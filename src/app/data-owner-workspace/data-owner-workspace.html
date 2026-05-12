@@ -80,6 +80,7 @@
       </header>
 
       <div class="workspace-grid">
+        <div class="workspace-col">
         <section class="panel step-panel">
           <header class="step-panel-head">
             <lucide-angular class="step-panel-icon" [img]="KeyRoundIcon" size="18"></lucide-angular>
@@ -118,6 +119,41 @@
             Generate New Key Pair
           </button>
         </section>
+
+        <section class="model-row">
+          <span class="model-row-label">Selected model</span>
+          <div class="toggle-pills" role="group" aria-label="Selected model">
+            <button
+              type="button"
+              class="toggle-pill"
+              [class.active]="selectedModel() === 'tree'"
+              (click)="selectModel('tree')"
+            >
+              <lucide-angular [img]="NetworkIcon" size="14" [strokeWidth]="1.8"></lucide-angular>
+              <span>Decision Tree</span>
+              @if (selectedModel() === 'tree') {
+                <lucide-angular class="pill-mark active" [img]="CircleCheckIcon" size="14"></lucide-angular>
+              } @else {
+                <lucide-angular class="pill-mark" [img]="CircleDashedIcon" size="14"></lucide-angular>
+              }
+            </button>
+            <button
+              type="button"
+              class="toggle-pill alt"
+              [class.active]="selectedModel() === 'logistic'"
+              (click)="selectModel('logistic')"
+            >
+              <lucide-angular [img]="ChartScatterIcon" size="14" [strokeWidth]="1.8"></lucide-angular>
+              <span>Logistic Regression</span>
+              @if (selectedModel() === 'logistic') {
+                <lucide-angular class="pill-mark active" [img]="CircleCheckIcon" size="14"></lucide-angular>
+              } @else {
+                <lucide-angular class="pill-mark" [img]="CircleDashedIcon" size="14"></lucide-angular>
+              }
+            </button>
+          </div>
+        </section>
+        </div>
 
         <section class="panel step-panel">
           <header class="step-panel-head">
@@ -160,40 +196,6 @@
           </div>
         </section>
       </div>
-
-      <section class="model-row">
-        <span class="model-row-label">Selected model</span>
-        <div class="toggle-pills" role="group" aria-label="Selected model">
-          <button
-            type="button"
-            class="toggle-pill"
-            [class.active]="selectedModel() === 'tree'"
-            (click)="selectModel('tree')"
-          >
-            <lucide-angular [img]="NetworkIcon" size="18" [strokeWidth]="1.8"></lucide-angular>
-            <span>Decision Tree</span>
-            @if (selectedModel() === 'tree') {
-              <lucide-angular class="pill-mark active" [img]="CircleCheckIcon" size="16"></lucide-angular>
-            } @else {
-              <lucide-angular class="pill-mark" [img]="CircleDashedIcon" size="16"></lucide-angular>
-            }
-          </button>
-          <button
-            type="button"
-            class="toggle-pill alt"
-            [class.active]="selectedModel() === 'logistic'"
-            (click)="selectModel('logistic')"
-          >
-            <lucide-angular [img]="ChartScatterIcon" size="18" [strokeWidth]="1.8"></lucide-angular>
-            <span>Logistic Regression</span>
-            @if (selectedModel() === 'logistic') {
-              <lucide-angular class="pill-mark active" [img]="CircleCheckIcon" size="16"></lucide-angular>
-            } @else {
-              <lucide-angular class="pill-mark" [img]="CircleDashedIcon" size="16"></lucide-angular>
-            }
-          </button>
-        </div>
-      </section>
 
       <section class="panel table-panel">
         <header class="table-head">
