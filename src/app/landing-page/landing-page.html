@@ -1,0 +1,216 @@
+<div class="page">
+  <header class="top-bar">
+    <div class="brand">
+      <img class="brand-logo-img" src="brand-logo.png" alt="IronCAP AI Marketplace logo" />
+      <div class="brand-text">
+        <span class="brand-title">IronCAP AI Marketplace</span>
+        <span class="brand-tag">FHE Enclave Demo</span>
+      </div>
+    </div>
+    <div class="top-bar-right">
+      <div class="trust-badge">
+        <lucide-angular class="trust-badge-icon" [img]="ShieldCheckIcon" size="16"></lucide-angular>
+        <span>Secure. Private. Verifiable.</span>
+      </div>
+      <span class="top-bar-divider" aria-hidden="true"></span>
+      <span class="username">alice</span>
+      <button type="button" class="btn-sign-out" (click)="signOut()">Sign Out</button>
+      <span class="avatar">
+        <lucide-angular [img]="UserIcon" size="20" [strokeWidth]="1.8"></lucide-angular>
+      </span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <main class="main">
+      <section class="panel overview-panel">
+        <div class="overview-head">
+          <div>
+            <h1 class="hero-title">Conference Demo Overview</h1>
+            <p class="hero-sub">
+              End-to-end privacy with Fully Homomorphic Encryption (FHE)
+            </p>
+          </div>
+          <div class="role-toggle" role="group" aria-label="Demo role">
+            <button
+              type="button"
+              class="role-btn"
+              [class.active]="role() === 'data'"
+              (click)="setRole('data')"
+            >
+              <lucide-angular [img]="UserIcon" size="22" [strokeWidth]="2.5"></lucide-angular>
+              Data Owner
+            </button>
+            <button
+              type="button"
+              class="role-btn alt"
+              [class.active]="role() === 'model'"
+              (click)="setRole('model')"
+            >
+              <lucide-angular [img]="LandmarkIcon" size="22" [strokeWidth]="2.2"></lucide-angular>
+              Model Owner
+            </button>
+          </div>
+        </div>
+
+        <div class="flow" aria-label="Demo workflow">
+          <article class="flow-card">
+            <div class="flow-num">1</div>
+            <lucide-angular class="flow-icon teal" [img]="KeyRoundIcon" size="56" [strokeWidth]="1.5"></lucide-angular>
+            <h2 class="flow-title">Generate Key Pair</h2>
+            <p class="flow-copy">
+              You generate an FHE key pair. Keep the private key secure.
+            </p>
+            <span class="pill pill-data">Data Owner</span>
+          </article>
+          <lucide-angular class="flow-connector" [img]="ArrowRightIcon" size="22" [strokeWidth]="1.5"></lucide-angular>
+          <article class="flow-card">
+            <div class="flow-num">2</div>
+            <lucide-angular class="flow-icon teal" [img]="FileLockIcon" size="56" [strokeWidth]="1.5"></lucide-angular>
+            <h2 class="flow-title">Upload &amp; Encrypt Data</h2>
+            <p class="flow-copy">
+              Encrypt your data locally using the public key and upload it securely.
+            </p>
+            <span class="pill pill-data">Data Owner</span>
+          </article>
+          <lucide-angular class="flow-connector" [img]="ArrowRightIcon" size="22" [strokeWidth]="1.5"></lucide-angular>
+          <article class="flow-card">
+            <div class="flow-num">3</div>
+            <lucide-angular class="flow-icon coral" [img]="CloudCogIcon" size="56" [strokeWidth]="1.5"></lucide-angular>
+            <h2 class="flow-title">Run Encrypted Inference</h2>
+            <p class="flow-copy">
+              The model owner runs inference on encrypted data—no plaintext is seen.
+            </p>
+            <span class="pill pill-model">Model Owner</span>
+          </article>
+          <lucide-angular class="flow-connector" [img]="ArrowRightIcon" size="22" [strokeWidth]="1.5"></lucide-angular>
+          <article class="flow-card">
+            <div class="flow-num">4</div>
+            <lucide-angular class="flow-icon teal" [img]="LockIcon" size="56" [strokeWidth]="1.5"></lucide-angular>
+            <h2 class="flow-title">Decrypt Result</h2>
+            <p class="flow-copy">
+              You decrypt the result with your private key and see the prediction.
+            </p>
+            <span class="pill pill-data">Data Owner</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel model-panel">
+        <div class="model-head">
+          <div>
+            <h2 class="section-title">Select Model to Run (Encrypted Inference)</h2>
+            <p class="section-sub">Choose an AI model to run on your encrypted data.</p>
+          </div>
+        </div>
+
+        <div class="model-layout">
+          <div class="model-cards">
+            <button
+              type="button"
+              class="model-card"
+              [class.selected]="selectedModel() === 'tree'"
+              (click)="selectModel('tree')"
+            >
+              <lucide-angular class="model-icon teal" [img]="NetworkIcon" size="48" [strokeWidth]="1.6"></lucide-angular>
+              <div class="model-card-body">
+                <h3 class="model-name">Decision Tree</h3>
+                <p class="model-desc">Tree-based classification model. Fast and interpretable.</p>
+              </div>
+              @if (selectedModel() === 'tree') {
+                <lucide-angular class="select-mark active" [img]="CircleCheckIcon" size="22"></lucide-angular>
+              } @else {
+                <lucide-angular class="select-mark" [img]="CircleIcon" size="22"></lucide-angular>
+              }
+            </button>
+
+            <button
+              type="button"
+              class="model-card"
+              [class.selected]="selectedModel() === 'logistic'"
+              (click)="selectModel('logistic')"
+            >
+              <lucide-angular class="model-icon coral" [img]="ChartScatterIcon" size="48" [strokeWidth]="1.6"></lucide-angular>
+              <div class="model-card-body">
+                <h3 class="model-name">Logistic Regression</h3>
+                <p class="model-desc">Linear model for binary classification.</p>
+              </div>
+              @if (selectedModel() === 'logistic') {
+                <lucide-angular class="select-mark active" [img]="CircleCheckIcon" size="22"></lucide-angular>
+              } @else {
+                <lucide-angular class="select-mark" [img]="CircleIcon" size="22"></lucide-angular>
+              }
+            </button>
+          </div>
+
+          <aside class="model-action">
+            <div class="hint-box">
+              <lucide-angular [img]="LockIcon" size="20"></lucide-angular>
+              <p>Your data stays encrypted. The model never sees plaintext.</p>
+            </div>
+            <button type="button" class="btn-primary" (click)="continueDemo()">
+              Continue to Encrypted Inference
+              <lucide-angular [img]="ArrowRightIcon" size="18"></lucide-angular>
+            </button>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <aside class="sidebar panel">
+      <h2 class="sidebar-title">How it works</h2>
+      <ol class="sidebar-steps">
+        <li>
+          <span class="step-num">1</span>
+          <lucide-angular class="step-icon teal" [img]="KeyRoundIcon" size="20" [strokeWidth]="1.6"></lucide-angular>
+          <p class="sb-step-desc">You generate a secure FHE key pair.</p>
+        </li>
+        <li>
+          <span class="step-num">2</span>
+          <lucide-angular class="step-icon teal" [img]="FileLockIcon" size="20" [strokeWidth]="1.6"></lucide-angular>
+          <p class="sb-step-desc">You encrypt your data and upload it.</p>
+        </li>
+        <li>
+          <span class="step-num">3</span>
+          <lucide-angular class="step-icon coral" [img]="CloudCogIcon" size="20" [strokeWidth]="1.6"></lucide-angular>
+          <p class="sb-step-desc">The model owner runs encrypted inference without seeing plaintext.</p>
+        </li>
+        <li>
+          <span class="step-num">4</span>
+          <lucide-angular class="step-icon teal" [img]="LockIcon" size="20" [strokeWidth]="1.6"></lucide-angular>
+          <p class="sb-step-desc">You decrypt the final result using your private key.</p>
+        </li>
+      </ol>
+      <div class="sidebar-callout">
+        <lucide-angular [img]="ShieldCheckIcon" size="28" [strokeWidth]="1.8"></lucide-angular>
+        <p>Privacy by design.<br />Security by default.</p>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="bottom-col">
+      <lucide-angular class="bottom-icon" [img]="ShieldCheckIcon" size="28"></lucide-angular>
+      <div>
+        <span class="bottom-title">Encrypted end-to-end</span>
+        <span class="bottom-desc">Your data is encrypted from upload to result.</span>
+      </div>
+    </div>
+    <div class="bottom-divider"></div>
+    <div class="bottom-col">
+      <lucide-angular class="bottom-icon" [img]="LockIcon" size="28"></lucide-angular>
+      <div>
+        <span class="bottom-title">Model never sees plaintext</span>
+        <span class="bottom-desc">Inference runs on ciphertext in the enclave.</span>
+      </div>
+    </div>
+    <div class="bottom-divider"></div>
+    <div class="bottom-col">
+      <lucide-angular class="bottom-icon" [img]="KeyRoundIcon" size="28"></lucide-angular>
+      <div>
+        <span class="bottom-title">Results decrypted by user only</span>
+        <span class="bottom-desc">Only you can decrypt and see the final result.</span>
+      </div>
+    </div>
+  </footer>
+</div>
