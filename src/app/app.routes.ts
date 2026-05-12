@@ -7,4 +7,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./landing-page/landing-page').then((m) => m.LandingPage),
   },
+  {
+    path: 'data-owner-workspace',
+    loadComponent: () =>
+      import('./data-owner-workspace/data-owner-workspace').then(
+        (m) => m.DataOwnerWorkspace,
+      ),
+  },
 ];

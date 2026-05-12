@@ -1,0 +1,311 @@
+<div class="page">
+  <header class="top-bar">
+    <div class="brand">
+      <img class="brand-logo-img" src="brand-logo.png" alt="IronCAP AI Marketplace logo" />
+      <div class="brand-text">
+        <span class="brand-title">IronCAP AI Marketplace</span>
+        <span class="brand-tag">FHE Enclave Demo</span>
+      </div>
+    </div>
+    <div class="top-bar-right">
+      <div class="trust-badge">
+        <lucide-angular class="trust-badge-icon" [img]="ShieldCheckIcon" size="16"></lucide-angular>
+        <span>Secure. Private. Verifiable.</span>
+      </div>
+      <span class="top-bar-divider" aria-hidden="true"></span>
+      <span class="username">alice</span>
+      <button type="button" class="btn-sign-out" (click)="signOut()">Sign Out</button>
+      <span class="avatar">
+        <lucide-angular [img]="UserIcon" size="20" [strokeWidth]="1.8"></lucide-angular>
+      </span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <main class="main">
+      <section class="stepper" aria-label="Workflow progress">
+        <div class="step active">
+          <div class="step-bubble">
+            <span class="step-bubble-num">1</span>
+          </div>
+          <lucide-angular class="step-symbol" [img]="KeyRoundIcon" size="32" [strokeWidth]="1.8"></lucide-angular>
+          <div class="step-text">
+            <div class="step-label">Generate Key Pair</div>
+            <div class="step-status">Active</div>
+          </div>
+        </div>
+        <span class="step-connector" aria-hidden="true"></span>
+
+        <div class="step active">
+          <div class="step-bubble">
+            <span class="step-bubble-num">2</span>
+          </div>
+          <lucide-angular class="step-symbol" [img]="FileLockIcon" size="32" [strokeWidth]="1.8"></lucide-angular>
+          <div class="step-text">
+            <div class="step-label">Upload &amp; Encrypt Data</div>
+            <div class="step-status">Active</div>
+          </div>
+        </div>
+        <span class="step-connector" aria-hidden="true"></span>
+
+        <div class="step">
+          <div class="step-bubble">
+            <span class="step-bubble-num">3</span>
+          </div>
+          <lucide-angular class="step-symbol" [img]="CloudCogIcon" size="32" [strokeWidth]="1.8"></lucide-angular>
+          <div class="step-text">
+            <div class="step-label">Run Encrypted Inference</div>
+            <div class="step-status muted">Upcoming</div>
+          </div>
+        </div>
+        <span class="step-connector" aria-hidden="true"></span>
+
+        <div class="step">
+          <div class="step-bubble">
+            <span class="step-bubble-num">4</span>
+          </div>
+          <lucide-angular class="step-symbol" [img]="LockIcon" size="32" [strokeWidth]="1.8"></lucide-angular>
+          <div class="step-text">
+            <div class="step-label">Decrypt Result</div>
+            <div class="step-status muted">Upcoming</div>
+          </div>
+        </div>
+      </section>
+
+      <header class="workspace-header">
+        <h1 class="hero-title">Data Owner Workspace</h1>
+        <p class="hero-sub">
+          Create keys and encrypt your dataset before submitting it to the model owner.
+        </p>
+      </header>
+
+      <div class="workspace-grid">
+        <section class="panel step-panel">
+          <header class="step-panel-head">
+            <lucide-angular class="step-panel-icon" [img]="KeyRoundIcon" size="18"></lucide-angular>
+            <h2 class="step-panel-title">Step 1: Generate Key Pair</h2>
+          </header>
+
+          <div class="key-body">
+            <div class="key-visual" aria-hidden="true">
+              <lucide-angular class="key-visual-icon" [img]="KeyRoundIcon" size="42" [strokeWidth]="1.6"></lucide-angular>
+              <span class="key-visual-label">FHE Key</span>
+              <lucide-angular class="key-visual-badge" [img]="ShieldCheckIcon" size="14"></lucide-angular>
+            </div>
+
+            <dl class="key-info">
+              <div class="key-row">
+                <dt>Key Name</dt>
+                <dd class="key-chip">{{ keyInfo.name }}</dd>
+              </div>
+              <div class="key-row">
+                <dt>Scheme</dt>
+                <dd class="key-chip">{{ keyInfo.scheme }}</dd>
+              </div>
+              <div class="key-row">
+                <dt>Multiplicative Depth</dt>
+                <dd class="key-chip">{{ keyInfo.depth }}</dd>
+              </div>
+              <div class="key-row">
+                <dt>Created</dt>
+                <dd class="key-chip">{{ keyInfo.created }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <button type="button" class="btn-primary btn-block" (click)="generateKeyPair()">
+            <lucide-angular [img]="KeyRoundIcon" size="18" [strokeWidth]="2"></lucide-angular>
+            Generate New Key Pair
+          </button>
+        </section>
+
+        <section class="panel step-panel">
+          <header class="step-panel-head">
+            <lucide-angular class="step-panel-icon" [img]="FileLockIcon" size="18"></lucide-angular>
+            <h2 class="step-panel-title">Step 2: Upload &amp; Encrypt Data</h2>
+          </header>
+
+          <div class="upload-zone" tabindex="0">
+            <lucide-angular class="upload-icon" [img]="CloudUploadIcon" size="32" [strokeWidth]="1.6"></lucide-angular>
+            <p class="upload-title">Drag &amp; drop your file here</p>
+            <p class="upload-or">or</p>
+            <button type="button" class="btn-secondary" (click)="browseFiles()">Browse Files</button>
+            <p class="upload-meta">Accepted file types: CSV, JSON · Max size: 50 MB</p>
+          </div>
+
+          <div class="mini-flow" aria-label="Upload flow">
+            <div class="mini-step">
+              <div class="mini-icon-wrap">
+                <lucide-angular [img]="FileTextIcon" size="22" [strokeWidth]="1.6"></lucide-angular>
+                <span class="mini-badge">1</span>
+              </div>
+              <span class="mini-label">Select dataset</span>
+            </div>
+            <lucide-angular class="mini-arrow" [img]="ArrowRightIcon" size="18" [strokeWidth]="2"></lucide-angular>
+            <div class="mini-step">
+              <div class="mini-icon-wrap">
+                <lucide-angular [img]="LockIcon" size="22" [strokeWidth]="1.6"></lucide-angular>
+                <span class="mini-badge">2</span>
+              </div>
+              <span class="mini-label">Encrypt locally</span>
+            </div>
+            <lucide-angular class="mini-arrow" [img]="ArrowRightIcon" size="18" [strokeWidth]="2"></lucide-angular>
+            <div class="mini-step">
+              <div class="mini-icon-wrap">
+                <lucide-angular [img]="ShieldCheckIcon" size="22" [strokeWidth]="1.6"></lucide-angular>
+                <span class="mini-badge">3</span>
+              </div>
+              <span class="mini-label">Submit encrypted dataset</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section class="model-row">
+        <span class="model-row-label">Selected model</span>
+        <div class="toggle-pills" role="group" aria-label="Selected model">
+          <button
+            type="button"
+            class="toggle-pill"
+            [class.active]="selectedModel() === 'tree'"
+            (click)="selectModel('tree')"
+          >
+            <lucide-angular [img]="NetworkIcon" size="18" [strokeWidth]="1.8"></lucide-angular>
+            <span>Decision Tree</span>
+            @if (selectedModel() === 'tree') {
+              <lucide-angular class="pill-mark active" [img]="CircleCheckIcon" size="16"></lucide-angular>
+            } @else {
+              <lucide-angular class="pill-mark" [img]="CircleDashedIcon" size="16"></lucide-angular>
+            }
+          </button>
+          <button
+            type="button"
+            class="toggle-pill alt"
+            [class.active]="selectedModel() === 'logistic'"
+            (click)="selectModel('logistic')"
+          >
+            <lucide-angular [img]="ChartScatterIcon" size="18" [strokeWidth]="1.8"></lucide-angular>
+            <span>Logistic Regression</span>
+            @if (selectedModel() === 'logistic') {
+              <lucide-angular class="pill-mark active" [img]="CircleCheckIcon" size="16"></lucide-angular>
+            } @else {
+              <lucide-angular class="pill-mark" [img]="CircleDashedIcon" size="16"></lucide-angular>
+            }
+          </button>
+        </div>
+      </section>
+
+      <section class="panel table-panel">
+        <header class="table-head">
+          <lucide-angular class="table-head-icon" [img]="DatabaseIcon" size="20"></lucide-angular>
+          <h2 class="section-title">Encrypted Datasets</h2>
+        </header>
+
+        <div class="table-wrap" role="table">
+          <div class="table-row table-header" role="row">
+            <span role="columnheader">Dataset Name</span>
+            <span role="columnheader">Owner</span>
+            <span role="columnheader">Encryption Status</span>
+            <span role="columnheader">Submitted To</span>
+            <span role="columnheader" class="col-action">Action</span>
+          </div>
+          @for (ds of datasets; track ds.name) {
+            <div class="table-row" role="row">
+              <span class="cell-name" role="cell">
+                <lucide-angular [img]="FileTextIcon" size="18" [strokeWidth]="1.6"></lucide-angular>
+                {{ ds.name }}
+              </span>
+              <span role="cell">{{ ds.owner }}</span>
+              <span class="cell-status" role="cell">
+                <lucide-angular [img]="LockIcon" size="14" [strokeWidth]="2"></lucide-angular>
+                {{ ds.status }}
+              </span>
+              <span class="cell-muted" role="cell">{{ ds.submittedTo ?? '—' }}</span>
+              <span class="cell-actions col-action" role="cell">
+                <button type="button" class="icon-btn" aria-label="View dataset" (click)="viewDataset(ds)">
+                  <lucide-angular [img]="EyeIcon" size="16"></lucide-angular>
+                </button>
+                <button type="button" class="icon-btn danger" aria-label="Delete dataset" (click)="deleteDataset(ds)">
+                  <lucide-angular [img]="Trash2Icon" size="16"></lucide-angular>
+                </button>
+              </span>
+            </div>
+          }
+        </div>
+      </section>
+    </main>
+
+    <aside class="sidebar panel">
+      <h2 class="sidebar-title">What happens here?</h2>
+      <ol class="sidebar-steps">
+        <li>
+          <lucide-angular class="step-icon teal" [img]="KeyRoundIcon" size="22" [strokeWidth]="1.8"></lucide-angular>
+          <div>
+            <p class="sb-step-title">1. Generate your key pair</p>
+            <p class="sb-step-desc">
+              Create an FHE key pair. Your private key stays only with you and never leaves this workspace.
+            </p>
+          </div>
+        </li>
+        <li>
+          <lucide-angular class="step-icon teal" [img]="FileLockIcon" size="22" [strokeWidth]="1.8"></lucide-angular>
+          <div>
+            <p class="sb-step-title">2. Encrypt data locally</p>
+            <p class="sb-step-desc">
+              Upload your dataset and encrypt it on your machine. The model owner will only see ciphertext.
+            </p>
+          </div>
+        </li>
+        <li>
+          <lucide-angular class="step-icon teal" [img]="ShieldCheckIcon" size="22" [strokeWidth]="1.8"></lucide-angular>
+          <div>
+            <p class="sb-step-title">3. Submit ciphertext only</p>
+            <p class="sb-step-desc">
+              Send the encrypted dataset to the model owner. Your plaintext data remains private.
+            </p>
+          </div>
+        </li>
+      </ol>
+
+      <div class="sidebar-callout">
+        <lucide-angular [img]="ShieldCheckIcon" size="22" [strokeWidth]="1.8"></lucide-angular>
+        <p>Your data. Your keys.<br />Privacy by design.</p>
+      </div>
+
+      <button type="button" class="btn-primary btn-block sidebar-cta" (click)="continueToModelOwner()">
+        Continue to Model Owner Stage
+        <lucide-angular [img]="ArrowRightIcon" size="22" [strokeWidth]="2.25"></lucide-angular>
+      </button>
+      <p class="sidebar-foot">
+        <lucide-angular [img]="ShieldCheckIcon" size="14"></lucide-angular>
+        You can review or modify before proceeding.
+      </p>
+    </aside>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="bottom-col">
+      <lucide-angular class="bottom-icon" [img]="UserIcon" size="22"></lucide-angular>
+      <div>
+        <span class="bottom-title">Private key stays with user</span>
+        <span class="bottom-desc">Never transmitted. Never stored.</span>
+      </div>
+    </div>
+    <div class="bottom-divider"></div>
+    <div class="bottom-col">
+      <lucide-angular class="bottom-icon" [img]="LockIcon" size="22"></lucide-angular>
+      <div>
+        <span class="bottom-title">Ciphertext sent to model owner</span>
+        <span class="bottom-desc">Only encrypted data leaves the user.</span>
+      </div>
+    </div>
+    <div class="bottom-divider"></div>
+    <div class="bottom-col">
+      <lucide-angular class="bottom-icon" [img]="ShieldCheckIcon" size="22"></lucide-angular>
+      <div>
+        <span class="bottom-title">Plaintext never leaves the user side</span>
+        <span class="bottom-desc">End-to-end privacy by default.</span>
+      </div>
+    </div>
+  </footer>
+</div>

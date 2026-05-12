@@ -1,4 +1,5 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import {
   ArrowRight,
   ChartScatter,
@@ -27,6 +28,8 @@ export type ModelChoice = 'tree' | 'logistic';
   styleUrl: './landing-page.css',
 })
 export class LandingPage {
+  private readonly router = inject(Router);
+
   readonly role = signal<WorkflowRole>('data');
   readonly selectedModel = signal<ModelChoice>('tree');
 
@@ -52,7 +55,9 @@ export class LandingPage {
     this.selectedModel.set(next);
   }
 
-  continueInference(): void {}
+  continueInference(): void {
+    this.router.navigate(['/data-owner-workspace']);
+  }
 
   signOut(): void {}
 }
