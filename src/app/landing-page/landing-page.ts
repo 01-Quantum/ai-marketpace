@@ -16,7 +16,7 @@ import {
   User,
 } from 'lucide-angular';
 
-export type DemoRole = 'data' | 'model';
+export type WorkflowRole = 'data' | 'model';
 export type ModelChoice = 'tree' | 'logistic';
 
 @Component({
@@ -27,7 +27,7 @@ export type ModelChoice = 'tree' | 'logistic';
   styleUrl: './landing-page.css',
 })
 export class LandingPage {
-  readonly role = signal<DemoRole>('data');
+  readonly role = signal<WorkflowRole>('data');
   readonly selectedModel = signal<ModelChoice>('tree');
 
   readonly ShieldCheckIcon = ShieldCheck;
@@ -44,7 +44,7 @@ export class LandingPage {
   readonly CircleCheckIcon = CircleCheck;
   readonly CircleIcon = Circle;
 
-  setRole(next: DemoRole): void {
+  setRole(next: WorkflowRole): void {
     this.role.set(next);
   }
 
@@ -52,7 +52,7 @@ export class LandingPage {
     this.selectedModel.set(next);
   }
 
-  continueDemo(): void {}
+  continueInference(): void {}
 
   signOut(): void {}
 }
