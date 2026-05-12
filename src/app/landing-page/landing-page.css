@@ -362,8 +362,13 @@ lucide-angular svg {
 .flow-connector {
   align-self: center;
   flex-shrink: 0;
-  opacity: 0.55;
-  color: var(--muted);
+  color: var(--teal);
+  opacity: 1;
+  filter: drop-shadow(0 0 8px rgba(45, 212, 191, 0.35));
+}
+
+.flow-connector svg {
+  stroke: currentColor;
 }
 
 .model-head {
