@@ -28,4 +28,11 @@ export const routes: Routes = [
         (m) => m.DecryptResultWorkspace,
       ),
   },
+  {
+    path: 'model-builder-studio',
+    loadComponent: () =>
+      import('./model-builder-studio/model-builder-studio').then(
+        (m) => m.ModelBuilderStudio,
+      ),
+  },
 ];
