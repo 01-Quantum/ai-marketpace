@@ -11,7 +11,14 @@
       <lucide-angular class="trust-badge-icon" [img]="ShieldCheckIcon" size="16"></lucide-angular>
       <span>Secure. Private. Verifiable.</span>
     </div>
-    <span class="top-bar-divider" aria-hidden="true"></span>
+    @if (isModelOwner()) {
+      <span class="top-bar-divider" aria-hidden="true"></span>
+      @if (isInStudio()) {
+        <a routerLink="/model-owner-workspace" class="btn-model-studio">FHE Data</a>
+      } @else {
+        <a routerLink="/model-builder-studio" class="btn-model-studio">Model Studio</a>
+      }
+    }
     <span class="username">{{ username() }}</span>
     <button type="button" class="btn-sign-out" (click)="onSignOut()">Sign Out</button>
     <span class="avatar">
