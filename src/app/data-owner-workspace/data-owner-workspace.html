@@ -1,96 +1,12 @@
 <div class="page">
-  <header class="top-bar">
-    <div class="brand">
-      <img class="brand-logo-img" src="brand-logo.png" alt="IronCAP AI Marketplace logo" />
-      <div class="brand-text">
-        <span class="brand-title">IronCAP AI Marketplace</span>
-        <span class="brand-tag">FHE Enclave</span>
-      </div>
-    </div>
-    <div class="top-bar-right">
-      <div class="trust-badge">
-        <lucide-angular class="trust-badge-icon" [img]="ShieldCheckIcon" size="16"></lucide-angular>
-        <span>Secure. Private. Verifiable.</span>
-      </div>
-      <span class="top-bar-divider" aria-hidden="true"></span>
-      <span class="username">alice</span>
-      <button type="button" class="btn-sign-out" (click)="signOut()">Sign Out</button>
-      <span class="avatar">
-        <lucide-angular [img]="UserIcon" size="20" [strokeWidth]="1.8"></lucide-angular>
-      </span>
-    </div>
-  </header>
+  <app-top-bar (signOut)="signOut()" />
 
   <div class="layout layout-workspace">
-    <section class="stepper" aria-label="Workflow progress">
-      <div class="step active">
-        <div class="step-bubble">
-          <span class="step-bubble-num">1</span>
-        </div>
-        <lucide-angular class="step-symbol" [img]="KeyRoundIcon" size="32" [strokeWidth]="1.8"></lucide-angular>
-        <div class="step-text">
-          <div class="step-label">Generate Key Pair</div>
-          <div class="step-status">Active</div>
-        </div>
-      </div>
-      <span class="step-connector" aria-hidden="true"></span>
-
-      <div class="step active">
-        <div class="step-bubble">
-          <span class="step-bubble-num">2</span>
-        </div>
-        <lucide-angular class="step-symbol" [img]="FileLockIcon" size="32" [strokeWidth]="1.8"></lucide-angular>
-        <div class="step-text">
-          <div class="step-label">Upload &amp; Encrypt Data</div>
-          <div class="step-status">Active</div>
-        </div>
-      </div>
-      <span class="step-connector" aria-hidden="true"></span>
-
-      <div class="step">
-        <div class="step-bubble">
-          <span class="step-bubble-num">3</span>
-        </div>
-        <lucide-angular class="step-symbol" [img]="CloudCogIcon" size="32" [strokeWidth]="1.8"></lucide-angular>
-        <div class="step-text">
-          <div class="step-label">Run Encrypted Inference</div>
-          <div class="step-status muted">Upcoming</div>
-        </div>
-      </div>
-      <span class="step-connector" aria-hidden="true"></span>
-
-      <div class="step">
-        <div class="step-bubble">
-          <span class="step-bubble-num">4</span>
-        </div>
-        <lucide-angular class="step-symbol" [img]="LockIcon" size="32" [strokeWidth]="1.8"></lucide-angular>
-        <div class="step-text">
-          <div class="step-label">Decrypt Result</div>
-          <div class="step-status muted">Upcoming</div>
-        </div>
-      </div>
-    </section>
-
-    <div class="role-toggle-compact" role="group" aria-label="Workflow role">
-      <button
-        type="button"
-        class="role-btn-compact"
-        [class.active]="role() === 'data'"
-        (click)="setRole('data')"
-      >
-        <lucide-angular [img]="UserIcon" size="16" [strokeWidth]="2"></lucide-angular>
-        Data Owner
-      </button>
-      <button
-        type="button"
-        class="role-btn-compact alt"
-        [class.active]="role() === 'model'"
-        (click)="setRole('model')"
-      >
-        <lucide-angular [img]="LandmarkIcon" size="16" [strokeWidth]="2"></lucide-angular>
-        Model Owner
-      </button>
-    </div>
+    <app-workflow-header
+      [activeThrough]="2"
+      [showStepStatus]="true"
+      role="data"
+    />
 
     <main class="main">
       <header class="workspace-header">

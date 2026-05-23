@@ -1,0 +1,51 @@
+<section class="stepper" aria-label="Workflow progress">
+  @for (step of steps; track step.num; let last = $last) {
+    <div
+      class="step"
+      [class.active]="isActive(step.num)"
+      [class.current]="isCurrent(step.num)"
+    >
+      <div class="step-bubble">
+        <span class="step-bubble-num">{{ step.num }}</span>
+      </div>
+      <lucide-angular
+        class="step-symbol"
+        [img]="step.icon"
+        size="32"
+        [strokeWidth]="1.8"
+      ></lucide-angular>
+      <div class="step-text">
+        <div class="step-label">{{ step.label }}</div>
+        @if (showStepStatus()) {
+          <div class="step-status" [class.muted]="!isActive(step.num)">
+            {{ stepStatus(step.num) }}
+          </div>
+        }
+      </div>
+    </div>
+    @if (!last) {
+      <span class="step-connector" aria-hidden="true"></span>
+    }
+  }
+</section>
+
+<div class="role-toggle-compact" role="group" aria-label="Workflow role">
+  <button
+    type="button"
+    class="role-btn-compact"
+    [class.active]="role() === 'data'"
+    (click)="setRole('data')"
+  >
+    <lucide-angular [img]="UserIcon" size="16" [strokeWidth]="2"></lucide-angular>
+    Data Owner
+  </button>
+  <button
+    type="button"
+    class="role-btn-compact alt"
+    [class.active]="role() === 'model'"
+    (click)="setRole('model')"
+  >
+    <lucide-angular [img]="LandmarkIcon" size="16" [strokeWidth]="2"></lucide-angular>
+    Model Owner
+  </button>
+</div>

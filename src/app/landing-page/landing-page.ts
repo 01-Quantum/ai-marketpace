@@ -16,14 +16,15 @@ import {
   ShieldCheck,
   User,
 } from 'lucide-angular';
+import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
+import { WorkflowRole } from '../shared/workflow.types';
 
-export type WorkflowRole = 'data' | 'model';
 export type ModelChoice = 'tree' | 'logistic';
 
 @Component({
   selector: 'app-landing-page',
   standalone: true,
-  imports: [LucideAngularModule],
+  imports: [LucideAngularModule, AppTopBar],
   templateUrl: './landing-page.html',
   styleUrl: './landing-page.css',
 })

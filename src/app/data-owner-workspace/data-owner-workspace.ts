@@ -5,14 +5,12 @@ import {
   ChartScatter,
   CircleCheck,
   CircleDashed,
-  CloudCog,
   CloudUpload,
   Database,
   Eye,
   FileLock,
   FileText,
   KeyRound,
-  Landmark,
   Lock,
   LucideAngularModule,
   Network,
@@ -20,9 +18,10 @@ import {
   Trash2,
   User,
 } from 'lucide-angular';
+import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
+import { WorkflowHeader } from '../shared/workflow-header/workflow-header';
 
 export type ModelChoice = 'tree' | 'logistic';
-export type WorkflowRole = 'data' | 'model';
 
 interface EncryptedDataset {
   name: string;
@@ -34,14 +33,13 @@ interface EncryptedDataset {
 @Component({
   selector: 'app-data-owner-workspace',
   standalone: true,
-  imports: [LucideAngularModule],
+  imports: [LucideAngularModule, AppTopBar, WorkflowHeader],
   templateUrl: './data-owner-workspace.html',
   styleUrl: './data-owner-workspace.css',
 })
 export class DataOwnerWorkspace {
   private readonly router = inject(Router);
 
-  readonly role = signal<WorkflowRole>('data');
   readonly selectedModel = signal<ModelChoice>('tree');
 
   readonly keyInfo = {
@@ -58,11 +56,8 @@ export class DataOwnerWorkspace {
   ];
 
   readonly ShieldCheckIcon = ShieldCheck;
-  readonly UserIcon = User;
   readonly KeyRoundIcon = KeyRound;
-  readonly LandmarkIcon = Landmark;
   readonly FileLockIcon = FileLock;
-  readonly CloudCogIcon = CloudCog;
   readonly CloudUploadIcon = CloudUpload;
   readonly LockIcon = Lock;
   readonly ArrowRightIcon = ArrowRight;
@@ -74,16 +69,10 @@ export class DataOwnerWorkspace {
   readonly DatabaseIcon = Database;
   readonly EyeIcon = Eye;
   readonly Trash2Icon = Trash2;
+  readonly UserIcon = User;
 
   selectModel(next: ModelChoice): void {
     this.selectedModel.set(next);
-  }
-
-  setRole(next: WorkflowRole): void {
-    this.role.set(next);
-    if (next === 'model') {
-      this.router.navigate(['/model-owner-workspace']);
-    }
   }
 
   generateKeyPair(): void {}

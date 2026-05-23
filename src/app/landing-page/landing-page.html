@@ -1,25 +1,5 @@
 <div class="page">
-  <header class="top-bar">
-    <div class="brand">
-      <img class="brand-logo-img" src="brand-logo.png" alt="IronCAP AI Marketplace logo" />
-      <div class="brand-text">
-        <span class="brand-title">IronCAP AI Marketplace</span>
-        <span class="brand-tag">FHE Encrypted Enclave</span>
-      </div>
-    </div>
-    <div class="top-bar-right">
-      <div class="trust-badge">
-        <lucide-angular class="trust-badge-icon" [img]="ShieldCheckIcon" size="16"></lucide-angular>
-        <span>Secure. Private. Verifiable.</span>
-      </div>
-      <span class="top-bar-divider" aria-hidden="true"></span>
-      <span class="username">alice</span>
-      <button type="button" class="btn-sign-out" (click)="signOut()">Sign Out</button>
-      <span class="avatar">
-        <lucide-angular [img]="UserIcon" size="20" [strokeWidth]="1.8"></lucide-angular>
-      </span>
-    </div>
-  </header>
+  <app-top-bar brandTag="FHE Encrypted Enclave" (signOut)="signOut()" />
 
   <div class="layout">
     <main class="main">

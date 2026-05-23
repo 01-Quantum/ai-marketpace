@@ -1,6 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, signal } from '@angular/core';
 import {
   ChartScatter,
   CircleCheck,
@@ -12,7 +11,6 @@ import {
   Download,
   FileLock,
   KeyRound,
-  Landmark,
   ListChecks,
   LoaderCircle,
   Lock,
@@ -21,11 +19,11 @@ import {
   Play,
   ShieldAlert,
   ShieldCheck,
-  User,
 } from 'lucide-angular';
+import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
+import { WorkflowHeader } from '../shared/workflow-header/workflow-header';
 
 export type ModelChoice = 'tree' | 'logistic';
-export type WorkflowRole = 'data' | 'model';
 
 interface IncomingDataset {
   name: string;
@@ -50,14 +48,11 @@ interface InferenceJob {
 @Component({
   selector: 'app-model-owner-workspace',
   standalone: true,
-  imports: [LucideAngularModule, DecimalPipe],
+  imports: [LucideAngularModule, DecimalPipe, AppTopBar, WorkflowHeader],
   templateUrl: './model-owner-workspace.html',
   styleUrl: './model-owner-workspace.css',
 })
 export class ModelOwnerWorkspace {
-  private readonly router = inject(Router);
-
-  readonly role = signal<WorkflowRole>('model');
   readonly selectedModel = signal<ModelChoice>('tree');
 
   readonly datasets: IncomingDataset[] = [
@@ -116,12 +111,9 @@ export class ModelOwnerWorkspace {
 
   readonly ShieldCheckIcon = ShieldCheck;
   readonly ShieldAlertIcon = ShieldAlert;
-  readonly UserIcon = User;
-  readonly KeyRoundIcon = KeyRound;
   readonly FileLockIcon = FileLock;
   readonly CloudCogIcon = CloudCog;
   readonly LockIcon = Lock;
-  readonly LandmarkIcon = Landmark;
   readonly NetworkIcon = Network;
   readonly ChartScatterIcon = ChartScatter;
   readonly CircleCheckIcon = CircleCheck;
@@ -133,13 +125,7 @@ export class ModelOwnerWorkspace {
   readonly LoaderIcon = LoaderCircle;
   readonly DownloadIcon = Download;
   readonly PlayIcon = Play;
-
-  setRole(next: WorkflowRole): void {
-    this.role.set(next);
-    if (next === 'data') {
-      this.router.navigate(['/data-owner-workspace']);
-    }
-  }
+  readonly KeyRoundIcon = KeyRound;
 
   selectModel(next: ModelChoice): void {
     this.selectedModel.set(next);

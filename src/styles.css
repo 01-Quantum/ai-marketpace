@@ -208,12 +208,16 @@ lucide-angular svg {
   align-items: start;
 }
 
-.layout-workspace > .stepper {
+.layout-workspace > app-workflow-header {
+  display: contents;
+}
+
+.layout-workspace .stepper {
   grid-area: stepper;
   min-width: 0;
 }
 
-.layout-workspace > .role-toggle-compact {
+.layout-workspace .role-toggle-compact {
   grid-area: role;
   justify-self: end;
   align-self: center;
@@ -952,7 +956,7 @@ svg.step-icon {
       'sidebar';
   }
 
-  .layout-workspace > .role-toggle-compact {
+  .layout-workspace .role-toggle-compact {
     justify-self: start;
   }
 }
