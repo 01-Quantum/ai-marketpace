@@ -16,11 +16,9 @@
       ></lucide-angular>
       <div class="step-text">
         <div class="step-label">{{ step.label }}</div>
-        @if (showStepStatus()) {
-          <div class="step-status" [class.muted]="!isActive(step.num)">
-            {{ stepStatus(step.num) }}
-          </div>
-        }
+        <div class="step-status" [class.muted]="!isActive(step.num)">
+          {{ stepStatus(step.num) }}
+        </div>
       </div>
     </div>
     @if (!last) {

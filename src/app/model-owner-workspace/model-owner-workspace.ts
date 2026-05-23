@@ -1,6 +1,8 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import {
+  ArrowRight,
   ChartScatter,
   CircleCheck,
   CircleDashed,
@@ -53,6 +55,8 @@ interface InferenceJob {
   styleUrl: './model-owner-workspace.css',
 })
 export class ModelOwnerWorkspace {
+  private readonly router = inject(Router);
+
   readonly selectedModel = signal<ModelChoice>('tree');
 
   readonly datasets: IncomingDataset[] = [
@@ -126,6 +130,7 @@ export class ModelOwnerWorkspace {
   readonly DownloadIcon = Download;
   readonly PlayIcon = Play;
   readonly KeyRoundIcon = KeyRound;
+  readonly ArrowRightIcon = ArrowRight;
 
   selectModel(next: ModelChoice): void {
     this.selectedModel.set(next);
@@ -133,7 +138,13 @@ export class ModelOwnerWorkspace {
 
   runInference(_dataset: IncomingDataset): void {}
 
-  saveResult(_job: InferenceJob): void {}
+  saveResult(_job: InferenceJob): void {
+    this.router.navigate(['/decrypt-result-workspace']);
+  }
+
+  continueToDecrypt(): void {
+    this.router.navigate(['/decrypt-result-workspace']);
+  }
 
   signOut(): void {}
 }

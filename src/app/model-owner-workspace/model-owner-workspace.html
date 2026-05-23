@@ -2,11 +2,7 @@
   <app-top-bar (signOut)="signOut()" />
 
   <div class="layout layout-workspace">
-    <app-workflow-header
-      [activeThrough]="3"
-      [currentStep]="3"
-      role="model"
-    />
+    <app-workflow-header [activeThrough]="3" [currentStep]="3" role="model" />
 
     <main class="main">
       <header class="workspace-header">
@@ -197,6 +193,11 @@
         <lucide-angular [img]="ShieldCheckIcon" size="22" [strokeWidth]="1.8"></lucide-angular>
         <p>Privacy by design.<br />Security by default.</p>
       </div>
+
+      <button type="button" class="btn-primary btn-block sidebar-cta" (click)="continueToDecrypt()">
+        Continue to Decrypt Result
+        <lucide-angular [img]="ArrowRightIcon" size="22" [strokeWidth]="2.25"></lucide-angular>
+      </button>
     </aside>
   </div>
 

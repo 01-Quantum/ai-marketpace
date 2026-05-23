@@ -21,4 +21,11 @@ export const routes: Routes = [
         (m) => m.ModelOwnerWorkspace,
       ),
   },
+  {
+    path: 'decrypt-result-workspace',
+    loadComponent: () =>
+      import('./decrypt-result-workspace/decrypt-result-workspace').then(
+        (m) => m.DecryptResultWorkspace,
+      ),
+  },
 ];

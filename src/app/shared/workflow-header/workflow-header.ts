@@ -28,7 +28,6 @@ export class WorkflowHeader {
 
   readonly activeThrough = input.required<WorkflowStep>();
   readonly currentStep = input<WorkflowStep>();
-  readonly showStepStatus = input(false);
   readonly role = input.required<WorkflowRole>();
 
   readonly steps: StepDefinition[] = [

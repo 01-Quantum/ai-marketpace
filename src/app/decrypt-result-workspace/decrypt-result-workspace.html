@@ -1,0 +1,230 @@
+<div class="page">
+  <app-top-bar (signOut)="signOut()" />
+
+  <div class="layout layout-workspace">
+    <app-workflow-header [activeThrough]="4" [currentStep]="4" role="data" />
+
+    <main class="main">
+      <header class="workspace-header">
+        <h1 class="hero-title">Decrypt and View Result</h1>
+        <p class="hero-sub">
+          Only the data owner can decrypt the model prediction using the private key.
+        </p>
+      </header>
+
+      <section class="panel result-status-row">
+        <div class="status-item">
+          <span class="status-icon teal">
+            <lucide-angular [img]="DatabaseIcon" size="20" [strokeWidth]="1.8"></lucide-angular>
+          </span>
+          <div class="status-body">
+            <div class="status-label">Selected Dataset</div>
+            <div class="status-value teal">Iris Dataset</div>
+            <div class="status-meta">150 rows &middot; 4 features</div>
+          </div>
+        </div>
+
+        <div class="status-item">
+          <span class="status-icon coral">
+            <lucide-angular [img]="BoxIcon" size="20" [strokeWidth]="1.8"></lucide-angular>
+          </span>
+          <div class="status-body">
+            <div class="status-label">Selected Model</div>
+            <div class="status-value coral">Decision Tree</div>
+            <div class="status-meta">Tree depth: 4 &middot; Gini</div>
+          </div>
+        </div>
+
+        <div class="status-item">
+          <span class="status-icon green">
+            <lucide-angular [img]="ShieldCheckIcon" size="20" [strokeWidth]="1.8"></lucide-angular>
+          </span>
+          <div class="status-body">
+            <div class="status-label">Result Status</div>
+            <div class="status-value green">Ready to Decrypt</div>
+            <div class="status-meta">Inference completed</div>
+          </div>
+        </div>
+
+        <div class="status-cta">
+          <button type="button" class="btn-decrypt" (click)="decrypt()">
+            <lucide-angular [img]="LockIcon" size="16" [strokeWidth]="2.2"></lucide-angular>
+            Decrypt Result
+          </button>
+          <p class="status-cta-hint">Click to decrypt with your private key.</p>
+        </div>
+      </section>
+
+      <section class="comparison-row">
+        <div class="panel encrypted-panel">
+          <div class="comp-head">
+            <span class="comp-icon coral">
+              <lucide-angular [img]="LockIcon" size="16" [strokeWidth]="2"></lucide-angular>
+            </span>
+            <h2 class="comp-title">Encrypted Prediction</h2>
+          </div>
+
+          <div class="ciphertext-block">
+            <div class="ciphertext-label">Ciphertext (truncated)</div>
+            <div class="ciphertext">
+              @for (line of ciphertextLines; track $index) {
+                <div class="ciphertext-line">{{ line }}</div>
+              }
+            </div>
+          </div>
+
+          <div class="comp-meta">
+            <div>
+              <div class="meta-label">Algorithm</div>
+              <div class="meta-value">BFV (CKKS-like)</div>
+            </div>
+            <div>
+              <div class="meta-label">Time (UTC)</div>
+              <div class="meta-value">May 24, 2025 &middot; 10:42:31</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="comparison-arrow" aria-hidden="true">
+          <span class="arrow-bubble">
+            <lucide-angular [img]="LockIcon" size="18" [strokeWidth]="2"></lucide-angular>
+          </span>
+          <lucide-angular class="arrow-glyph" [img]="ArrowRightIcon" size="20" [strokeWidth]="2"></lucide-angular>
+        </div>
+
+        <div class="panel decrypted-panel">
+          <div class="comp-head">
+            <span class="comp-icon teal">
+              <lucide-angular [img]="ShieldCheckIcon" size="16" [strokeWidth]="2"></lucide-angular>
+            </span>
+            <h2 class="comp-title">Decrypted Prediction</h2>
+          </div>
+
+          <div class="prediction-card">
+            <span class="prediction-icon">
+              <lucide-angular [img]="LeafIcon" size="36" [strokeWidth]="1.6"></lucide-angular>
+            </span>
+            <div>
+              <div class="prediction-label">Predicted class:</div>
+              <div class="prediction-value">Iris Virginica</div>
+            </div>
+          </div>
+
+          <div class="prediction-stats">
+            <div>
+              <div class="stat-label">Confidence</div>
+              <div class="stat-value teal">94.3%</div>
+            </div>
+            <div>
+              <div class="stat-label">Explanation</div>
+              <div class="stat-explainer">
+                <span>Leaf node 7</span>
+                <lucide-angular [img]="InfoIcon" size="14" [strokeWidth]="2"></lucide-angular>
+              </div>
+            </div>
+          </div>
+
+          <div class="prediction-foot">
+            <div class="foot-status">
+              <lucide-angular [img]="CircleCheckIcon" size="16" [strokeWidth]="2"></lucide-angular>
+              <div>
+                <div class="foot-title">Decrypted locally</div>
+                <div class="foot-desc">Only you can see this result.</div>
+              </div>
+            </div>
+            <div class="foot-time">
+              <div class="meta-label">Time (UTC)</div>
+              <div class="meta-value">May 24, 2025 &middot; 10:42:39</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="sidebar panel decrypt-sidebar">
+      <h2 class="sidebar-title">
+        <lucide-angular [img]="ShieldCheckIcon" size="18" [strokeWidth]="1.8"></lucide-angular>
+        Why this matters
+      </h2>
+      <ul class="why-list">
+        <li>
+          <span class="why-mark">
+            <lucide-angular [img]="CircleCheckIcon" size="16" [strokeWidth]="2"></lucide-angular>
+          </span>
+          <div>
+            <p class="why-title">Model owner never saw plaintext</p>
+            <p class="why-desc">Your data stayed encrypted throughout the entire process.</p>
+          </div>
+        </li>
+        <li>
+          <span class="why-mark">
+            <lucide-angular [img]="CircleCheckIcon" size="16" [strokeWidth]="2"></lucide-angular>
+          </span>
+          <div>
+            <p class="why-title">Encrypted inference preserved privacy</p>
+            <p class="why-desc">The model ran on ciphertext inside the secure enclave.</p>
+          </div>
+        </li>
+        <li>
+          <span class="why-mark">
+            <lucide-angular [img]="CircleCheckIcon" size="16" [strokeWidth]="2"></lucide-angular>
+          </span>
+          <div>
+            <p class="why-title">Only you can unlock the result</p>
+            <p class="why-desc">Decryption happens locally with your private key.</p>
+          </div>
+        </li>
+      </ul>
+
+      <h2 class="sidebar-title sidebar-title-secondary">
+        <lucide-angular [img]="CircleCheckIcon" size="18" [strokeWidth]="1.8"></lucide-angular>
+        Audit Trail
+      </h2>
+      <ul class="audit-list">
+        @for (event of auditTrail; track event.label; let last = $last) {
+          <li
+            class="audit-item"
+            [class.current]="event.status === 'current'"
+            [class.last]="last"
+          >
+            <span class="audit-mark">
+              <lucide-angular [img]="CheckIcon" size="12" [strokeWidth]="2.5"></lucide-angular>
+            </span>
+            <span class="audit-label">{{ event.label }}</span>
+            <span class="audit-time">{{ event.time }}</span>
+          </li>
+        }
+      </ul>
+    </aside>
+  </div>
+
+  <footer class="bottom-bar bottom-bar-cta">
+    <div class="bottom-col">
+      <lucide-angular class="bottom-icon" [img]="UserIcon" size="22"></lucide-angular>
+      <div>
+        <span class="bottom-title">User-controlled decryption</span>
+        <span class="bottom-desc">You hold the keys. You control access.</span>
+      </div>
+    </div>
+    <div class="bottom-divider"></div>
+    <div class="bottom-col">
+      <lucide-angular class="bottom-icon" [img]="ShieldCheckIcon" size="22"></lucide-angular>
+      <div>
+        <span class="bottom-title">Private by design</span>
+        <span class="bottom-desc">Zero plaintext exposure. End to end.</span>
+      </div>
+    </div>
+    <div class="bottom-divider"></div>
+    <div class="bottom-col">
+      <lucide-angular class="bottom-icon" [img]="MonitorIcon" size="22"></lucide-angular>
+      <div>
+        <span class="bottom-title">Conference demo ready</span>
+        <span class="bottom-desc">Secure, verifiable, and explainable.</span>
+      </div>
+    </div>
+    <button type="button" class="btn-primary btn-run-again" (click)="runAnother()">
+      <lucide-angular [img]="RefreshCwIcon" size="18" [strokeWidth]="2"></lucide-angular>
+      Run Another Encrypted Query
+    </button>
+  </footer>
+</div>
