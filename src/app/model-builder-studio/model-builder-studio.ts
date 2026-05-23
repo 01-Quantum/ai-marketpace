@@ -66,8 +66,8 @@ export class ModelBuilderStudio {
       iconKind: 'tree',
     },
     {
-      id: 'logreg-demo',
-      name: 'Logistic Regression Demo',
+      id: 'logreg-classifier',
+      name: 'Logistic Regression',
       version: 'v1.0.0',
       updated: 'Updated 5d ago',
       iconKind: 'scatter',

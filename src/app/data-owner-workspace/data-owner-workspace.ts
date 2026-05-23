@@ -43,7 +43,7 @@ export class DataOwnerWorkspace {
   readonly selectedModel = signal<ModelChoice>('tree');
 
   readonly keyInfo = {
-    name: 'alice_demo_key_01',
+    name: 'alice_key_01',
     scheme: 'OpenFHE CKKS',
     depth: '16',
     created: 'May 21, 2025 10:45 AM',

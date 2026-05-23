@@ -1,59 +1,57 @@
-# AiMarketpace
+# IronCAP AI Marketplace
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.10.
+**Live app:** [https://01-quantum.github.io/ai-marketpace/](https://01-quantum.github.io/ai-marketpace/)
 
-## Development server
+A privacy-preserving machine learning marketplace for Fully Homomorphic Encryption (FHE) encrypted inference. The platform walks through a four-step workflow where data owners encrypt datasets locally, model owners run inference on ciphertext inside a secure enclave, and results are decrypted only by the data owner with their private key.
 
-To start a local development server, run:
+## Features
 
-```bash
-ng serve
-```
+- **Landing overview** — role-based introduction to the FHE inference workflow
+- **Data Owner workspace** — key generation, local encryption, and encrypted dataset upload
+- **Model Owner workspace** — review incoming ciphertext, run encrypted inference, return results
+- **Decrypt & view result** — data owner decrypts predictions locally with audit trail
+- **Model Builder Studio** — design decision tree / logistic regression models and publish to the enclave
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Built with Angular 21, standalone components, and a shared dark-theme UI (top bar, workflow stepper, panels, tables, sidebars).
 
-## Code scaffolding
+## Development
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Start the local dev server:
 
 ```bash
-ng generate --help
+npm start
 ```
 
-## Building
+Open [http://localhost:4200/](http://localhost:4200/). The app reloads automatically when source files change.
 
-To build the project run:
+## Build
+
+Production build:
 
 ```bash
-ng build
+npm run build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Output is written to `dist/ai-marketpace/`.
 
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Deploy to GitHub Pages
 
 ```bash
-ng test
+npm run deploy:gh-pages
 ```
 
-## Running end-to-end tests
+Then in the GitHub repo: **Settings → Pages → Deploy from branch → `gh-pages` / root**.
 
-For end-to-end (e2e) testing, run:
+The live site is served at `/ai-marketpace/` (project site). If the repo is renamed, update `baseHref` in `angular.json` under the `gh-pages` configuration.
+
+## Tests
 
 ```bash
-ng e2e
+npm test
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Tech stack
 
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- [Angular](https://angular.dev/) 21
+- [Lucide Angular](https://lucide.dev/) icons
+- [Vitest](https://vitest.dev/) for unit tests
