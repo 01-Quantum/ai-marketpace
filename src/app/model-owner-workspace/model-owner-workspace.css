@@ -1,0 +1,85 @@
+/* Page-specific tokens (compact panel padding + smaller primary button) */
+:host {
+  --panel-pad: 1rem 1.15rem;
+  --sidebar-width: 320px;
+  --btn-primary-pad: 0.6rem 1rem;
+  --btn-primary-font: 0.85rem;
+  --btn-primary-radius: 9px;
+  display: block;
+}
+
+/* ===== Select Model section ===== */
+.select-model-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.select-model-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.select-model-section .model-cards {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.select-model-section .model-card {
+  padding: 0.95rem 1rem;
+}
+
+.select-model-section .model-name {
+  font-size: 0.95rem;
+  margin-bottom: 0.2rem;
+}
+
+.select-model-section .model-desc {
+  font-size: 0.78rem;
+}
+
+/* ===== Incoming Encrypted Datasets table ===== */
+.datasets-table .table-row {
+  grid-template-columns:
+    minmax(0, 1.5fr)   /* dataset name */
+    minmax(0, 0.7fr)   /* submitted by */
+    minmax(0, 0.9fr)   /* model */
+    minmax(0, 1fr)     /* encryption status */
+    minmax(0, 0.6fr)   /* records */
+    minmax(0, 1.1fr)   /* submitted at */
+    minmax(0, 1.3fr);  /* action */
+}
+
+/* ===== Inference Jobs table ===== */
+.jobs-table .table-row {
+  grid-template-columns:
+    minmax(0, 1.05fr) /* job id (mono) */
+    minmax(0, 1.4fr)  /* dataset */
+    minmax(0, 0.85fr) /* model */
+    minmax(0, 0.85fr) /* status */
+    minmax(0, 1.1fr)  /* started at */
+    minmax(0, 1.1fr)  /* completed at */
+    minmax(0, 1.3fr); /* action */
+}
+
+/* Spinning loader animation for "Running" status */
+.spin {
+  animation: spin 1.4s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 860px) {
+  .select-model-section .model-cards {
+    grid-template-columns: 1fr;
+  }
+}

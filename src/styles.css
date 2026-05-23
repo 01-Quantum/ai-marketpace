@@ -30,6 +30,12 @@ body {
   --teal-deep: #0f766e;
   --coral: #f87171;
   --coral-dim: rgba(248, 113, 113, 0.16);
+  --amber: #f59e0b;
+  --amber-dim: rgba(245, 158, 11, 0.16);
+  --blue: #60a5fa;
+  --blue-dim: rgba(96, 165, 250, 0.16);
+  --green: #34d399;
+  --green-dim: rgba(52, 211, 153, 0.16);
   --radius: 12px;
 
   /* Per-page overridable tokens (set on :host in each component if needed) */
@@ -73,7 +79,7 @@ lucide-angular svg {
   flex-direction: column;
 }
 
-/* ===== Top bar (used by every page) ===== */
+/* ===== Top bar ===== */
 .top-bar {
   display: flex;
   align-items: center;
@@ -182,17 +188,58 @@ lucide-angular svg {
   flex-shrink: 0;
 }
 
-/* ===== Main layout shell (main + right sidebar) ===== */
+/* ===== Layout shell ===== */
 .layout {
   flex: 1;
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 1.75rem 1.25rem 2rem;
+  padding: 1.5rem 1.25rem 2rem;
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--sidebar-width);
   gap: 1.5rem;
   align-items: stretch;
+}
+
+.layout-workspace {
+  grid-template-areas:
+    'stepper role'
+    'main sidebar';
+  align-items: start;
+}
+
+.layout-workspace > .stepper {
+  grid-area: stepper;
+  min-width: 0;
+}
+
+.layout-workspace > .role-toggle-compact {
+  grid-area: role;
+  justify-self: end;
+  align-self: center;
+}
+
+.layout-workspace > .main {
+  grid-area: main;
+}
+
+.layout-workspace > .sidebar {
+  grid-area: sidebar;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  position: sticky;
+  top: 1.5rem;
 }
 
 /* ===== Panel surface ===== */
@@ -203,7 +250,7 @@ lucide-angular svg {
   padding: var(--panel-pad);
 }
 
-/* ===== Primary button ===== */
+/* ===== Buttons ===== */
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -229,10 +276,495 @@ lucide-angular svg {
   width: 100%;
 }
 
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(45, 212, 191, 0.45);
+  background: var(--teal-dim);
+  color: var(--teal);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(45, 212, 191, 0.22);
+}
+
+/* Compact row-action buttons (used inside table cells) */
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 7px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter 0.15s ease, background 0.15s ease;
+}
+
+.btn-action.coral {
+  background: var(--coral);
+  color: #2a0a0a;
+  border-color: rgba(248, 113, 113, 0.6);
+  box-shadow: 0 4px 14px rgba(248, 113, 113, 0.25);
+}
+
+.btn-action.coral:hover {
+  filter: brightness(1.05);
+}
+
+.btn-action.teal {
+  background: var(--teal);
+  color: #042f2e;
+  border-color: rgba(45, 212, 191, 0.6);
+  box-shadow: 0 4px 14px rgba(45, 212, 191, 0.25);
+}
+
+.btn-action.teal:hover {
+  filter: brightness(1.05);
+}
+
+/* ===== Stepper (shared by workspace pages) ===== */
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0 0.5rem;
+  overflow-x: auto;
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-shrink: 0;
+  padding: 0.25rem 0.35rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+}
+
+.step-bubble {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #243045;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.88rem;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px rgba(36, 48, 69, 0.4);
+}
+
+.step.active .step-bubble {
+  background: var(--teal);
+  color: #042f2e;
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.18);
+}
+
+.step-symbol {
+  color: var(--muted);
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.step-symbol svg {
+  width: 32px !important;
+  height: 32px !important;
+}
+
+.step.active .step-symbol {
+  color: var(--teal);
+  filter: drop-shadow(0 0 10px rgba(45, 212, 191, 0.25));
+}
+
+.step.current {
+  border-color: rgba(45, 212, 191, 0.55);
+  background: rgba(45, 212, 191, 0.05);
+  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.18);
+}
+
+.step.current .step-symbol {
+  color: var(--coral);
+  filter: drop-shadow(0 0 8px rgba(248, 113, 113, 0.35));
+}
+
+.step-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.step-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.step-status {
+  font-size: 0.68rem;
+  color: var(--teal);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.step-status.muted {
+  color: var(--muted-soft);
+  font-weight: 500;
+}
+
+.step-connector {
+  flex: 1 1 24px;
+  min-width: 18px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(45, 212, 191, 0.6),
+    rgba(36, 48, 69, 0.9)
+  );
+  align-self: center;
+}
+
+/* ===== Inline role toggle (small variant for stepper row) ===== */
+.role-toggle-compact {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: #0c1220;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.role-toggle-compact .role-btn-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.role-toggle-compact .role-btn-compact lucide-angular {
+  color: var(--muted);
+}
+
+.role-toggle-compact .role-btn-compact.alt lucide-angular {
+  color: var(--coral);
+}
+
+.role-toggle-compact .role-btn-compact.active {
+  background: rgba(15, 118, 110, 0.18);
+  border-color: rgba(45, 212, 191, 0.45);
+  color: var(--text);
+}
+
+.role-toggle-compact .role-btn-compact.active lucide-angular {
+  color: var(--teal);
+}
+
+.role-toggle-compact .role-btn-compact.alt.active {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: var(--coral);
+}
+
+/* ===== Workspace header ===== */
+.workspace-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.workspace-header .hero-title {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.2vw, 1.8rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.workspace-header .hero-sub {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+  max-width: 56rem;
+}
+
+/* ===== Notice banners ===== */
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.notice-coral {
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.notice-coral lucide-angular {
+  color: var(--coral);
+  flex-shrink: 0;
+}
+
+.notice-teal {
+  border: 1px solid rgba(45, 212, 191, 0.4);
+  background: rgba(45, 212, 191, 0.08);
+}
+
+.notice-teal lucide-angular {
+  color: var(--teal);
+  flex-shrink: 0;
+}
+
+/* ===== Section title (used by table panels and inline sections) ===== */
+.section-title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ===== Model selection cards (shared by landing & model-owner) ===== */
+.model-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.model-card {
+  position: relative;
+  text-align: left;
+  padding: 1.1rem 1.15rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.model-card:hover {
+  border-color: rgba(45, 212, 191, 0.35);
+}
+
+.model-card.selected {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.35);
+}
+
+.model-card-body {
+  flex: 1;
+  min-width: 0;
+  padding-right: 1.75rem;
+}
+
+.select-mark {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.95rem;
+  flex-shrink: 0;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.select-mark.active {
+  color: var(--teal);
+  opacity: 1;
+}
+
+.model-icon.teal {
+  color: var(--teal);
+  filter: drop-shadow(0 0 10px rgba(45, 212, 191, 0.25));
+}
+
+.model-icon.coral {
+  color: var(--coral);
+  filter: drop-shadow(0 0 12px rgba(248, 113, 113, 0.35));
+}
+
+.model-name {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.model-desc {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* ===== Data tables ===== */
+.table-panel {
+  padding: 1.25rem 1.4rem 1.1rem;
+}
+
+.table-head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.5rem;
+}
+
+.table-head-icon {
+  color: var(--teal);
+}
+
+.table-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.table-row {
+  display: grid;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.4rem 0.25rem;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.table-header {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--muted);
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.cell-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--text);
+  font-weight: 400;
+  min-width: 0;
+}
+
+.cell-name lucide-angular {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.cell-name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 6px;
+  background: var(--teal-dim);
+  color: var(--teal);
+  font-weight: 500;
+  font-size: 0.72rem;
+  width: fit-content;
+}
+
+.cell-status.amber {
+  background: var(--amber-dim);
+  color: var(--amber);
+}
+
+.cell-status.blue {
+  background: var(--blue-dim);
+  color: var(--blue);
+}
+
+.cell-status.green {
+  background: var(--green-dim);
+  color: var(--green);
+}
+
+.cell-muted {
+  color: var(--muted-soft);
+}
+
+.cell-mono {
+  font-family: 'JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.col-action {
+  justify-self: end;
+}
+
+.cell-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.icon-btn:hover {
+  color: var(--text);
+  border-color: rgba(45, 212, 191, 0.4);
+}
+
+.icon-btn.danger:hover {
+  color: var(--coral);
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
 /* ===== Sidebar shared title ===== */
 .sidebar-title {
-  margin: 0 0 1.25rem;
-  font-size: 1.05rem;
+  margin: 0 0 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   position: relative;
   padding-bottom: 0.55rem;
@@ -247,6 +779,107 @@ lucide-angular svg {
   height: 2px;
   background: var(--teal);
   border-radius: 2px;
+}
+
+/* ===== Sidebar steps with outlined circular icons (workspace pages) ===== */
+.sidebar-steps {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.sidebar-steps li {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.step-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(45, 212, 191, 0.55);
+  background: transparent;
+  flex-shrink: 0;
+  color: var(--teal);
+}
+
+.step-icon.teal {
+  color: var(--teal);
+}
+
+.step-icon.coral {
+  color: var(--coral);
+  border-color: rgba(248, 113, 113, 0.55);
+}
+
+/* Lucide copies host classes onto the inner SVG — keep only the outer ring */
+.step-icon lucide-angular,
+.step-icon svg,
+svg.step-icon {
+  width: 22px !important;
+  height: 22px !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0;
+  background: transparent;
+}
+
+.sb-step-title {
+  margin: 0 0 0.2rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sb-step-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+/* ===== Sidebar callout ===== */
+.sidebar-callout {
+  margin-top: 0.25rem;
+  padding: 0.95rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  background: rgba(45, 212, 191, 0.06);
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--teal);
+  position: relative;
+}
+
+.sidebar-callout::before {
+  content: '';
+  position: absolute;
+  top: -1rem;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border);
+}
+
+.sidebar-callout p {
+  margin: 0;
+  line-height: 1.35;
+}
+
+.sidebar-callout lucide-angular {
+  flex-shrink: 0;
+  color: var(--teal);
 }
 
 /* ===== Footer trust strip ===== */
@@ -310,9 +943,42 @@ lucide-angular svg {
   .layout {
     grid-template-columns: 1fr;
   }
+
+  .layout-workspace {
+    grid-template-areas:
+      'stepper'
+      'role'
+      'main'
+      'sidebar';
+  }
+
+  .layout-workspace > .role-toggle-compact {
+    justify-self: start;
+  }
 }
 
 @media (max-width: 860px) {
+  .stepper {
+    flex-wrap: wrap;
+  }
+
+  .step-connector {
+    display: none;
+  }
+
+  .table-row {
+    grid-template-columns: 1fr !important;
+    gap: 0.25rem;
+  }
+
+  .table-header {
+    display: none;
+  }
+
+  .col-action {
+    justify-self: start;
+  }
+
   .bottom-bar {
     grid-template-columns: 1fr;
     text-align: left;

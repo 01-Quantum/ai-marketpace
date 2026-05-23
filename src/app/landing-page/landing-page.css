@@ -5,17 +5,15 @@
   display: block;
 }
 
+/* Landing page sidebar stretches with content (overrides shared sticky) */
 .sidebar {
-  display: flex;
-  flex-direction: column;
   align-self: stretch;
+  position: static;
+  top: auto;
 }
 
 .main {
-  display: flex;
-  flex-direction: column;
   gap: 1.5rem;
-  min-width: 0;
 }
 
 .overview-panel {
@@ -47,6 +45,7 @@
   max-width: 42rem;
 }
 
+/* ===== Large role toggle (overview header) ===== */
 .role-toggle {
   display: inline-flex;
   gap: 4px;
@@ -196,21 +195,20 @@
   stroke: currentColor;
 }
 
-/* ===== Model selection panel ===== */
+/* ===== Model selection panel (uses shared .model-card from styles.css) ===== */
 .model-head {
   margin-bottom: 1.25rem;
 }
 
-.section-title {
-  margin: 0 0 0.35rem;
+.model-head .section-title {
   font-size: 1.25rem;
-  font-weight: 600;
 }
 
 .section-sub {
   margin: 0;
   color: var(--muted);
   font-size: 0.92rem;
+  margin-top: 0.35rem;
 }
 
 .model-layout {
@@ -218,82 +216,6 @@
   grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
   gap: 1.5rem;
   align-items: start;
-}
-
-.model-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1rem;
-}
-
-.model-card {
-  position: relative;
-  text-align: left;
-  padding: 1.1rem 1.15rem;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
-  cursor: pointer;
-  color: inherit;
-  font: inherit;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.model-card:hover {
-  border-color: rgba(45, 212, 191, 0.35);
-}
-
-.model-card.selected {
-  border-color: var(--teal);
-  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.35);
-}
-
-.model-card-body {
-  flex: 1;
-  min-width: 0;
-  padding-right: 1.75rem;
-}
-
-.select-mark {
-  position: absolute;
-  top: 0.85rem;
-  right: 0.95rem;
-  flex-shrink: 0;
-  color: var(--muted);
-  opacity: 0.7;
-}
-
-.select-mark.active {
-  color: var(--teal);
-  opacity: 1;
-}
-
-.model-icon.teal {
-  color: var(--teal);
-  filter: drop-shadow(0 0 10px rgba(45, 212, 191, 0.25));
-}
-
-.model-icon.coral {
-  color: var(--coral);
-  filter: drop-shadow(0 0 12px rgba(248, 113, 113, 0.35));
-}
-
-.model-name {
-  margin: 0 0 0.35rem;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.model-desc {
-  margin: 0;
-  font-size: 0.82rem;
-  color: var(--muted);
-  line-height: 1.4;
 }
 
 .model-action {
@@ -319,21 +241,15 @@
   margin: 0;
 }
 
-/* ===== Right sidebar ===== */
-.sidebar-steps {
-  list-style: none;
+/* ===== Right sidebar (numbered + adjacent icon variant for landing) ===== */
+.sidebar .sidebar-steps {
   margin: 0 0 1.25rem;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
   gap: 1.25rem;
 }
 
-.sidebar-steps li {
-  display: grid;
+.sidebar .sidebar-steps li {
   grid-template-columns: 26px 24px 1fr;
   gap: 0.65rem;
-  align-items: start;
 }
 
 .step-num {
@@ -350,54 +266,36 @@
   justify-content: center;
 }
 
-.step-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+/* Landing sidebar uses flat icons (no outlined circle) */
+.sidebar .step-icon {
   width: 24px;
   height: 24px;
+  border: none;
   background: transparent;
-  margin-top: 1px;
+  box-shadow: none;
 }
 
-.step-icon.teal {
-  color: var(--teal);
-}
-
-.step-icon.coral {
-  color: var(--coral);
+.sidebar .step-icon.coral {
   filter: drop-shadow(0 0 6px rgba(248, 113, 113, 0.35));
 }
 
-.sb-step-desc {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--muted);
-  line-height: 1.45;
+.sidebar .step-icon lucide-angular,
+.sidebar .step-icon svg {
+  width: 20px !important;
+  height: 20px !important;
 }
 
-.sidebar-callout {
+.sidebar .sb-step-desc {
+  font-size: 0.85rem;
+}
+
+/* Landing-page sidebar callout pushes to bottom of stretched column */
+.sidebar .sidebar-callout {
   margin-top: auto;
-  border-radius: 10px;
-  border: 1px solid rgba(45, 212, 191, 0.35);
-  background: var(--teal-dim);
-  padding: 1rem;
-  display: flex;
-  gap: 0.65rem;
-  align-items: center;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--teal);
 }
 
-.sidebar-callout lucide-angular {
-  flex-shrink: 0;
-  color: var(--teal);
-}
-
-.sidebar-callout p {
-  margin: 0;
-  line-height: 1.4;
+.sidebar .sidebar-callout::before {
+  display: none;
 }
 
 /* ===== Responsive ===== */

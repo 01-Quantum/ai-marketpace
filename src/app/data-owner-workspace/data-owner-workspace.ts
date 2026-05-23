@@ -1,4 +1,5 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import {
   ArrowRight,
   ChartScatter,
@@ -11,6 +12,7 @@ import {
   FileLock,
   FileText,
   KeyRound,
+  Landmark,
   Lock,
   LucideAngularModule,
   Network,
@@ -20,6 +22,7 @@ import {
 } from 'lucide-angular';
 
 export type ModelChoice = 'tree' | 'logistic';
+export type WorkflowRole = 'data' | 'model';
 
 interface EncryptedDataset {
   name: string;
@@ -36,6 +39,9 @@ interface EncryptedDataset {
   styleUrl: './data-owner-workspace.css',
 })
 export class DataOwnerWorkspace {
+  private readonly router = inject(Router);
+
+  readonly role = signal<WorkflowRole>('data');
   readonly selectedModel = signal<ModelChoice>('tree');
 
   readonly keyInfo = {
@@ -54,6 +60,7 @@ export class DataOwnerWorkspace {
   readonly ShieldCheckIcon = ShieldCheck;
   readonly UserIcon = User;
   readonly KeyRoundIcon = KeyRound;
+  readonly LandmarkIcon = Landmark;
   readonly FileLockIcon = FileLock;
   readonly CloudCogIcon = CloudCog;
   readonly CloudUploadIcon = CloudUpload;
@@ -72,11 +79,20 @@ export class DataOwnerWorkspace {
     this.selectedModel.set(next);
   }
 
+  setRole(next: WorkflowRole): void {
+    this.role.set(next);
+    if (next === 'model') {
+      this.router.navigate(['/model-owner-workspace']);
+    }
+  }
+
   generateKeyPair(): void {}
 
   browseFiles(): void {}
 
-  continueToModelOwner(): void {}
+  continueToModelOwner(): void {
+    this.router.navigate(['/model-owner-workspace']);
+  }
 
   viewDataset(_: EncryptedDataset): void {}
 

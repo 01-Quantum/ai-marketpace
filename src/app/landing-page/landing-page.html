@@ -162,22 +162,30 @@
       <ol class="sidebar-steps">
         <li>
           <span class="step-num">1</span>
-          <lucide-angular class="step-icon teal" [img]="KeyRoundIcon" size="20" [strokeWidth]="1.6"></lucide-angular>
+          <span class="step-icon teal">
+            <lucide-angular [img]="KeyRoundIcon" size="20" [strokeWidth]="1.6"></lucide-angular>
+          </span>
           <p class="sb-step-desc">You generate a secure FHE key pair.</p>
         </li>
         <li>
           <span class="step-num">2</span>
-          <lucide-angular class="step-icon teal" [img]="FileLockIcon" size="20" [strokeWidth]="1.6"></lucide-angular>
+          <span class="step-icon teal">
+            <lucide-angular [img]="FileLockIcon" size="20" [strokeWidth]="1.6"></lucide-angular>
+          </span>
           <p class="sb-step-desc">You encrypt your data and upload it.</p>
         </li>
         <li>
           <span class="step-num">3</span>
-          <lucide-angular class="step-icon coral" [img]="CloudCogIcon" size="20" [strokeWidth]="1.6"></lucide-angular>
+          <span class="step-icon coral">
+            <lucide-angular [img]="CloudCogIcon" size="20" [strokeWidth]="1.6"></lucide-angular>
+          </span>
           <p class="sb-step-desc">The model owner runs encrypted inference without seeing plaintext.</p>
         </li>
         <li>
           <span class="step-num">4</span>
-          <lucide-angular class="step-icon teal" [img]="LockIcon" size="20" [strokeWidth]="1.6"></lucide-angular>
+          <span class="step-icon teal">
+            <lucide-angular [img]="LockIcon" size="20" [strokeWidth]="1.6"></lucide-angular>
+          </span>
           <p class="sb-step-desc">You decrypt the final result using your private key.</p>
         </li>
       </ol>

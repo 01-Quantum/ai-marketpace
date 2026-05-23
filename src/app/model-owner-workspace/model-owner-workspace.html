@@ -1,0 +1,308 @@
+<div class="page">
+  <header class="top-bar">
+    <div class="brand">
+      <img class="brand-logo-img" src="brand-logo.png" alt="IronCAP AI Marketplace logo" />
+      <div class="brand-text">
+        <span class="brand-title">IronCAP AI Marketplace</span>
+        <span class="brand-tag">FHE Enclave</span>
+      </div>
+    </div>
+    <div class="top-bar-right">
+      <div class="trust-badge">
+        <lucide-angular class="trust-badge-icon" [img]="ShieldCheckIcon" size="16"></lucide-angular>
+        <span>Secure. Private. Verifiable.</span>
+      </div>
+      <span class="top-bar-divider" aria-hidden="true"></span>
+      <span class="username">alice</span>
+      <button type="button" class="btn-sign-out" (click)="signOut()">Sign Out</button>
+      <span class="avatar">
+        <lucide-angular [img]="UserIcon" size="20" [strokeWidth]="1.8"></lucide-angular>
+      </span>
+    </div>
+  </header>
+
+  <div class="layout layout-workspace">
+    <section class="stepper" aria-label="Workflow progress">
+      <div class="step active">
+        <div class="step-bubble">
+          <span>1</span>
+        </div>
+        <lucide-angular class="step-symbol" [img]="KeyRoundIcon" size="32" [strokeWidth]="1.8"></lucide-angular>
+        <div class="step-text">
+          <div class="step-label">Generate Key Pair</div>
+        </div>
+      </div>
+      <span class="step-connector" aria-hidden="true"></span>
+
+      <div class="step active">
+        <div class="step-bubble">
+          <span>2</span>
+        </div>
+        <lucide-angular class="step-symbol" [img]="FileLockIcon" size="32" [strokeWidth]="1.8"></lucide-angular>
+        <div class="step-text">
+          <div class="step-label">Upload &amp; Encrypt Data</div>
+        </div>
+      </div>
+      <span class="step-connector" aria-hidden="true"></span>
+
+      <div class="step active current">
+        <div class="step-bubble">
+          <span>3</span>
+        </div>
+        <lucide-angular class="step-symbol" [img]="CloudCogIcon" size="32" [strokeWidth]="1.8"></lucide-angular>
+        <div class="step-text">
+          <div class="step-label">Run Encrypted Inference</div>
+        </div>
+      </div>
+      <span class="step-connector" aria-hidden="true"></span>
+
+      <div class="step">
+        <div class="step-bubble">
+          <span>4</span>
+        </div>
+        <lucide-angular class="step-symbol" [img]="LockIcon" size="32" [strokeWidth]="1.8"></lucide-angular>
+        <div class="step-text">
+          <div class="step-label">Decrypt Result</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="role-toggle-compact" role="group" aria-label="Workflow role">
+      <button
+        type="button"
+        class="role-btn-compact"
+        [class.active]="role() === 'data'"
+        (click)="setRole('data')"
+      >
+        <lucide-angular [img]="UserIcon" size="16" [strokeWidth]="2"></lucide-angular>
+        Data Owner
+      </button>
+      <button
+        type="button"
+        class="role-btn-compact alt"
+        [class.active]="role() === 'model'"
+        (click)="setRole('model')"
+      >
+        <lucide-angular [img]="LandmarkIcon" size="16" [strokeWidth]="2"></lucide-angular>
+        Model Owner
+      </button>
+    </div>
+
+    <main class="main">
+      <header class="workspace-header">
+        <h1 class="hero-title">Model Owner Workspace</h1>
+        <p class="hero-sub">
+          Review incoming encrypted datasets and run inference without accessing plaintext.
+        </p>
+      </header>
+
+      <div class="notice notice-coral">
+        <lucide-angular [img]="ShieldAlertIcon" size="20" [strokeWidth]="1.8"></lucide-angular>
+        <span>You can see ciphertext only. No plaintext user data is visible.</span>
+      </div>
+
+      <section class="select-model-section">
+        <h2 class="select-model-title">Select Model</h2>
+        <div class="model-cards">
+          <button
+            type="button"
+            class="model-card"
+            [class.selected]="selectedModel() === 'tree'"
+            (click)="selectModel('tree')"
+          >
+            <lucide-angular class="model-icon teal" [img]="NetworkIcon" size="44" [strokeWidth]="1.6"></lucide-angular>
+            <div class="model-card-body">
+              <h3 class="model-name">Decision Tree</h3>
+              <p class="model-desc">Tree-based classification model. Fast and interpretable.</p>
+            </div>
+            @if (selectedModel() === 'tree') {
+              <lucide-angular class="select-mark active" [img]="CircleCheckIcon" size="22"></lucide-angular>
+            } @else {
+              <lucide-angular class="select-mark" [img]="CircleDashedIcon" size="22"></lucide-angular>
+            }
+          </button>
+
+          <button
+            type="button"
+            class="model-card"
+            [class.selected]="selectedModel() === 'logistic'"
+            (click)="selectModel('logistic')"
+          >
+            <lucide-angular class="model-icon coral" [img]="ChartScatterIcon" size="44" [strokeWidth]="1.6"></lucide-angular>
+            <div class="model-card-body">
+              <h3 class="model-name">Logistic Regression</h3>
+              <p class="model-desc">Linear model for binary classification.</p>
+            </div>
+            @if (selectedModel() === 'logistic') {
+              <lucide-angular class="select-mark active" [img]="CircleCheckIcon" size="22"></lucide-angular>
+            } @else {
+              <lucide-angular class="select-mark" [img]="CircleDashedIcon" size="22"></lucide-angular>
+            }
+          </button>
+        </div>
+      </section>
+
+      <section class="panel table-panel datasets-table">
+        <header class="table-head">
+          <lucide-angular class="table-head-icon" [img]="DatabaseIcon" size="20"></lucide-angular>
+          <h2 class="section-title">Incoming Encrypted Datasets</h2>
+        </header>
+
+        <div class="table-wrap" role="table">
+          <div class="table-row table-header" role="row">
+            <span role="columnheader">Dataset</span>
+            <span role="columnheader">Submitted By</span>
+            <span role="columnheader">Model</span>
+            <span role="columnheader">Encryption Status</span>
+            <span role="columnheader">Records</span>
+            <span role="columnheader">Submitted At</span>
+            <span role="columnheader" class="col-action">Action</span>
+          </div>
+          @for (ds of datasets; track ds.name) {
+            <div class="table-row" role="row">
+              <span class="cell-name" role="cell">
+                <lucide-angular [img]="FileLockIcon" size="16" [strokeWidth]="1.6"></lucide-angular>
+                <span>{{ ds.name }}</span>
+              </span>
+              <span role="cell">{{ ds.submittedBy }}</span>
+              <span role="cell">{{ ds.model }}</span>
+              <span class="cell-status" role="cell">
+                <lucide-angular [img]="LockIcon" size="12" [strokeWidth]="2"></lucide-angular>
+                {{ ds.status }}
+              </span>
+              <span role="cell">{{ ds.records | number }}</span>
+              <span class="cell-muted" role="cell">{{ ds.submittedAt }}</span>
+              <span class="col-action" role="cell">
+                <button type="button" class="btn-action coral" (click)="runInference(ds)">
+                  <lucide-angular [img]="PlayIcon" size="12" [strokeWidth]="2.2"></lucide-angular>
+                  Run Encrypted Inference
+                </button>
+              </span>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="panel table-panel jobs-table">
+        <header class="table-head">
+          <lucide-angular class="table-head-icon" [img]="ListChecksIcon" size="20"></lucide-angular>
+          <h2 class="section-title">Inference Jobs</h2>
+        </header>
+
+        <div class="table-wrap" role="table">
+          <div class="table-row table-header" role="row">
+            <span role="columnheader">Job ID</span>
+            <span role="columnheader">Dataset</span>
+            <span role="columnheader">Model</span>
+            <span role="columnheader">Status</span>
+            <span role="columnheader">Started At</span>
+            <span role="columnheader">Completed At</span>
+            <span role="columnheader" class="col-action">Action</span>
+          </div>
+          @for (job of jobs; track job.jobId) {
+            <div class="table-row" role="row">
+              <span class="cell-mono" role="cell">{{ job.jobId }}</span>
+              <span role="cell">{{ job.dataset }}</span>
+              <span role="cell">{{ job.model }}</span>
+              <span role="cell">
+                @switch (job.status) {
+                  @case ('queued') {
+                    <span class="cell-status amber">
+                      <lucide-angular [img]="ClockIcon" size="12" [strokeWidth]="2"></lucide-angular>
+                      Queued
+                    </span>
+                  }
+                  @case ('running') {
+                    <span class="cell-status blue">
+                      <lucide-angular class="spin" [img]="LoaderIcon" size="12" [strokeWidth]="2"></lucide-angular>
+                      Running
+                    </span>
+                  }
+                  @case ('completed') {
+                    <span class="cell-status green">
+                      <lucide-angular [img]="CircleCheckIcon" size="12" [strokeWidth]="2"></lucide-angular>
+                      Completed
+                    </span>
+                  }
+                }
+              </span>
+              <span class="cell-muted" role="cell">{{ job.startedAt ?? '—' }}</span>
+              <span class="cell-muted" role="cell">{{ job.completedAt ?? '—' }}</span>
+              <span class="col-action" role="cell">
+                @if (job.status === 'completed') {
+                  <button type="button" class="btn-action teal" (click)="saveResult(job)">
+                    <lucide-angular [img]="DownloadIcon" size="12" [strokeWidth]="2.2"></lucide-angular>
+                    Save Encrypted Result
+                  </button>
+                } @else {
+                  <span class="cell-muted">—</span>
+                }
+              </span>
+            </div>
+          }
+        </div>
+      </section>
+    </main>
+
+    <aside class="sidebar panel">
+      <h2 class="sidebar-title">How to explain this</h2>
+      <ol class="sidebar-steps">
+        <li>
+          <span class="step-icon teal">
+            <lucide-angular [img]="ShieldCheckIcon" size="22" [strokeWidth]="1.8"></lucide-angular>
+          </span>
+          <div>
+            <p class="sb-step-desc">Model owner receives ciphertext datasets only.</p>
+          </div>
+        </li>
+        <li>
+          <span class="step-icon coral">
+            <lucide-angular [img]="CloudCogIcon" size="22" [strokeWidth]="1.8"></lucide-angular>
+          </span>
+          <div>
+            <p class="sb-step-desc">Enclave runs encrypted inference&mdash;model never sees plaintext.</p>
+          </div>
+        </li>
+        <li>
+          <span class="step-icon teal">
+            <lucide-angular [img]="LockIcon" size="22" [strokeWidth]="1.8"></lucide-angular>
+          </span>
+          <div>
+            <p class="sb-step-desc">Encrypted result is stored and returned to the user for decryption.</p>
+          </div>
+        </li>
+      </ol>
+
+      <div class="sidebar-callout">
+        <lucide-angular [img]="ShieldCheckIcon" size="22" [strokeWidth]="1.8"></lucide-angular>
+        <p>Privacy by design.<br />Security by default.</p>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="bottom-col">
+      <lucide-angular class="bottom-icon" [img]="ShieldCheckIcon" size="22"></lucide-angular>
+      <div>
+        <span class="bottom-title">Model never sees plaintext</span>
+        <span class="bottom-desc">Your data stays encrypted end-to-end.</span>
+      </div>
+    </div>
+    <div class="bottom-divider"></div>
+    <div class="bottom-col">
+      <lucide-angular class="bottom-icon" [img]="LockIcon" size="22"></lucide-angular>
+      <div>
+        <span class="bottom-title">Inference happens in enclave</span>
+        <span class="bottom-desc">Computation occurs inside a secure enclave.</span>
+      </div>
+    </div>
+    <div class="bottom-divider"></div>
+    <div class="bottom-col">
+      <lucide-angular class="bottom-icon" [img]="KeyRoundIcon" size="22"></lucide-angular>
+      <div>
+        <span class="bottom-title">Encrypted result returned to user</span>
+        <span class="bottom-desc">You decrypt results with your private key.</span>
+      </div>
+    </div>
+  </footer>
+</div>

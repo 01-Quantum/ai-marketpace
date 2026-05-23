@@ -14,4 +14,11 @@ export const routes: Routes = [
         (m) => m.DataOwnerWorkspace,
       ),
   },
+  {
+    path: 'model-owner-workspace',
+    loadComponent: () =>
+      import('./model-owner-workspace/model-owner-workspace').then(
+        (m) => m.ModelOwnerWorkspace,
+      ),
+  },
 ];
