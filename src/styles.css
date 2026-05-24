@@ -570,6 +570,71 @@ lucide-angular svg {
   letter-spacing: -0.01em;
 }
 
+/* ===== Form fields (shared inputs/selects) ===== */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-label {
+  font-size: 0.74rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.form-input {
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-family: inherit;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: rgba(45, 212, 191, 0.5);
+}
+
+/* ===== Outline action buttons ===== */
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-outline:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-outline-teal {
+  border: 1px solid rgba(45, 212, 191, 0.45);
+  color: var(--teal);
+}
+
+.btn-outline-teal:hover:not(:disabled) {
+  background: rgba(45, 212, 191, 0.1);
+}
+
+.btn-outline-coral {
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  color: var(--coral);
+}
+
+.btn-outline-coral:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.1);
+}
+
 /* ===== Model selection cards (shared by landing & model-owner) ===== */
 .model-cards {
   display: grid;

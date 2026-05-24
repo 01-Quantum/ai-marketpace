@@ -46,7 +46,7 @@
       <p class="library-section-label">Published Models</p>
 
       <ul class="library-list">
-        @for (item of libraryItems; track item.id) {
+        @for (item of libraryItems(); track item.id) {
           <li>
             <button
               type="button"
@@ -76,133 +76,9 @@
       </button>
     </aside>
 
-    <section class="panel designer-panel">
-      <header class="designer-head">
-        <h2 class="section-title">Decision Tree Designer</h2>
-        <div class="zoom-controls">
-          <button type="button" class="zoom-btn" aria-label="Zoom out">
-            <lucide-angular [img]="MinusIcon" size="14" [strokeWidth]="2"></lucide-angular>
-          </button>
-          <span class="zoom-value">100%</span>
-          <button type="button" class="zoom-btn" aria-label="Zoom in">
-            <lucide-angular [img]="PlusIcon" size="14" [strokeWidth]="2"></lucide-angular>
-          </button>
-          <button type="button" class="zoom-btn" aria-label="Fullscreen">
-            <lucide-angular [img]="Maximize2Icon" size="14" [strokeWidth]="2"></lucide-angular>
-          </button>
-        </div>
-      </header>
+    <app-decision-tree-designer />
 
-      <div
-        class="tree-canvas"
-        [style.width.px]="canvasWidth"
-        [style.height.px]="canvasHeight"
-      >
-        <svg
-          class="tree-edges"
-          [attr.viewBox]="'0 0 ' + canvasWidth + ' ' + canvasHeight"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          @for (edge of edges; track edge.fromId + '-' + edge.toId) {
-            <path
-              [attr.d]="edgePath(edge)"
-              [attr.stroke]="edge.branch === 'true' ? 'rgba(45, 212, 191, 0.7)' : 'rgba(248, 113, 113, 0.7)'"
-              stroke-width="1.5"
-              fill="none"
-            />
-          }
-        </svg>
-
-        <span class="root-tag" [style.left.px]="nodes[0].left + nodes[0].width / 2 - 22" [style.top.px]="nodes[0].top - 22">
-          Root
-        </span>
-
-        @for (edge of edges; track edge.fromId + '-' + edge.toId) {
-          <span
-            class="edge-label"
-            [class.coral]="edge.branch === 'false'"
-            [style.left.px]="edgeLabelPosition(edge).left"
-            [style.top.px]="edgeLabelPosition(edge).top"
-          >
-            {{ edge.label }}
-          </span>
-        }
-
-        @for (node of nodes; track node.id) {
-          <button
-            type="button"
-            class="tree-node"
-            [class.decision]="node.type === 'decision'"
-            [class.leaf]="node.type === 'leaf'"
-            [class.selected]="selectedNodeId() === node.id"
-            [style.top.px]="node.top"
-            [style.left.px]="node.left"
-            [style.width.px]="node.width"
-            (click)="selectNode(node.id)"
-          >
-            <span class="node-num">{{ node.id }}</span>
-            <span class="node-body">
-              <span class="node-title">{{ node.title }}</span>
-              <span class="node-meta">{{ node.meta }}</span>
-              @if (node.type === 'leaf') {
-                <span class="leaf-badge">
-                  <lucide-angular [img]="LeafIcon" size="12" [strokeWidth]="2"></lucide-angular>
-                  Leaf
-                </span>
-              }
-            </span>
-          </button>
-        }
-      </div>
-    </section>
-
-    <aside class="panel properties-panel">
-      <header class="properties-head">
-        <h2 class="section-title">Node Properties</h2>
-        <span class="node-pill">Node {{ selectedNodeId() }}</span>
-      </header>
-
-      <label class="form-field">
-        <span class="form-label">Feature</span>
-        <span class="select">
-          <span class="select-value">petal_width</span>
-          <lucide-angular [img]="ChevronDownIcon" size="16" [strokeWidth]="2"></lucide-angular>
-        </span>
-      </label>
-
-      <label class="form-field">
-        <span class="form-label">Threshold</span>
-        <input class="form-input" type="text" value="1.8" />
-      </label>
-
-      <label class="form-field">
-        <span class="form-label">Left Branch (&le; 1.8)</span>
-        <span class="select">
-          <span class="select-value">Node 4 (species = versicolor)</span>
-          <lucide-angular [img]="ChevronDownIcon" size="16" [strokeWidth]="2"></lucide-angular>
-        </span>
-      </label>
-
-      <label class="form-field">
-        <span class="form-label">Right Branch (> 1.8)</span>
-        <span class="select">
-          <span class="select-value">Node 5 (species = virginica)</span>
-          <lucide-angular [img]="ChevronDownIcon" size="16" [strokeWidth]="2"></lucide-angular>
-        </span>
-      </label>
-
-      <div class="properties-actions">
-        <button type="button" class="btn-outline btn-outline-teal">
-          <lucide-angular [img]="PlusIcon" size="16" [strokeWidth]="2"></lucide-angular>
-          Add Node
-        </button>
-        <button type="button" class="btn-outline btn-outline-coral">
-          <lucide-angular [img]="Trash2Icon" size="16" [strokeWidth]="2"></lucide-angular>
-          Delete Node
-        </button>
-      </div>
-    </aside>
+    <app-node-properties />
   </div>
 
   <section class="publish-row">

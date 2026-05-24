@@ -1,0 +1,34 @@
+.properties-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.properties-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.node-pill {
+  padding: 0.18rem 0.6rem;
+  border-radius: 6px;
+  background: var(--teal-dim);
+  color: var(--teal);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.properties-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.empty-state {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
