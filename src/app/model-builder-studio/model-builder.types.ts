@@ -50,11 +50,6 @@ export interface TreeNodeView {
   width: number;
 }
 
-export interface BranchOption {
-  id: number;
-  label: string;
-}
-
 export const FEATURE_OPTIONS = [
   'petal_length',
   'petal_width',

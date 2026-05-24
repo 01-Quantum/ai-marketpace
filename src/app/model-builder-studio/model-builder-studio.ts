@@ -10,6 +10,10 @@ import {
   LucideAngularModule,
   MoreVertical,
   Network,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
   Pencil,
   Plus,
   ShieldCheck,
@@ -51,6 +55,8 @@ export class ModelBuilderStudio {
 
   readonly editingName = signal(false);
   readonly nameDraft = signal('');
+  readonly libraryCollapsed = signal(false);
+  readonly propertiesCollapsed = signal(false);
 
   readonly NetworkIcon = Network;
   readonly ShieldCheckIcon = ShieldCheck;
@@ -62,6 +68,18 @@ export class ModelBuilderStudio {
   readonly ChevronRightIcon = ChevronRight;
   readonly PencilIcon = Pencil;
   readonly CheckIcon = Check;
+  readonly PanelLeftCloseIcon = PanelLeftClose;
+  readonly PanelLeftOpenIcon = PanelLeftOpen;
+  readonly PanelRightCloseIcon = PanelRightClose;
+  readonly PanelRightOpenIcon = PanelRightOpen;
+
+  toggleLibrary(): void {
+    this.libraryCollapsed.update((value) => !value);
+  }
+
+  toggleProperties(): void {
+    this.propertiesCollapsed.update((value) => !value);
+  }
 
   selectLibrary(id: string): void {
     this.modelBuilder.selectModel(id);

@@ -39,51 +39,80 @@
     </div>
   </div>
 
-  <div class="builder-layout">
-    <aside class="panel library-panel">
+  <div
+    class="builder-layout"
+    [class.library-collapsed]="libraryCollapsed()"
+    [class.properties-collapsed]="propertiesCollapsed()"
+  >
+    <aside class="panel library-panel" [class.collapsed]="libraryCollapsed()">
       <header class="library-head">
-        <h2 class="section-title">Model Library</h2>
-        <button type="button" class="btn-new-model">
-          <lucide-angular [img]="PlusIcon" size="14" [strokeWidth]="2.2"></lucide-angular>
-          New Model
-        </button>
-      </header>
-      <p class="library-section-label">Published Models</p>
-
-      <ul class="library-list">
-        @for (item of libraryItems(); track item.id) {
-          <li>
-            <button
-              type="button"
-              class="library-item"
-              [class.selected]="selectedLibraryId() === item.id"
-              (click)="selectLibrary(item.id)"
-            >
-              <span class="lib-icon" [class.coral]="item.iconKind === 'scatter'">
-                <lucide-angular [img]="iconForLibrary(item.iconKind)" size="22" [strokeWidth]="1.6"></lucide-angular>
-              </span>
-              <div class="lib-body">
-                <p class="lib-name">{{ item.name }}</p>
-                <p class="lib-meta">{{ item.version }} &middot; {{ item.updated }}</p>
-                <span class="lib-status">Published</span>
-              </div>
-              <span class="lib-more" aria-hidden="true">
-                <lucide-angular [img]="MoreVerticalIcon" size="16"></lucide-angular>
-              </span>
-            </button>
-          </li>
+        <div class="library-head-row">
+          @if (!libraryCollapsed()) {
+            <h2 class="section-title">Model Library</h2>
+          }
+          <button
+            type="button"
+            class="btn-panel-collapse"
+            [attr.aria-label]="libraryCollapsed() ? 'Expand model library' : 'Collapse model library'"
+            [attr.aria-expanded]="!libraryCollapsed()"
+            (click)="toggleLibrary()"
+          >
+            <lucide-angular
+              [img]="libraryCollapsed() ? PanelLeftOpenIcon : PanelLeftCloseIcon"
+              size="16"
+              [strokeWidth]="2"
+            ></lucide-angular>
+          </button>
+        </div>
+        @if (!libraryCollapsed()) {
+          <button type="button" class="btn-new-model">
+            <lucide-angular [img]="PlusIcon" size="14" [strokeWidth]="2.2"></lucide-angular>
+            New Model
+          </button>
         }
-      </ul>
+      </header>
 
-      <button type="button" class="library-view-all">
-        View All Models
-        <lucide-angular [img]="ChevronRightIcon" size="16" [strokeWidth]="2"></lucide-angular>
-      </button>
+      @if (!libraryCollapsed()) {
+        <p class="library-section-label">Published Models</p>
+
+        <ul class="library-list">
+          @for (item of libraryItems(); track item.id) {
+            <li>
+              <button
+                type="button"
+                class="library-item"
+                [class.selected]="selectedLibraryId() === item.id"
+                (click)="selectLibrary(item.id)"
+              >
+                <span class="lib-icon" [class.coral]="item.iconKind === 'scatter'">
+                  <lucide-angular [img]="iconForLibrary(item.iconKind)" size="22" [strokeWidth]="1.6"></lucide-angular>
+                </span>
+                <div class="lib-body">
+                  <p class="lib-name">{{ item.name }}</p>
+                  <p class="lib-meta">{{ item.version }} &middot; {{ item.updated }}</p>
+                  <span class="lib-status">Published</span>
+                </div>
+                <span class="lib-more" aria-hidden="true">
+                  <lucide-angular [img]="MoreVerticalIcon" size="16"></lucide-angular>
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+
+        <button type="button" class="library-view-all">
+          View All Models
+          <lucide-angular [img]="ChevronRightIcon" size="16" [strokeWidth]="2"></lucide-angular>
+        </button>
+      }
     </aside>
 
     <app-decision-tree-designer />
 
-    <app-node-properties />
+    <app-node-properties
+      [collapsed]="propertiesCollapsed()"
+      (collapseToggle)="toggleProperties()"
+    />
   </div>
 
   <section class="publish-row">

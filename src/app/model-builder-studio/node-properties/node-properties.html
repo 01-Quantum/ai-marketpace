@@ -1,100 +1,87 @@
-<aside class="panel properties-panel">
-  @if (selectedNode(); as node) {
-    <header class="properties-head">
+<aside class="panel properties-panel" [class.collapsed]="collapsed()">
+  <header class="properties-head">
+    @if (!collapsed()) {
       <h2 class="section-title">Node Properties</h2>
-      <span class="node-pill">Node {{ node.id }}</span>
-    </header>
-
-    @if (decisionNode(); as decision) {
-      <label class="form-field">
-        <span class="form-label">Feature</span>
-        <select
-          class="form-input"
-          [value]="decision.feature"
-          (change)="patchDecision({ feature: $any($event.target).value })"
-        >
-          @for (feature of featureOptions; track feature) {
-            <option [value]="feature">{{ feature }}</option>
-          }
-        </select>
-      </label>
-
-      <label class="form-field">
-        <span class="form-label">Threshold</span>
-        <input
-          class="form-input"
-          type="number"
-          step="0.1"
-          [value]="decision.threshold"
-          (change)="onThresholdChange($any($event.target).value)"
-        />
-      </label>
-
-      <label class="form-field">
-        <span class="form-label">Left Branch (&le; {{ decision.threshold }})</span>
-        <select
-          class="form-input"
-          [value]="decision.leftBranchId"
-          (change)="patchDecision({ leftBranchId: +$any($event.target).value })"
-        >
-          @for (option of branchOptions(); track option.id) {
-            @if (option.id !== decision.id) {
-              <option [value]="option.id">{{ option.label }}</option>
-            }
-          }
-        </select>
-      </label>
-
-      <label class="form-field">
-        <span class="form-label">Right Branch (> {{ decision.threshold }})</span>
-        <select
-          class="form-input"
-          [value]="decision.rightBranchId"
-          (change)="patchDecision({ rightBranchId: +$any($event.target).value })"
-        >
-          @for (option of branchOptions(); track option.id) {
-            @if (option.id !== decision.id) {
-              <option [value]="option.id">{{ option.label }}</option>
-            }
-          }
-        </select>
-      </label>
-    } @else if (leafNode(); as leaf) {
-      <label class="form-field">
-        <span class="form-label">Classification</span>
-        <input
-          class="form-input"
-          type="text"
-          [value]="leaf.label"
-          (change)="patchLeaf({ label: $any($event.target).value })"
-        />
-      </label>
+      @if (selectedNode(); as node) {
+        <span class="node-pill">Node {{ node.id }}</span>
+      }
     }
+    <button
+      type="button"
+      class="btn-panel-collapse"
+      [class.solo]="collapsed()"
+      [attr.aria-label]="collapsed() ? 'Expand node properties' : 'Collapse node properties'"
+      [attr.aria-expanded]="!collapsed()"
+      (click)="collapseToggle.emit()"
+    >
+      <lucide-angular
+        [img]="collapsed() ? PanelLeftOpenIcon : PanelRightCloseIcon"
+        size="16"
+        [strokeWidth]="2"
+      ></lucide-angular>
+    </button>
+  </header>
 
-    <div class="properties-actions">
-      <button
-        type="button"
-        class="btn-outline btn-outline-teal"
-        [disabled]="node.type !== 'leaf'"
-        (click)="addNode()"
-      >
-        <lucide-angular [img]="PlusIcon" size="16" [strokeWidth]="2"></lucide-angular>
-        Add Node
-      </button>
-      <button
-        type="button"
-        class="btn-outline btn-outline-coral"
-        [disabled]="node.type === 'leaf'"
-        (click)="deleteNode()"
-      >
-        <lucide-angular [img]="Trash2Icon" size="16" [strokeWidth]="2"></lucide-angular>
-        Delete Node
-      </button>
-    </div>
-  } @else {
-    <header class="properties-head">
-      <h2 class="section-title">Node Properties</h2>
-    </header>
-    <p class="empty-state">Select a node in the tree to edit its properties.</p>
+  @if (!collapsed()) {
+    @if (selectedNode(); as node) {
+      @if (decisionNode(); as decision) {
+        <label class="form-field">
+          <span class="form-label">Feature</span>
+          <select
+            class="form-input"
+            [value]="decision.feature"
+            (change)="patchDecision({ feature: $any($event.target).value })"
+          >
+            @for (feature of featureOptions; track feature) {
+              <option [value]="feature">{{ feature }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="form-field">
+          <span class="form-label">Threshold</span>
+          <input
+            class="form-input"
+            type="number"
+            step="0.1"
+            [value]="decision.threshold"
+            (change)="onThresholdChange($any($event.target).value)"
+          />
+        </label>
+      } @else if (leafNode(); as leaf) {
+        <label class="form-field">
+          <span class="form-label">Classification</span>
+          <input
+            class="form-input"
+            type="text"
+            [value]="leaf.label"
+            (change)="patchLeaf({ label: $any($event.target).value })"
+          />
+        </label>
+      }
+
+      <div class="properties-actions">
+        <button
+          type="button"
+          class="btn-outline btn-outline-teal"
+          [disabled]="node.type !== 'leaf'"
+          (click)="addNode()"
+        >
+          <lucide-angular [img]="PlusIcon" size="16" [strokeWidth]="2"></lucide-angular>
+          Add Node
+        </button>
+        <button
+          type="button"
+          class="btn-outline btn-outline-coral"
+          [disabled]="node.type === 'leaf'"
+          (click)="deleteNode()"
+        >
+          <lucide-angular [img]="Trash2Icon" size="16" [strokeWidth]="2"></lucide-angular>
+          Delete Node
+        </button>
+      </div>
+    } @else {
+      <p class="empty-state">Select a node in the tree to edit its properties.</p>
+    }
   }
 </aside>

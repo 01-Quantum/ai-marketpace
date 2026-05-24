@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable, shareReplay } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, shareReplay } from 'rxjs';
 import { DecisionTreeModelService } from './decision-tree-model.service';
 import {
   cloneTreeNodes,
@@ -7,7 +7,6 @@ import {
 } from './decision-tree-model.mapper';
 import { formatThresholdDisplay } from './format-threshold';
 import {
-  BranchOption,
   DecisionNode,
   FEATURE_OPTIONS,
   LeafNode,
@@ -35,10 +34,6 @@ const OTHER_LIBRARY_MODELS: LibraryModel[] = [
     type: 'tree',
   },
 ];
-
-function nodeTitle(node: TreeNode): string {
-  return node.type === 'leaf' ? node.label : `${node.feature} < ${node.threshold}`;
-}
 
 function toNodeView(node: TreeNode): TreeNodeView {
   const title =
@@ -154,12 +149,6 @@ export class ModelBuilderService {
   readonly selectedNode$ = combineLatest([this.nodes$, this.selectedNodeIdSubject]).pipe(
     map(([nodes, nodeId]) => nodes.find((node) => node.id === nodeId) ?? null),
     shareReplay({ bufferSize: 1, refCount: true }),
-  );
-
-  readonly branchOptions$: Observable<BranchOption[]> = this.nodes$.pipe(
-    map((nodes) =>
-      nodes.map((node) => ({ id: node.id, label: `Node ${node.id} (${nodeTitle(node)})` })),
-    ),
   );
 
   selectModel(modelId: string): void {

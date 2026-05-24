@@ -1,6 +1,6 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ChevronDown, LucideAngularModule, Plus, Trash2 } from 'lucide-angular';
+import { LucideAngularModule, PanelLeftOpen, PanelRightClose, Plus, Trash2 } from 'lucide-angular';
 import { ModelBuilderService } from '../model-builder.service';
 import { DecisionNode, FEATURE_OPTIONS, LeafNode } from '../model-builder.types';
 
@@ -14,8 +14,10 @@ import { DecisionNode, FEATURE_OPTIONS, LeafNode } from '../model-builder.types'
 export class NodeProperties {
   private readonly modelBuilder = inject(ModelBuilderService);
 
+  readonly collapsed = input(false);
+  readonly collapseToggle = output<void>();
+
   readonly selectedNode = toSignal(this.modelBuilder.selectedNode$, { initialValue: null });
-  readonly branchOptions = toSignal(this.modelBuilder.branchOptions$, { initialValue: [] });
 
   readonly decisionNode = computed<DecisionNode | null>(() => {
     const node = this.selectedNode();
@@ -30,7 +32,8 @@ export class NodeProperties {
 
   readonly PlusIcon = Plus;
   readonly Trash2Icon = Trash2;
-  readonly ChevronDownIcon = ChevronDown;
+  readonly PanelRightCloseIcon = PanelRightClose;
+  readonly PanelLeftOpenIcon = PanelLeftOpen;
 
   patchDecision(patch: Partial<DecisionNode>): void {
     const node = this.decisionNode();
