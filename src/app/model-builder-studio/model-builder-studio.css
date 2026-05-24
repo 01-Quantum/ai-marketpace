@@ -38,6 +38,82 @@
   justify-content: flex-end;
 }
 
+.toolbar-center {
+  display: flex;
+  justify-content: center;
+}
+
+.model-name-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0.55rem 0.45rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #0c1220;
+}
+
+.model-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.model-name-input {
+  width: 220px;
+  padding: 0.35rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid rgba(45, 212, 191, 0.45);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-family: inherit;
+}
+
+.model-name-input:focus {
+  outline: none;
+  border-color: var(--teal);
+}
+
+.btn-edit-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  background: rgba(45, 212, 191, 0.08);
+  color: var(--teal);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-edit-name:hover {
+  background: rgba(45, 212, 191, 0.14);
+}
+
+.btn-name-action {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(45, 212, 191, 0.45);
+  background: rgba(45, 212, 191, 0.12);
+  color: var(--teal);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.btn-name-action:hover {
+  background: rgba(45, 212, 191, 0.2);
+}
+
 .btn-help {
   display: inline-flex;
   align-items: center;
@@ -55,50 +131,6 @@
 .btn-help:hover {
   border-color: rgba(45, 212, 191, 0.4);
   color: var(--teal);
-}
-
-/* Model type toggle */
-.model-type-toggle {
-  display: inline-flex;
-  gap: 6px;
-  padding: 5px;
-  border-radius: 12px;
-  background: #0c1220;
-  border: 1px solid var(--border);
-}
-
-.model-type-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.65rem 1.4rem;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--muted);
-  font-size: 0.92rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-
-.model-type-btn lucide-angular {
-  color: var(--muted);
-}
-
-.model-type-btn.active {
-  background: rgba(15, 118, 110, 0.18);
-  border-color: rgba(45, 212, 191, 0.45);
-  color: var(--teal);
-  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.15);
-}
-
-.model-type-btn.active lucide-angular {
-  color: var(--teal);
-}
-
-.model-type-btn:hover:not(.active) {
-  color: var(--text);
 }
 
 /* Main 3-column layout */

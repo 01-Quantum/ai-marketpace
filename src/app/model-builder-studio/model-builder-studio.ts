@@ -1,7 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   ChartScatter,
+  Check,
   ChevronDown,
   ChevronRight,
   CircleHelp,
@@ -9,13 +10,14 @@ import {
   LucideAngularModule,
   MoreVertical,
   Network,
+  Pencil,
   Plus,
   ShieldCheck,
 } from 'lucide-angular';
 import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
 import { DecisionTreeDesigner } from './decision-tree-designer/decision-tree-designer';
 import { ModelBuilderService } from './model-builder.service';
-import { LibraryModel, ModelType } from './model-builder.types';
+import { LibraryModel } from './model-builder.types';
 import { NodeProperties } from './node-properties/node-properties';
 
 const LIBRARY_ICONS: Record<LibraryModel['iconKind'], typeof Network> = {
@@ -45,11 +47,11 @@ export class ModelBuilderStudio {
   readonly selectedLibraryId = toSignal(this.modelBuilder.selectedModelId$, {
     initialValue: 'iris-dt',
   });
-  readonly modelType = toSignal(this.modelBuilder.modelType$, {
-    initialValue: 'tree' as ModelType,
-  });
+  readonly selectedModel = toSignal(this.modelBuilder.selectedModel$, { initialValue: null });
 
-  readonly ChartScatterIcon = ChartScatter;
+  readonly editingName = signal(false);
+  readonly nameDraft = signal('');
+
   readonly NetworkIcon = Network;
   readonly ShieldCheckIcon = ShieldCheck;
   readonly PlusIcon = Plus;
@@ -58,13 +60,43 @@ export class ModelBuilderStudio {
   readonly InfoIcon = Info;
   readonly ChevronDownIcon = ChevronDown;
   readonly ChevronRightIcon = ChevronRight;
-
-  setModelType(type: ModelType): void {
-    this.modelBuilder.setModelType(type);
-  }
+  readonly PencilIcon = Pencil;
+  readonly CheckIcon = Check;
 
   selectLibrary(id: string): void {
     this.modelBuilder.selectModel(id);
+    this.editingName.set(false);
+  }
+
+  startEditingName(): void {
+    const model = this.selectedModel();
+    if (!model) return;
+    this.nameDraft.set(model.name);
+    this.editingName.set(true);
+  }
+
+  saveModelName(): void {
+    this.modelBuilder.renameModel(this.nameDraft());
+    this.editingName.set(false);
+  }
+
+  cancelEditingName(): void {
+    this.editingName.set(false);
+  }
+
+  onNameDraftInput(event: Event): void {
+    this.nameDraft.set((event.target as HTMLInputElement).value);
+  }
+
+  onNameKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.saveModelName();
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.cancelEditingName();
+    }
   }
 
   iconForLibrary(kind: LibraryModel['iconKind']): typeof Network {

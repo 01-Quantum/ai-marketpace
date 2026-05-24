@@ -6,7 +6,6 @@ import {
   FEATURE_OPTIONS,
   LeafNode,
   LibraryModel,
-  ModelType,
   TreeEdge,
   TreeNode,
   TreeNodeView,
@@ -152,7 +151,6 @@ function placeholderLeaf(
 export class ModelBuilderService {
   private readonly libraryModelsSubject = new BehaviorSubject<LibraryModel[]>(LIBRARY_MODELS);
   private readonly selectedModelIdSubject = new BehaviorSubject<string>('iris-dt');
-  private readonly modelTypeSubject = new BehaviorSubject<ModelType>('tree');
   private readonly selectedNodeIdSubject = new BehaviorSubject<number>(3);
   private readonly nodesByModelSubject = new BehaviorSubject<Record<string, TreeNode[]>>({
     'iris-dt': structuredClone(IRIS_TREE_NODES),
@@ -161,8 +159,15 @@ export class ModelBuilderService {
 
   readonly libraryModels$ = this.libraryModelsSubject.asObservable();
   readonly selectedModelId$ = this.selectedModelIdSubject.asObservable();
-  readonly modelType$ = this.modelTypeSubject.asObservable();
   readonly selectedNodeId$ = this.selectedNodeIdSubject.asObservable();
+
+  readonly selectedModel$ = combineLatest([
+    this.libraryModelsSubject,
+    this.selectedModelIdSubject,
+  ]).pipe(
+    map(([models, id]) => models.find((model) => model.id === id) ?? null),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
 
   readonly nodes$ = combineLatest([this.selectedModelIdSubject, this.nodesByModelSubject]).pipe(
     map(([modelId, nodesByModel]) => nodesByModel[modelId] ?? []),
@@ -189,7 +194,6 @@ export class ModelBuilderService {
     if (!model) return;
 
     this.selectedModelIdSubject.next(modelId);
-    this.modelTypeSubject.next(model.type);
 
     const nodes = this.nodesByModelSubject.value[modelId] ?? [];
     if (!nodes.some((node) => node.id === this.selectedNodeIdSubject.value)) {
@@ -197,8 +201,16 @@ export class ModelBuilderService {
     }
   }
 
-  setModelType(type: ModelType): void {
-    this.modelTypeSubject.next(type);
+  renameModel(name: string): void {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+
+    const modelId = this.selectedModelIdSubject.value;
+    this.libraryModelsSubject.next(
+      this.libraryModelsSubject.value.map((model) =>
+        model.id === modelId ? { ...model, name: trimmed } : model,
+      ),
+    );
   }
 
   selectNode(nodeId: number): void {

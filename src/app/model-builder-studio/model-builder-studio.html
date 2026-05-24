@@ -6,25 +6,30 @@
       <h1 class="hero-title">Model Builder Studio</h1>
       <p class="hero-sub">Design a model, publish it to the enclave, and run privacy-preserving inference.</p>
     </div>
-    <div class="model-type-toggle" role="group" aria-label="Model type">
-      <button
-        type="button"
-        class="model-type-btn"
-        [class.active]="modelType() === 'tree'"
-        (click)="setModelType('tree')"
-      >
-        <lucide-angular [img]="NetworkIcon" size="16" [strokeWidth]="1.8"></lucide-angular>
-        Decision Tree
-      </button>
-      <button
-        type="button"
-        class="model-type-btn"
-        [class.active]="modelType() === 'logistic'"
-        (click)="setModelType('logistic')"
-      >
-        <lucide-angular [img]="ChartScatterIcon" size="16" [strokeWidth]="1.8"></lucide-angular>
-        Logistic Regression
-      </button>
+    <div class="toolbar-center">
+      @if (selectedModel(); as model) {
+        <div class="model-name-bar">
+          @if (editingName()) {
+            <input
+              class="model-name-input"
+              type="text"
+              [value]="nameDraft()"
+              (input)="onNameDraftInput($event)"
+              (keydown)="onNameKeydown($event)"
+              aria-label="Model name"
+            />
+            <button type="button" class="btn-name-action" aria-label="Save name" (click)="saveModelName()">
+              <lucide-angular [img]="CheckIcon" size="14" [strokeWidth]="2.2"></lucide-angular>
+            </button>
+          } @else {
+            <span class="model-name">{{ model.name }}</span>
+            <button type="button" class="btn-edit-name" (click)="startEditingName()">
+              <lucide-angular [img]="PencilIcon" size="14" [strokeWidth]="2"></lucide-angular>
+              Edit
+            </button>
+          }
+        </div>
+      }
     </div>
     <div class="toolbar-right">
       <button type="button" class="btn-help">
