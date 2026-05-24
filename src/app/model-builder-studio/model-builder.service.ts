@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, Observable, shareReplay } from 'rxjs';
 import {
   BranchOption,
+  DecisionNode,
+  FEATURE_OPTIONS,
   LeafNode,
   LibraryModel,
   ModelType,
@@ -110,6 +112,42 @@ function buildEdges(nodes: TreeNode[]): TreeEdge[] {
   );
 }
 
+function collectSubtreeIds(nodes: TreeNode[], rootId: number): Set<number> {
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  const ids = new Set<number>();
+  const stack = [rootId];
+
+  while (stack.length) {
+    const id = stack.pop()!;
+    if (ids.has(id)) continue;
+    ids.add(id);
+    const node = byId.get(id);
+    if (node?.type === 'decision') {
+      stack.push(node.leftBranchId, node.rightBranchId);
+    }
+  }
+
+  return ids;
+}
+
+function placeholderLeaf(
+  id: number,
+  parent: DecisionNode,
+  side: 'left' | 'right',
+): LeafNode {
+  const { top, left, width } = parent.layout;
+  return {
+    id,
+    type: 'leaf',
+    label: 'species = unknown',
+    layout: {
+      top: top + 160,
+      left: side === 'left' ? Math.max(0, left - 140) : left + 140,
+      width,
+    },
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class ModelBuilderService {
   private readonly libraryModelsSubject = new BehaviorSubject<LibraryModel[]>(LIBRARY_MODELS);
@@ -183,26 +221,85 @@ export class ModelBuilderService {
 
   deleteNode(nodeId: number): void {
     const nodes = this.currentNodes();
-    if (nodes.length <= 1) return;
+    const toDelete = collectSubtreeIds(nodes, nodeId);
+    if (toDelete.size >= nodes.length) return;
 
-    this.updateNodes((current) => current.filter((node) => node.id !== nodeId));
-    if (this.selectedNodeIdSubject.value === nodeId) {
-      this.selectedNodeIdSubject.next(this.currentNodes()[0]?.id ?? nodeId);
+    let nextId = Math.max(0, ...nodes.map((node) => node.id));
+    const replacementLeaves: LeafNode[] = [];
+
+    const surviving = nodes
+      .filter((node) => !toDelete.has(node.id))
+      .map((node) => {
+        if (node.type !== 'decision') return node;
+
+        let leftBranchId = node.leftBranchId;
+        let rightBranchId = node.rightBranchId;
+
+        if (toDelete.has(leftBranchId)) {
+          nextId += 1;
+          leftBranchId = nextId;
+          replacementLeaves.push(placeholderLeaf(nextId, node, 'left'));
+        }
+        if (toDelete.has(rightBranchId)) {
+          nextId += 1;
+          rightBranchId = nextId;
+          replacementLeaves.push(placeholderLeaf(nextId, node, 'right'));
+        }
+
+        if (leftBranchId === node.leftBranchId && rightBranchId === node.rightBranchId) {
+          return node;
+        }
+
+        return { ...node, leftBranchId, rightBranchId };
+      });
+
+    this.updateNodes(() => [...surviving, ...replacementLeaves]);
+
+    if (toDelete.has(this.selectedNodeIdSubject.value)) {
+      this.selectedNodeIdSubject.next(surviving[0]?.id ?? this.selectedNodeIdSubject.value);
     }
   }
 
   addNode(): void {
+    const nodeId = this.selectedNodeIdSubject.value;
     const nodes = this.currentNodes();
-    const nextId = Math.max(0, ...nodes.map((node) => node.id)) + 1;
-    const newNode: LeafNode = {
-      id: nextId,
-      type: 'leaf',
-      label: 'species = unknown',
-      layout: { top: 420, left: 200, width: 220 },
+    const leaf = nodes.find((node) => node.id === nodeId && node.type === 'leaf');
+    if (!leaf) return;
+
+    const maxId = Math.max(0, ...nodes.map((node) => node.id));
+    const leftId = maxId + 1;
+    const rightId = maxId + 2;
+    const { top, left, width } = leaf.layout;
+
+    const decision: DecisionNode = {
+      id: leaf.id,
+      type: 'decision',
+      feature: FEATURE_OPTIONS[0],
+      threshold: 1,
+      leftBranchId: leftId,
+      rightBranchId: rightId,
+      layout: { top, left, width },
     };
 
-    this.updateNodes((current) => [...current, newNode]);
-    this.selectedNodeIdSubject.next(nextId);
+    const leftLeaf: LeafNode = {
+      id: leftId,
+      type: 'leaf',
+      label: 'species = unknown',
+      layout: { top: top + 160, left: Math.max(0, left - 140), width },
+    };
+
+    const rightLeaf: LeafNode = {
+      id: rightId,
+      type: 'leaf',
+      label: 'species = unknown',
+      layout: { top: top + 160, left: left + 140, width },
+    };
+
+    this.updateNodes((current) =>
+      current.flatMap((node) =>
+        node.id === leaf.id ? [decision, leftLeaf, rightLeaf] : [node],
+      ),
+    );
   }
 
   private currentNodes(): TreeNode[] {

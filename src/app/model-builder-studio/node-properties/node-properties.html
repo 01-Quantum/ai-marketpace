@@ -72,7 +72,12 @@
     }
 
     <div class="properties-actions">
-      <button type="button" class="btn-outline btn-outline-teal" (click)="addNode()">
+      <button
+        type="button"
+        class="btn-outline btn-outline-teal"
+        [disabled]="node.type !== 'leaf'"
+        (click)="addNode()"
+      >
         <lucide-angular [img]="PlusIcon" size="16" [strokeWidth]="2"></lucide-angular>
         Add Node
       </button>

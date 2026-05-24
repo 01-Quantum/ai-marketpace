@@ -57,12 +57,12 @@
       <div
         class="tree-canvas"
         [style.transform]="canvasTransform()"
-        [style.width.px]="canvasWidth"
-        [style.height.px]="canvasHeight"
+        [style.width.px]="canvasWidth()"
+        [style.height.px]="canvasHeight()"
       >
         <svg
           class="tree-edges"
-          [attr.viewBox]="'0 0 ' + canvasWidth + ' ' + canvasHeight"
+          [attr.viewBox]="'0 0 ' + canvasWidth() + ' ' + canvasHeight()"
           preserveAspectRatio="none"
           aria-hidden="true"
         >

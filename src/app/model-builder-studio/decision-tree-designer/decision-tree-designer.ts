@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Hand, Leaf, LucideAngularModule, Maximize2, Minus, Plus } from 'lucide-angular';
 import { ModelBuilderService } from '../model-builder.service';
@@ -47,9 +47,28 @@ export class DecisionTreeDesigner {
   readonly isDragging = signal(false);
   readonly draggingNodeId = signal<number | null>(null);
 
-  readonly canvasWidth = 880;
-  readonly canvasHeight = 500;
   readonly nodeHeight = 80;
+  private readonly canvasPadding = 48;
+  private readonly minCanvasWidth = 880;
+  private readonly minCanvasHeight = 500;
+
+  readonly canvasWidth = computed(() => {
+    const nodes = this.nodes();
+    if (!nodes.length) return this.minCanvasWidth;
+    return Math.max(
+      this.minCanvasWidth,
+      ...nodes.map((node) => node.left + node.width + this.canvasPadding),
+    );
+  });
+
+  readonly canvasHeight = computed(() => {
+    const nodes = this.nodes();
+    if (!nodes.length) return this.minCanvasHeight;
+    return Math.max(
+      this.minCanvasHeight,
+      ...nodes.map((node) => node.top + this.nodeHeight + this.canvasPadding),
+    );
+  });
 
   private readonly minZoom = 0.5;
   private readonly maxZoom = 1.5;
@@ -78,11 +97,11 @@ export class DecisionTreeDesigner {
   }
 
   scaledWidth(): number {
-    return this.canvasWidth * this.zoomLevel();
+    return this.canvasWidth() * this.zoomLevel();
   }
 
   scaledHeight(): number {
-    return this.canvasHeight * this.zoomLevel();
+    return this.canvasHeight() * this.zoomLevel();
   }
 
   canvasTransform(): string {
