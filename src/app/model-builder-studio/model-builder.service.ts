@@ -1,5 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, Observable, shareReplay } from 'rxjs';
+import { DecisionTreeModelService } from './decision-tree-model.service';
+import {
+  cloneTreeNodes,
+  convertDecisionTreeModelToNodes,
+} from './decision-tree-model.mapper';
+import { formatThresholdDisplay } from './format-threshold';
 import {
   BranchOption,
   DecisionNode,
@@ -11,54 +17,7 @@ import {
   TreeNodeView,
 } from './model-builder.types';
 
-const IRIS_TREE_NODES: TreeNode[] = [
-  {
-    id: 1,
-    type: 'decision',
-    feature: 'petal_length',
-    threshold: 2.4,
-    leftBranchId: 2,
-    rightBranchId: 3,
-    layout: { top: 60, left: 340, width: 220 },
-  },
-  {
-    id: 2,
-    type: 'leaf',
-    label: 'species = setosa',
-    layout: { top: 220, left: 60, width: 220 },
-  },
-  {
-    id: 3,
-    type: 'decision',
-    feature: 'petal_width',
-    threshold: 1.8,
-    leftBranchId: 4,
-    rightBranchId: 5,
-    layout: { top: 220, left: 460, width: 220 },
-  },
-  {
-    id: 4,
-    type: 'leaf',
-    label: 'species = versicolor',
-    layout: { top: 380, left: 320, width: 220 },
-  },
-  {
-    id: 5,
-    type: 'leaf',
-    label: 'species = virginica',
-    layout: { top: 380, left: 600, width: 220 },
-  },
-];
-
-const LIBRARY_MODELS: LibraryModel[] = [
-  {
-    id: 'iris-dt',
-    name: 'Iris Decision Tree',
-    version: 'v1.2.0',
-    updated: 'Updated 2d ago',
-    iconKind: 'tree',
-    type: 'tree',
-  },
+const OTHER_LIBRARY_MODELS: LibraryModel[] = [
   {
     id: 'logreg-classifier',
     name: 'Logistic Regression',
@@ -82,9 +41,14 @@ function nodeTitle(node: TreeNode): string {
 }
 
 function toNodeView(node: TreeNode): TreeNodeView {
+  const title =
+    node.type === 'leaf'
+      ? node.label
+      : `${node.feature} < ${formatThresholdDisplay(node.threshold)}`;
+
   return {
     id: node.id,
-    title: nodeTitle(node),
+    title,
     type: node.type,
     ...node.layout,
   };
@@ -99,13 +63,13 @@ function buildEdges(nodes: TreeNode[]): TreeEdge[] {
             fromId: node.id,
             toId: node.leftBranchId,
             branch: 'true' as const,
-            label: `True (\u2264 ${node.threshold})`,
+            label: `True (\u2264 ${formatThresholdDisplay(node.threshold)})`,
           },
           {
             fromId: node.id,
             toId: node.rightBranchId,
             branch: 'false' as const,
-            label: `False (> ${node.threshold})`,
+            label: `False (> ${formatThresholdDisplay(node.threshold)})`,
           },
         ],
   );
@@ -149,12 +113,21 @@ function placeholderLeaf(
 
 @Injectable({ providedIn: 'root' })
 export class ModelBuilderService {
-  private readonly libraryModelsSubject = new BehaviorSubject<LibraryModel[]>(LIBRARY_MODELS);
+  private readonly decisionTreeModel = inject(DecisionTreeModelService);
+
+  private readonly irisTreeNodes = convertDecisionTreeModelToNodes(
+    this.decisionTreeModel.getModel(),
+  );
+
+  private readonly libraryModelsSubject = new BehaviorSubject<LibraryModel[]>([
+    this.decisionTreeModel.getLibraryEntry(),
+    ...OTHER_LIBRARY_MODELS,
+  ]);
   private readonly selectedModelIdSubject = new BehaviorSubject<string>('iris-dt');
-  private readonly selectedNodeIdSubject = new BehaviorSubject<number>(3);
+  private readonly selectedNodeIdSubject = new BehaviorSubject<number>(1);
   private readonly nodesByModelSubject = new BehaviorSubject<Record<string, TreeNode[]>>({
-    'iris-dt': structuredClone(IRIS_TREE_NODES),
-    'risk-classifier': structuredClone(IRIS_TREE_NODES),
+    'iris-dt': cloneTreeNodes(this.irisTreeNodes),
+    'risk-classifier': cloneTreeNodes(this.irisTreeNodes),
   });
 
   readonly libraryModels$ = this.libraryModelsSubject.asObservable();
