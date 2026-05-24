@@ -1,4 +1,10 @@
-import { DecisionTreeModel, DecisionTreeNode } from './decision-tree-model.types';
+import {
+  BatchTestResult,
+  BatchTestRow,
+  DecisionTreeModel,
+  DecisionTreeNode,
+  batchRowToFeatures,
+} from './decision-tree-model.types';
 import { formatThresholdDisplay } from './format-threshold';
 
 const FEATURE_KEYS = ['sepal_length', 'sepal_width', 'petal_length', 'petal_width'];
@@ -55,4 +61,19 @@ export function predictDecisionTree(
   });
 
   return { className, classIndex: node.class_index, path };
+}
+
+export function runBatchTest(model: DecisionTreeModel, rows: BatchTestRow[]): BatchTestResult {
+  const resultRows = rows.map((row) => {
+    const prediction = predictDecisionTree(model, batchRowToFeatures(row));
+    return {
+      id: row.id,
+      prediction: prediction.className,
+      expected: row.expected,
+      passed: prediction.className === row.expected,
+    };
+  });
+
+  const passed = resultRows.filter((row) => row.passed).length;
+  return { rows: resultRows, passed, total: resultRows.length };
 }

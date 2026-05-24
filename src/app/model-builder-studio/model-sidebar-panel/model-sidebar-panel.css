@@ -108,7 +108,7 @@
 
 .input-mode-toggle {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
   padding: 4px;
   border-radius: 10px;
@@ -280,4 +280,126 @@
   font-size: 0.82rem;
   color: var(--muted);
   line-height: 1.45;
+}
+
+.batch-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.batch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.batch-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.batch-action-btn.icon-only {
+  padding: 0.35rem;
+  color: var(--muted);
+}
+
+.batch-action-btn:hover:not(:disabled) {
+  border-color: rgba(45, 212, 191, 0.4);
+  color: var(--teal);
+}
+
+.batch-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.batch-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.batch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.68rem;
+}
+
+.batch-table th,
+.batch-table td {
+  padding: 0.4rem 0.35rem;
+  border-bottom: 1px solid var(--border-soft);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.batch-table th {
+  background: rgba(7, 10, 18, 0.65);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.62rem;
+  text-transform: lowercase;
+}
+
+.batch-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.batch-table tbody tr.selected {
+  background: rgba(45, 212, 191, 0.08);
+}
+
+.batch-table tbody tr {
+  cursor: pointer;
+}
+
+.batch-cell-input {
+  width: 3.5rem;
+  padding: 0.2rem 0.25rem;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.68rem;
+  font-family: inherit;
+}
+
+.batch-cell-input:focus {
+  outline: none;
+  border-color: rgba(45, 212, 191, 0.45);
+  background: var(--bg-elevated);
+}
+
+.batch-table td:last-child .batch-cell-input {
+  width: 4.5rem;
+}
+
+.status-pass {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--green);
+  font-weight: 600;
+}
+
+.status-fail {
+  color: var(--coral);
+  font-weight: 600;
+}
+
+.accuracy-summary {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--green);
 }

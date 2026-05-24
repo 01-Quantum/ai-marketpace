@@ -133,14 +133,6 @@
               >
                 Batch (Table)
               </button>
-              <button
-                type="button"
-                class="input-mode-btn"
-                [class.active]="inputMode() === 'csv'"
-                (click)="setInputMode('csv')"
-              >
-                CSV Upload
-              </button>
             </div>
           </div>
 
@@ -168,7 +160,7 @@
               Run Test
             </button>
 
-            @if (hasRunTest() && lastResult(); as result) {
+            @if (lastRunMode() === 'single' && lastResult(); as result) {
               <div class="result-card">
                 <span class="result-card-label">Prediction Result</span>
                 <div class="prediction-value">
@@ -200,19 +192,150 @@
                 </ol>
               </div>
             }
-          } @else {
-            <p class="empty-state">
-              @if (inputMode() === 'batch') {
-                Batch table testing will be available in a future update.
-              } @else {
-                CSV upload testing will be available in a future update.
-              }
-            </p>
+          } @else if (inputMode() === 'batch') {
+            <div class="section-block">
+              <div class="batch-head">
+                <span class="form-label">Batch Test Data ({{ batchRows().length }} rows)</span>
+                <div class="batch-actions">
+                  <button type="button" class="batch-action-btn" (click)="addBatchRow()">
+                    <lucide-angular [img]="PlusIcon" size="12" [strokeWidth]="2.2"></lucide-angular>
+                    Add Row
+                  </button>
+                  <button type="button" class="batch-action-btn" (click)="importBatchCsv()">
+                    <lucide-angular [img]="UploadIcon" size="12" [strokeWidth]="2.2"></lucide-angular>
+                    Import CSV
+                  </button>
+                  <button
+                    type="button"
+                    class="batch-action-btn icon-only"
+                    aria-label="Delete selected row"
+                    [disabled]="selectedBatchRowId() === null"
+                    (click)="removeSelectedBatchRow()"
+                  >
+                    <lucide-angular [img]="Trash2Icon" size="14" [strokeWidth]="2"></lucide-angular>
+                  </button>
+                </div>
+              </div>
+
+              <div class="batch-table-wrap">
+                <table class="batch-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      @for (field of batchFields; track field) {
+                        <th>{{ field }}</th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of batchRows(); track row.id; let i = $index) {
+                      <tr
+                        [class.selected]="selectedBatchRowId() === row.id"
+                        (click)="selectBatchRow(row.id)"
+                      >
+                        <td>{{ i + 1 }}</td>
+                        @for (field of batchFields; track field) {
+                          <td>
+                            <input
+                              class="batch-cell-input"
+                              [type]="field === 'expected' ? 'text' : 'number'"
+                              [step]="field === 'expected' ? null : 0.1"
+                              [value]="row[field]"
+                              (click)="$event.stopPropagation()"
+                              (change)="onBatchCellChange(row.id, field, $any($event.target).value)"
+                            />
+                          </td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <button type="button" class="btn-run-test" (click)="runBatchTest()">
+              <lucide-angular [img]="PlayIcon" size="16" [strokeWidth]="2"></lucide-angular>
+              Run Batch Test
+            </button>
+
+            @if (lastRunMode() === 'batch' && lastBatchResult(); as batchResult) {
+              <div class="section-block">
+                <span class="form-label">Batch Test Results</span>
+                <div class="batch-table-wrap">
+                  <table class="batch-table results-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Prediction</th>
+                        <th>Expected</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of batchResult.rows; track row.id; let i = $index) {
+                        <tr>
+                          <td>{{ i + 1 }}</td>
+                          <td>{{ row.prediction }}</td>
+                          <td>{{ row.expected }}</td>
+                          <td>
+                            @if (row.passed) {
+                              <span class="status-pass">
+                                <lucide-angular [img]="CheckIcon" size="12" [strokeWidth]="2.5"></lucide-angular>
+                                Pass
+                              </span>
+                            } @else {
+                              <span class="status-fail">Fail</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                <p class="accuracy-summary">{{ batchAccuracyLabel() }}</p>
+              </div>
+            }
           }
         }
 
         @case ('results') {
-          @if (hasRunTest() && lastResult(); as result) {
+          @if (lastRunMode() === 'batch' && lastBatchResult(); as batchResult) {
+            <div class="section-block">
+              <span class="form-label">Batch Test Results</span>
+              <div class="batch-table-wrap">
+                <table class="batch-table results-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Prediction</th>
+                      <th>Expected</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of batchResult.rows; track row.id; let i = $index) {
+                      <tr>
+                        <td>{{ i + 1 }}</td>
+                        <td>{{ row.prediction }}</td>
+                        <td>{{ row.expected }}</td>
+                        <td>
+                          @if (row.passed) {
+                            <span class="status-pass">
+                              <lucide-angular [img]="CheckIcon" size="12" [strokeWidth]="2.5"></lucide-angular>
+                              Pass
+                            </span>
+                          } @else {
+                            <span class="status-fail">Fail</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <p class="accuracy-summary">{{ batchAccuracyLabel() }}</p>
+            </div>
+          } @else if (lastRunMode() === 'single' && lastResult(); as result) {
             <div class="result-card">
               <span class="result-card-label">Latest Prediction</span>
               <div class="prediction-value">

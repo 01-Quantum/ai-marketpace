@@ -1,6 +1,7 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
+  Check,
   Leaf,
   LucideAngularModule,
   PanelLeftOpen,
@@ -8,16 +9,27 @@ import {
   Play,
   Plus,
   Trash2,
+  Upload,
 } from 'lucide-angular';
+import { BatchTestRow, BatchTestResult } from '../decision-tree-model.types';
 import { DecisionTreeModelService } from '../decision-tree-model.service';
-import { InferenceResult, predictDecisionTree } from '../decision-tree-inference';
+import { InferenceResult, predictDecisionTree, runBatchTest } from '../decision-tree-inference';
 import { ModelBuilderService } from '../model-builder.service';
 import { DecisionNode, FEATURE_OPTIONS, LeafNode } from '../model-builder.types';
 
 type SidebarTab = 'properties' | 'test-data' | 'results';
-type InputMode = 'single' | 'batch' | 'csv';
+type InputMode = 'single' | 'batch';
+type TestRunMode = 'single' | 'batch';
+type BatchField = keyof Omit<BatchTestRow, 'id'>;
 
 const DEFAULT_SAMPLE = [5.1, 3.5, 1.4, 0.2];
+const BATCH_FIELDS: BatchField[] = [
+  'sepal_length',
+  'sepal_width',
+  'petal_length',
+  'petal_width',
+  'expected',
+];
 
 @Component({
   selector: 'app-model-sidebar-panel',
@@ -37,7 +49,13 @@ export class ModelSidebarPanel {
   readonly inputMode = signal<InputMode>('single');
   readonly featureValues = signal<number[]>([...DEFAULT_SAMPLE]);
   readonly lastResult = signal<InferenceResult | null>(null);
-  readonly hasRunTest = signal(false);
+  readonly lastBatchResult = signal<BatchTestResult | null>(null);
+  readonly lastRunMode = signal<TestRunMode | null>(null);
+  readonly selectedBatchRowId = signal<number | null>(null);
+
+  readonly batchRows = toSignal(this.decisionTreeModel.publishedTestData$, {
+    initialValue: [] as BatchTestRow[],
+  });
 
   readonly selectedNode = toSignal(this.modelBuilder.selectedNode$, { initialValue: null });
 
@@ -50,8 +68,16 @@ export class ModelSidebarPanel {
     return node?.type === 'leaf' ? node : null;
   });
 
+  readonly batchAccuracyLabel = computed(() => {
+    const result = this.lastBatchResult();
+    if (!result || result.total === 0) return '';
+    const pct = Math.round((result.passed / result.total) * 100);
+    return `Accuracy: ${result.passed} / ${result.total} (${pct}%)`;
+  });
+
   readonly modelFeatures = this.decisionTreeModel.getModel().features;
   readonly featureOptions = FEATURE_OPTIONS;
+  readonly batchFields = BATCH_FIELDS;
 
   readonly PlusIcon = Plus;
   readonly Trash2Icon = Trash2;
@@ -59,6 +85,8 @@ export class ModelSidebarPanel {
   readonly PanelLeftOpenIcon = PanelLeftOpen;
   readonly PlayIcon = Play;
   readonly LeafIcon = Leaf;
+  readonly UploadIcon = Upload;
+  readonly CheckIcon = Check;
 
   setTab(tab: SidebarTab): void {
     this.activeTab.set(tab);
@@ -81,7 +109,41 @@ export class ModelSidebarPanel {
   runTest(): void {
     const result = predictDecisionTree(this.decisionTreeModel.getModel(), this.featureValues());
     this.lastResult.set(result);
-    this.hasRunTest.set(true);
+    this.lastBatchResult.set(null);
+    this.lastRunMode.set('single');
+  }
+
+  runBatchTest(): void {
+    const rows = this.batchRows();
+    if (!rows.length) return;
+    const result = runBatchTest(this.decisionTreeModel.getModel(), rows);
+    this.lastBatchResult.set(result);
+    this.lastResult.set(null);
+    this.lastRunMode.set('batch');
+  }
+
+  addBatchRow(): void {
+    this.decisionTreeModel.addTestRow();
+  }
+
+  importBatchCsv(): void {
+    this.decisionTreeModel.importPublishedTestData();
+    this.selectedBatchRowId.set(null);
+  }
+
+  removeSelectedBatchRow(): void {
+    const id = this.selectedBatchRowId();
+    if (id === null) return;
+    this.decisionTreeModel.removeTestRow(id);
+    this.selectedBatchRowId.set(null);
+  }
+
+  selectBatchRow(id: number): void {
+    this.selectedBatchRowId.set(id);
+  }
+
+  onBatchCellChange(rowId: number, field: BatchField, value: string): void {
+    this.decisionTreeModel.updateTestRow(rowId, field, value);
   }
 
   patchDecision(patch: Partial<DecisionNode>): void {

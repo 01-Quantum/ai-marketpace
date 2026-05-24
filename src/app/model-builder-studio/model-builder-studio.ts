@@ -20,6 +20,7 @@ import {
 } from 'lucide-angular';
 import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
 import { DecisionTreeDesigner } from './decision-tree-designer/decision-tree-designer';
+import { DecisionTreeModelService } from './decision-tree-model.service';
 import { ModelBuilderService } from './model-builder.service';
 import { LibraryModel } from './model-builder.types';
 import { ModelSidebarPanel } from './model-sidebar-panel/model-sidebar-panel';
@@ -44,6 +45,7 @@ const LIBRARY_ICONS: Record<LibraryModel['iconKind'], typeof Network> = {
 })
 export class ModelBuilderStudio {
   private readonly modelBuilder = inject(ModelBuilderService);
+  private readonly decisionTreeModel = inject(DecisionTreeModelService);
 
   readonly libraryItems = toSignal(this.modelBuilder.libraryModels$, {
     initialValue: [] as LibraryModel[],
@@ -122,4 +124,8 @@ export class ModelBuilderStudio {
   }
 
   signOut(): void {}
+
+  publishToEnclave(): void {
+    this.decisionTreeModel.publishTestData();
+  }
 }
