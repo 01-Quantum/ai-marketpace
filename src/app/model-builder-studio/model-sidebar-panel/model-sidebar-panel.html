@@ -1,0 +1,263 @@
+<aside class="panel sidebar-panel" [class.collapsed]="collapsed()">
+  @if (!collapsed()) {
+    <div class="sidebar-top">
+      <div class="sidebar-tabs" role="tablist" aria-label="Model sidebar">
+        <button
+          type="button"
+          class="sidebar-tab"
+          role="tab"
+          [class.active]="activeTab() === 'properties'"
+          [attr.aria-selected]="activeTab() === 'properties'"
+          (click)="setTab('properties')"
+        >
+          Node Properties
+        </button>
+        <button
+          type="button"
+          class="sidebar-tab"
+          role="tab"
+          [class.active]="activeTab() === 'test-data'"
+          [attr.aria-selected]="activeTab() === 'test-data'"
+          (click)="setTab('test-data')"
+        >
+          Test Data
+        </button>
+        <button
+          type="button"
+          class="sidebar-tab"
+          role="tab"
+          [class.active]="activeTab() === 'results'"
+          [attr.aria-selected]="activeTab() === 'results'"
+          (click)="setTab('results')"
+        >
+          Results
+        </button>
+      </div>
+      <button
+        type="button"
+        class="btn-panel-collapse"
+        aria-label="Collapse sidebar"
+        [attr.aria-expanded]="true"
+        (click)="collapseToggle.emit()"
+      >
+        <lucide-angular [img]="PanelRightCloseIcon" size="16" [strokeWidth]="2"></lucide-angular>
+      </button>
+    </div>
+
+    <div class="sidebar-body">
+      @switch (activeTab()) {
+        @case ('properties') {
+          @if (selectedNode(); as node) {
+            <div class="properties-head-inline">
+              <span class="node-pill">Node {{ node.id }}</span>
+            </div>
+
+            @if (decisionNode(); as decision) {
+              <label class="form-field">
+                <span class="form-label">Feature</span>
+                <select
+                  class="form-input"
+                  [value]="decision.feature"
+                  (change)="patchDecision({ feature: $any($event.target).value })"
+                >
+                  @for (feature of featureOptions; track feature) {
+                    <option [value]="feature">{{ feature }}</option>
+                  }
+                </select>
+              </label>
+
+              <label class="form-field">
+                <span class="form-label">Threshold</span>
+                <input
+                  class="form-input"
+                  type="number"
+                  step="0.1"
+                  [value]="decision.threshold"
+                  (change)="onThresholdChange($any($event.target).value)"
+                />
+              </label>
+            } @else if (leafNode(); as leaf) {
+              <label class="form-field">
+                <span class="form-label">Classification</span>
+                <input
+                  class="form-input"
+                  type="text"
+                  [value]="leaf.label"
+                  (change)="patchLeaf({ label: $any($event.target).value })"
+                />
+              </label>
+            }
+
+            <div class="properties-actions">
+              <button
+                type="button"
+                class="btn-outline btn-outline-teal"
+                [disabled]="node.type !== 'leaf'"
+                (click)="addNode()"
+              >
+                <lucide-angular [img]="PlusIcon" size="16" [strokeWidth]="2"></lucide-angular>
+                Add Node
+              </button>
+              <button
+                type="button"
+                class="btn-outline btn-outline-coral"
+                [disabled]="node.type === 'leaf'"
+                (click)="deleteNode()"
+              >
+                <lucide-angular [img]="Trash2Icon" size="16" [strokeWidth]="2"></lucide-angular>
+                Delete Node
+              </button>
+            </div>
+          } @else {
+            <p class="empty-state">Select a node in the tree to edit its properties.</p>
+          }
+        }
+
+        @case ('test-data') {
+          <div class="section-block">
+            <span class="form-label">Input Mode</span>
+            <div class="input-mode-toggle" role="group" aria-label="Input mode">
+              <button
+                type="button"
+                class="input-mode-btn"
+                [class.active]="inputMode() === 'single'"
+                (click)="setInputMode('single')"
+              >
+                Single Sample
+              </button>
+              <button
+                type="button"
+                class="input-mode-btn"
+                [class.active]="inputMode() === 'batch'"
+                (click)="setInputMode('batch')"
+              >
+                Batch (Table)
+              </button>
+              <button
+                type="button"
+                class="input-mode-btn"
+                [class.active]="inputMode() === 'csv'"
+                (click)="setInputMode('csv')"
+              >
+                CSV Upload
+              </button>
+            </div>
+          </div>
+
+          @if (inputMode() === 'single') {
+            <div class="section-block">
+              <span class="form-label">Features (Iris)</span>
+              <div class="feature-inputs">
+                @for (feature of modelFeatures; track feature; let i = $index) {
+                  <label class="form-field">
+                    <span class="form-label">{{ feature }}</span>
+                    <input
+                      class="form-input"
+                      type="number"
+                      step="0.1"
+                      [value]="featureValues()[i]"
+                      (change)="onFeatureChange(i, $any($event.target).value)"
+                    />
+                  </label>
+                }
+              </div>
+            </div>
+
+            <button type="button" class="btn-run-test" (click)="runTest()">
+              <lucide-angular [img]="PlayIcon" size="16" [strokeWidth]="2"></lucide-angular>
+              Run Test
+            </button>
+
+            @if (hasRunTest() && lastResult(); as result) {
+              <div class="result-card">
+                <span class="result-card-label">Prediction Result</span>
+                <div class="prediction-value">
+                  <lucide-angular [img]="LeafIcon" size="18" [strokeWidth]="2"></lucide-angular>
+                  {{ result.className }}
+                </div>
+              </div>
+
+              <div class="section-block">
+                <span class="form-label">Decision Path</span>
+                <ol class="decision-path">
+                  @for (step of result.path; track step.nodeIndex) {
+                    <li class="path-step" [class.leaf-step]="step.kind === 'leaf'">
+                      <span class="path-node-num">{{ step.nodeIndex }}</span>
+                      <div class="path-step-body">
+                        @if (step.kind === 'split') {
+                          <p class="path-rule">{{ step.rule }}</p>
+                          <p class="path-comparison">
+                            {{ step.comparison }}
+                            <span class="path-badge true">{{ step.branchLabel }}</span>
+                          </p>
+                        } @else {
+                          <p class="path-rule">{{ step.leafLabel }}</p>
+                          <span class="path-badge leaf">Reached leaf node</span>
+                        }
+                      </div>
+                    </li>
+                  }
+                </ol>
+              </div>
+            }
+          } @else {
+            <p class="empty-state">
+              @if (inputMode() === 'batch') {
+                Batch table testing will be available in a future update.
+              } @else {
+                CSV upload testing will be available in a future update.
+              }
+            </p>
+          }
+        }
+
+        @case ('results') {
+          @if (hasRunTest() && lastResult(); as result) {
+            <div class="result-card">
+              <span class="result-card-label">Latest Prediction</span>
+              <div class="prediction-value">
+                <lucide-angular [img]="LeafIcon" size="18" [strokeWidth]="2"></lucide-angular>
+                {{ result.className }}
+              </div>
+            </div>
+
+            <div class="section-block">
+              <span class="form-label">Decision Path</span>
+              <ol class="decision-path">
+                @for (step of result.path; track step.nodeIndex) {
+                  <li class="path-step" [class.leaf-step]="step.kind === 'leaf'">
+                    <span class="path-node-num">{{ step.nodeIndex }}</span>
+                    <div class="path-step-body">
+                      @if (step.kind === 'split') {
+                        <p class="path-rule">{{ step.rule }}</p>
+                        <p class="path-comparison">
+                          {{ step.comparison }}
+                          <span class="path-badge true">{{ step.branchLabel }}</span>
+                        </p>
+                      } @else {
+                        <p class="path-rule">{{ step.leafLabel }}</p>
+                        <span class="path-badge leaf">Reached leaf node</span>
+                      }
+                    </div>
+                  </li>
+                }
+              </ol>
+            </div>
+          } @else {
+            <p class="empty-state">Run a test from the Test Data tab to see results here.</p>
+          }
+        }
+      }
+    </div>
+  } @else {
+    <button
+      type="button"
+      class="btn-panel-collapse solo"
+      aria-label="Expand sidebar"
+      [attr.aria-expanded]="false"
+      (click)="collapseToggle.emit()"
+    >
+      <lucide-angular [img]="PanelLeftOpenIcon" size="16" [strokeWidth]="2"></lucide-angular>
+    </button>
+  }
+</aside>

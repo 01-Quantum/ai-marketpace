@@ -22,7 +22,7 @@ import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
 import { DecisionTreeDesigner } from './decision-tree-designer/decision-tree-designer';
 import { ModelBuilderService } from './model-builder.service';
 import { LibraryModel } from './model-builder.types';
-import { NodeProperties } from './node-properties/node-properties';
+import { ModelSidebarPanel } from './model-sidebar-panel/model-sidebar-panel';
 
 const LIBRARY_ICONS: Record<LibraryModel['iconKind'], typeof Network> = {
   tree: Network,
@@ -37,7 +37,7 @@ const LIBRARY_ICONS: Record<LibraryModel['iconKind'], typeof Network> = {
     LucideAngularModule,
     AppTopBar,
     DecisionTreeDesigner,
-    NodeProperties,
+    ModelSidebarPanel,
   ],
   templateUrl: './model-builder-studio.html',
   styleUrl: './model-builder-studio.css',
