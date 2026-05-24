@@ -107,7 +107,11 @@
       }
     </aside>
 
-    <app-decision-tree-designer />
+    @if (selectedModel()?.type === 'logistic') {
+      <app-logistic-regression-designer />
+    } @else {
+      <app-decision-tree-designer />
+    }
 
     <app-model-sidebar-panel
       [collapsed]="propertiesCollapsed()"

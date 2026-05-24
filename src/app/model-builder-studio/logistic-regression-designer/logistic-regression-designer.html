@@ -1,0 +1,213 @@
+<section class="panel lr-panel">
+  <div class="lr-formula">
+    <div class="lr-formula-head">
+      <lucide-angular [img]="SigmaIcon" size="18" [strokeWidth]="2"></lucide-angular>
+      <h2 class="section-title">Model Formula</h2>
+    </div>
+    <div class="lr-formula-body">
+      <p class="lr-equation">
+        <span class="lr-var">z</span>
+        <span class="lr-eq">=</span>
+        <span class="lr-var">b</span>
+        <span class="lr-eq">+</span>
+        <span class="lr-sum">&Sigma;<sub>i=1</sub><sup>n</sup> (w<sub>i</sub> &middot; x<sub>i</sub>)</span>
+      </p>
+      <span class="lr-feature-badge">{{ totalFeatures() }}+ features</span>
+    </div>
+    <dl class="lr-legend">
+      <div><dt>z</dt><dd>Linear score (log-odds)</dd></div>
+      <div><dt>b</dt><dd>Intercept ({{ formatIntercept(model().intercept) }})</dd></div>
+      <div><dt>w<sub>i</sub></dt><dd>Feature coefficient</dd></div>
+    </dl>
+  </div>
+
+  <div class="lr-body">
+    <div class="lr-main panel lr-weights-panel">
+      <header class="lr-weights-head">
+        <h2 class="section-title">Feature Weights</h2>
+        <span class="lr-count">{{ totalFeatures() }} features total</span>
+      </header>
+
+      <div class="lr-toolbar">
+        <label class="lr-search">
+          <lucide-angular [img]="SearchIcon" size="15" [strokeWidth]="2"></lucide-angular>
+          <input
+            type="search"
+            placeholder="Search features"
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+          />
+        </label>
+
+        <div class="lr-filters">
+          <button
+            type="button"
+            class="lr-chip"
+            [class.active]="featureFilter() === 'all'"
+            (click)="setFilter('all')"
+          >
+            All
+          </button>
+          <button
+            type="button"
+            class="lr-chip"
+            [class.active]="featureFilter() === 'top'"
+            (click)="setFilter('top')"
+          >
+            Top Impact
+          </button>
+          <button
+            type="button"
+            class="lr-chip"
+            [class.active]="featureFilter() === 'positive'"
+            (click)="setFilter('positive')"
+          >
+            Positive
+          </button>
+          <button
+            type="button"
+            class="lr-chip"
+            [class.active]="featureFilter() === 'negative'"
+            (click)="setFilter('negative')"
+          >
+            Negative
+          </button>
+        </div>
+
+        <div class="lr-actions">
+          <button type="button" class="lr-btn" (click)="exportFeatures()">
+            <lucide-angular [img]="DownloadIcon" size="14" [strokeWidth]="2"></lucide-angular>
+            Export
+          </button>
+          <button type="button" class="lr-btn lr-btn-muted">
+            Columns
+            <lucide-angular [img]="ChevronDownIcon" size="14" [strokeWidth]="2"></lucide-angular>
+          </button>
+        </div>
+      </div>
+
+      <div class="lr-table-wrap">
+        <table class="lr-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Coef</th>
+              <th>Impact</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of pagedFeatures(); track row.name) {
+              <tr>
+                <td class="lr-feature-name">{{ row.name }}</td>
+                <td [class.positive]="row.weight > 0" [class.negative]="row.weight < 0">
+                  {{ formatCoef(row.weight) }}
+                </td>
+                <td>
+                  <div class="lr-impact">
+                    <span
+                      class="lr-impact-bar"
+                      [class.positive]="row.weight >= 0"
+                      [class.negative]="row.weight < 0"
+                      [style.width.%]="impactWidth(row.weight, maxAbsWeight())"
+                    ></span>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <footer class="lr-table-foot">
+        <p class="lr-showing">
+          Showing {{ pagedFeatures().length }} of {{ filteredFeatures().length }} features
+        </p>
+        <div class="lr-pagination">
+          <button
+            type="button"
+            class="lr-page-btn"
+            [disabled]="page() <= 1"
+            (click)="setPage(page() - 1)"
+            aria-label="Previous page"
+          >
+            <lucide-angular [img]="ChevronLeftIcon" size="14" [strokeWidth]="2"></lucide-angular>
+          </button>
+          @for (num of pageNumbers(); track num) {
+            <button
+              type="button"
+              class="lr-page-num"
+              [class.active]="page() === num"
+              (click)="setPage(num)"
+            >
+              {{ num }}
+            </button>
+          }
+          <button
+            type="button"
+            class="lr-page-btn"
+            [disabled]="page() >= totalPages()"
+            (click)="setPage(page() + 1)"
+            aria-label="Next page"
+          >
+            <lucide-angular [img]="ChevronRightIcon" size="14" [strokeWidth]="2"></lucide-angular>
+          </button>
+          <label class="lr-page-size">
+            <select [value]="pageSize()" (change)="setPageSize(+$any($event.target).value)">
+              @for (size of pageSizeOptions; track size) {
+                <option [value]="size">{{ size }} / page</option>
+              }
+            </select>
+          </label>
+        </div>
+      </footer>
+
+      <p class="lr-footnote">
+        <lucide-angular [img]="InfoIcon" size="14" [strokeWidth]="2"></lucide-angular>
+        Weights are learned on standardized features. Positive coefficients increase the predicted
+        score; negative coefficients decrease it.
+      </p>
+    </div>
+
+    <aside class="lr-side">
+      <div class="panel lr-chart-panel">
+        <header class="lr-chart-head">
+          <h3 class="lr-side-title">Top Coefficients</h3>
+          <div class="lr-chart-toggle">
+            <button
+              type="button"
+              class="lr-chip"
+              [class.active]="chartDirection() === 'positive'"
+              (click)="setChartDirection('positive')"
+            >
+              Positive
+            </button>
+            <button
+              type="button"
+              class="lr-chip"
+              [class.active]="chartDirection() === 'negative'"
+              (click)="setChartDirection('negative')"
+            >
+              Negative
+            </button>
+          </div>
+        </header>
+
+        <div class="lr-chart">
+          @for (row of chartFeatures(); track row.name) {
+            <div class="lr-chart-row">
+              <span class="lr-chart-label">{{ row.name }}</span>
+              <div class="lr-chart-track">
+                <span
+                  class="lr-chart-bar"
+                  [class.positive]="row.weight >= 0"
+                  [class.negative]="row.weight < 0"
+                  [style.width.%]="impactWidth(row.weight, chartMaxAbs())"
+                ></span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>

@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, shareReplay } from 'rxjs';
 import { DecisionTreeModelService } from './decision-tree-model.service';
+import { LogisticRegressionModelService } from './logistic-regression-model.service';
 import {
   cloneTreeNodes,
   convertDecisionTreeModelToNodes,
@@ -17,14 +18,6 @@ import {
 } from './model-builder.types';
 
 const OTHER_LIBRARY_MODELS: LibraryModel[] = [
-  {
-    id: 'logreg-classifier',
-    name: 'Logistic Regression',
-    version: 'v1.0.0',
-    updated: 'Updated 5d ago',
-    iconKind: 'scatter',
-    type: 'logistic',
-  },
   {
     id: 'risk-classifier',
     name: 'Risk Classifier',
@@ -109,6 +102,7 @@ function placeholderLeaf(
 @Injectable({ providedIn: 'root' })
 export class ModelBuilderService {
   private readonly decisionTreeModel = inject(DecisionTreeModelService);
+  private readonly logisticRegressionModel = inject(LogisticRegressionModelService);
 
   private readonly irisTreeNodes = convertDecisionTreeModelToNodes(
     this.decisionTreeModel.getModel(),
@@ -116,6 +110,7 @@ export class ModelBuilderService {
 
   private readonly libraryModelsSubject = new BehaviorSubject<LibraryModel[]>([
     this.decisionTreeModel.getLibraryEntry(),
+    this.logisticRegressionModel.getLibraryEntry(),
     ...OTHER_LIBRARY_MODELS,
   ]);
   private readonly selectedModelIdSubject = new BehaviorSubject<string>('iris-dt');
