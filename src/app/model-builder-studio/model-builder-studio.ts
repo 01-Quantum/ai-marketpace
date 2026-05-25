@@ -17,10 +17,13 @@ import {
   Pencil,
   Plus,
   ShieldCheck,
+  TrendingUp,
 } from 'lucide-angular';
 import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
 import { DecisionTreeDesigner } from './decision-tree-designer/decision-tree-designer';
-import { DecisionTreeModelService } from './decision-tree-model.service';
+import { IrisDataService } from './iris-data.service';
+import { LinearRegressionDesigner } from './linear-regression-designer/linear-regression-designer';
+import { LinearRegressionModelService } from './linear-regression-model.service';
 import { LogisticRegressionDesigner } from './logistic-regression-designer/logistic-regression-designer';
 import { LogisticRegressionModelService } from './logistic-regression-model.service';
 import { ModelBuilderService } from './model-builder.service';
@@ -31,6 +34,7 @@ const LIBRARY_ICONS: Record<LibraryModel['iconKind'], typeof Network> = {
   tree: Network,
   scatter: ChartScatter,
   shield: ShieldCheck,
+  trending: TrendingUp,
 };
 
 @Component({
@@ -40,6 +44,7 @@ const LIBRARY_ICONS: Record<LibraryModel['iconKind'], typeof Network> = {
     LucideAngularModule,
     AppTopBar,
     DecisionTreeDesigner,
+    LinearRegressionDesigner,
     LogisticRegressionDesigner,
     ModelSidebarPanel,
   ],
@@ -48,8 +53,9 @@ const LIBRARY_ICONS: Record<LibraryModel['iconKind'], typeof Network> = {
 })
 export class ModelBuilderStudio {
   private readonly modelBuilder = inject(ModelBuilderService);
-  private readonly decisionTreeModel = inject(DecisionTreeModelService);
+  private readonly irisData = inject(IrisDataService);
   private readonly logisticRegressionModel = inject(LogisticRegressionModelService);
+  private readonly linearRegressionModel = inject(LinearRegressionModelService);
 
   readonly libraryItems = toSignal(this.modelBuilder.libraryModels$, {
     initialValue: [] as LibraryModel[],
@@ -130,10 +136,15 @@ export class ModelBuilderStudio {
   signOut(): void {}
 
   publishToEnclave(): void {
-    if (this.selectedModel()?.type === 'logistic') {
+    const type = this.selectedModel()?.type;
+    if (type === 'logistic') {
       this.logisticRegressionModel.publishModel();
       return;
     }
-    this.decisionTreeModel.publishTestData();
+    if (type === 'linear') {
+      this.linearRegressionModel.publishModel();
+      return;
+    }
+    this.irisData.publishTestData();
   }
 }

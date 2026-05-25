@@ -1,11 +1,11 @@
-export type ModelType = 'tree' | 'logistic';
+export type ModelType = 'tree' | 'logistic' | 'linear';
 
 export interface LibraryModel {
   id: string;
   name: string;
   version: string;
   updated: string;
-  iconKind: 'tree' | 'scatter' | 'shield';
+  iconKind: 'tree' | 'scatter' | 'shield' | 'trending';
   type: ModelType;
 }
 

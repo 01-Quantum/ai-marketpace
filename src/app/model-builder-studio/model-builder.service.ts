@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, shareReplay } from 'rxjs';
 import { DecisionTreeModelService } from './decision-tree-model.service';
+import { LinearRegressionModelService } from './linear-regression-model.service';
 import { LogisticRegressionModelService } from './logistic-regression-model.service';
 import {
   cloneTreeNodes,
@@ -103,6 +104,7 @@ function placeholderLeaf(
 export class ModelBuilderService {
   private readonly decisionTreeModel = inject(DecisionTreeModelService);
   private readonly logisticRegressionModel = inject(LogisticRegressionModelService);
+  private readonly linearRegressionModel = inject(LinearRegressionModelService);
 
   private readonly irisTreeNodes = convertDecisionTreeModelToNodes(
     this.decisionTreeModel.getModel(),
@@ -110,6 +112,7 @@ export class ModelBuilderService {
 
   private readonly libraryModelsSubject = new BehaviorSubject<LibraryModel[]>([
     this.decisionTreeModel.getLibraryEntry(),
+    this.linearRegressionModel.getLibraryEntry(),
     this.logisticRegressionModel.getLibraryEntry(),
     ...OTHER_LIBRARY_MODELS,
   ]);

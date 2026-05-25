@@ -2,14 +2,10 @@ import {
   DecisionTreeModel,
   DecisionTreeNode,
 } from './decision-tree-model.types';
+import { IRIS_FEATURE_KEYS } from './iris-dataset';
 import { FEATURE_OPTIONS, LeafNode, TreeNode } from './model-builder.types';
 
-const FEATURE_BY_INDEX = [
-  'sepal_length',
-  'sepal_width',
-  'petal_length',
-  'petal_width',
-] as const;
+const FEATURE_BY_INDEX = IRIS_FEATURE_KEYS;
 
 const NODE_WIDTH = 220;
 const VERTICAL_GAP = 160;

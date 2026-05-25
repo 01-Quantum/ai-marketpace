@@ -1,0 +1,215 @@
+.lin-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.lin-formula {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem 1.25rem;
+  padding: 1rem 1.15rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.lin-formula-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--teal);
+}
+
+.lin-formula-head .section-title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.lin-formula-body {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.lin-equation {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.lin-var {
+  color: var(--teal);
+}
+
+.lin-eq {
+  margin: 0 0.35rem;
+  color: var(--muted);
+}
+
+.lin-sum {
+  font-family: 'Georgia', 'Times New Roman', serif;
+}
+
+.lin-target-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  background: rgba(45, 212, 191, 0.08);
+  color: var(--teal);
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.lin-legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem 1rem;
+  margin: 0;
+  font-size: 0.72rem;
+}
+
+.lin-legend div {
+  display: flex;
+  gap: 0.35rem;
+  align-items: baseline;
+}
+
+.lin-legend dt {
+  margin: 0;
+  font-weight: 700;
+  color: var(--teal);
+}
+
+.lin-legend dd {
+  margin: 0;
+  color: var(--muted);
+}
+
+.lin-coefs-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.lin-coefs-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.lin-coefs-head .section-title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.lin-r-squared {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.lin-r-squared lucide-angular {
+  color: var(--teal);
+}
+
+.lin-table-wrap {
+  overflow: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border-soft);
+}
+
+.lin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.lin-table th,
+.lin-table td {
+  padding: 0.6rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.lin-table th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: rgba(7, 10, 18, 0.45);
+  white-space: nowrap;
+}
+
+.lin-table tbody tr:hover {
+  background: rgba(45, 212, 191, 0.04);
+}
+
+.lin-feature-name {
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+}
+
+.lin-table td.positive {
+  color: #2dd4bf;
+}
+
+.lin-table td.negative {
+  color: #f87171;
+}
+
+.lin-impact {
+  width: 100%;
+  min-width: 80px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.lin-impact-bar {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  min-width: 2px;
+}
+
+.lin-impact-bar.positive {
+  background: linear-gradient(90deg, rgba(45, 212, 191, 0.35), #2dd4bf);
+}
+
+.lin-impact-bar.negative {
+  background: linear-gradient(90deg, rgba(248, 113, 113, 0.35), #f87171);
+}
+
+.lin-footnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+@media (max-width: 1100px) {
+  .lin-formula {
+    grid-template-columns: 1fr;
+  }
+}

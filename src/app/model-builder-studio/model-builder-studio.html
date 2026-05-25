@@ -109,6 +109,8 @@
 
     @if (selectedModel()?.type === 'logistic') {
       <app-logistic-regression-designer />
+    } @else if (selectedModel()?.type === 'linear') {
+      <app-linear-regression-designer />
     } @else {
       <app-decision-tree-designer />
     }

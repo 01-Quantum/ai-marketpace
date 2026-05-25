@@ -192,6 +192,41 @@
                 </ol>
               </div>
             }
+
+            @if (lastRunMode() === 'single' && lastLinearResult(); as result) {
+              <div class="result-card">
+                <span class="result-card-label">Predicted {{ linearTarget() }}</span>
+                <div class="prediction-value">
+                  {{ formatNumber(result.value) }}
+                </div>
+              </div>
+
+              <div class="section-block">
+                <span class="form-label">Contributions</span>
+                <div class="batch-table-wrap">
+                  <table class="batch-table results-table">
+                    <thead>
+                      <tr>
+                        <th>Feature</th>
+                        <th>Coef</th>
+                        <th>x</th>
+                        <th>w &middot; x</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of result.contributions; track row.name) {
+                        <tr>
+                          <td>{{ row.name }}</td>
+                          <td>{{ formatSigned(row.weight) }}</td>
+                          <td>{{ formatNumber(row.input, 2) }}</td>
+                          <td>{{ formatSigned(row.contribution) }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            }
           } @else if (inputMode() === 'batch') {
             <div class="section-block">
               <div class="batch-head">
@@ -295,6 +330,37 @@
                 <p class="accuracy-summary">{{ batchAccuracyLabel() }}</p>
               </div>
             }
+
+            @if (lastRunMode() === 'batch' && lastLinearBatchResult(); as batchResult) {
+              <div class="section-block">
+                <span class="form-label">Batch Regression Results</span>
+                <div class="batch-table-wrap">
+                  <table class="batch-table results-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Prediction</th>
+                        <th>Expected</th>
+                        <th>Residual</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of batchResult.rows; track row.id; let i = $index) {
+                        <tr>
+                          <td>{{ i + 1 }}</td>
+                          <td>{{ formatNumber(row.prediction) }}</td>
+                          <td>{{ row.expected }}</td>
+                          <td [class.status-fail]="isLargeResidual(row.residual)">
+                            {{ formatSigned(row.residual) }}
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                <p class="accuracy-summary">{{ batchMaeLabel() }}</p>
+              </div>
+            }
           }
         }
 
@@ -334,6 +400,66 @@
                 </table>
               </div>
               <p class="accuracy-summary">{{ batchAccuracyLabel() }}</p>
+            </div>
+          } @else if (lastRunMode() === 'batch' && lastLinearBatchResult(); as batchResult) {
+            <div class="section-block">
+              <span class="form-label">Batch Regression Results</span>
+              <div class="batch-table-wrap">
+                <table class="batch-table results-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Prediction</th>
+                      <th>Expected</th>
+                      <th>Residual</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of batchResult.rows; track row.id; let i = $index) {
+                      <tr>
+                        <td>{{ i + 1 }}</td>
+                        <td>{{ formatNumber(row.prediction) }}</td>
+                        <td>{{ row.expected }}</td>
+                        <td>{{ formatSigned(row.residual) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <p class="accuracy-summary">{{ batchMaeLabel() }}</p>
+            </div>
+          } @else if (lastRunMode() === 'single' && lastLinearResult(); as result) {
+            <div class="result-card">
+              <span class="result-card-label">Predicted {{ linearTarget() }}</span>
+              <div class="prediction-value">
+                {{ formatNumber(result.value) }}
+              </div>
+            </div>
+
+            <div class="section-block">
+              <span class="form-label">Contributions</span>
+              <div class="batch-table-wrap">
+                <table class="batch-table results-table">
+                  <thead>
+                    <tr>
+                      <th>Feature</th>
+                      <th>Coef</th>
+                      <th>x</th>
+                      <th>w &middot; x</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of result.contributions; track row.name) {
+                      <tr>
+                        <td>{{ row.name }}</td>
+                        <td>{{ formatSigned(row.weight) }}</td>
+                        <td>{{ formatNumber(row.input, 2) }}</td>
+                        <td>{{ formatSigned(row.contribution) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
             </div>
           } @else if (lastRunMode() === 'single' && lastResult(); as result) {
             <div class="result-card">

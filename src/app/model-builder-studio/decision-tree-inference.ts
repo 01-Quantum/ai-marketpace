@@ -1,13 +1,11 @@
+import { DecisionTreeModel, DecisionTreeNode } from './decision-tree-model.types';
+import { formatThresholdDisplay } from './format-threshold';
 import {
   BatchTestResult,
   BatchTestRow,
-  DecisionTreeModel,
-  DecisionTreeNode,
+  IRIS_FEATURE_KEYS,
   batchRowToFeatures,
-} from './decision-tree-model.types';
-import { formatThresholdDisplay } from './format-threshold';
-
-const FEATURE_KEYS = ['sepal_length', 'sepal_width', 'petal_length', 'petal_width'];
+} from './iris-dataset';
 
 export interface DecisionPathStep {
   nodeIndex: number;
@@ -25,7 +23,7 @@ export interface InferenceResult {
 }
 
 function featureKey(model: DecisionTreeModel, index: number): string {
-  return FEATURE_KEYS[index] ?? model.features[index] ?? `feature_${index}`;
+  return IRIS_FEATURE_KEYS[index] ?? model.features[index] ?? `feature_${index}`;
 }
 
 export function predictDecisionTree(
