@@ -13,7 +13,7 @@ import { filter, map, startWith } from 'rxjs';
 export class AppTopBar {
   private readonly router = inject(Router);
 
-  readonly brandTag = input('FHE Enclave');
+  readonly brandTag = input('IronCAP FHE Enclave');
   readonly username = input('alice');
 
   readonly signOut = output<void>();
