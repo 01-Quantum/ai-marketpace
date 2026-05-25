@@ -51,6 +51,13 @@ export class LinearRegressionModelService {
     };
   }
 
+  updateIntercept(intercept: number): void {
+    this.modelSubject.next({
+      ...this.modelSubject.value,
+      intercept,
+    });
+  }
+
   updateCoefficient(index: number, weight: number): void {
     const model = this.modelSubject.value;
     this.modelSubject.next({

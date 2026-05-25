@@ -10,7 +10,11 @@
           [attr.aria-selected]="activeTab() === 'properties'"
           (click)="setTab('properties')"
         >
-          Node Properties
+          @if (selectedModelType() === 'linear') {
+            Model Properties
+          } @else {
+            Node Properties
+          }
         </button>
         <button
           type="button"
@@ -47,7 +51,40 @@
     <div class="sidebar-body">
       @switch (activeTab()) {
         @case ('properties') {
-          @if (selectedNode(); as node) {
+          @if (selectedModelType() === 'linear') {
+            <div class="properties-head-inline">
+              <span class="node-pill">Linear model</span>
+            </div>
+
+            <label class="form-field">
+              <span class="form-label">Intercept (b)</span>
+              <input
+                class="form-input"
+                type="number"
+                step="0.0001"
+                [value]="linearModel().intercept"
+                (change)="onInterceptChange($any($event.target).value)"
+              />
+            </label>
+
+            <div class="section-block">
+              <span class="form-label">Coefficients</span>
+              <div class="feature-inputs">
+                @for (feature of linearModel().features; track feature.name; let i = $index) {
+                  <label class="form-field">
+                    <span class="form-label">{{ feature.name }}</span>
+                    <input
+                      class="form-input"
+                      type="number"
+                      step="0.0001"
+                      [value]="feature.weight"
+                      (change)="onCoefficientChange(i, $any($event.target).value)"
+                    />
+                  </label>
+                }
+              </div>
+            </div>
+          } @else if (selectedNode(); as node) {
             <div class="properties-head-inline">
               <span class="node-pill">Node {{ node.id }}</span>
             </div>

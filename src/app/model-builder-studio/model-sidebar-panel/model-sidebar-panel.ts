@@ -75,6 +75,9 @@ export class ModelSidebarPanel {
 
   readonly selectedModel = toSignal(this.modelBuilder.selectedModel$, { initialValue: null });
   readonly selectedNode = toSignal(this.modelBuilder.selectedNode$, { initialValue: null });
+  readonly linearModel = toSignal(this.linearRegressionModel.model$, {
+    initialValue: this.linearRegressionModel.getModel(),
+  });
 
   readonly selectedModelType = computed<ModelType | null>(
     () => this.selectedModel()?.type ?? null,
@@ -221,6 +224,16 @@ export class ModelSidebarPanel {
   onThresholdChange(value: string): void {
     const threshold = Number.parseFloat(value);
     if (!Number.isNaN(threshold)) this.patchDecision({ threshold });
+  }
+
+  onInterceptChange(value: string): void {
+    const intercept = Number.parseFloat(value);
+    if (!Number.isNaN(intercept)) this.linearRegressionModel.updateIntercept(intercept);
+  }
+
+  onCoefficientChange(index: number, value: string): void {
+    const weight = Number.parseFloat(value);
+    if (!Number.isNaN(weight)) this.linearRegressionModel.updateCoefficient(index, weight);
   }
 
   addNode(): void {
