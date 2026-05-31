@@ -50,6 +50,9 @@ export class LandingPage {
 
   setRole(next: WorkflowRole): void {
     this.role.set(next);
+    if (next === 'model') {
+      this.router.navigate(['/model-builder-studio']);
+    }
   }
 
   selectModel(next: ModelChoice): void {
@@ -57,7 +60,9 @@ export class LandingPage {
   }
 
   continueInference(): void {
-    this.router.navigate(['/data-owner-workspace']);
+    const destination =
+      this.role() === 'model' ? '/model-builder-studio' : '/data-owner-workspace';
+    this.router.navigate([destination]);
   }
 
   signOut(): void {}

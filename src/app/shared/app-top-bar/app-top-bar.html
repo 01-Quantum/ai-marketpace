@@ -1,11 +1,11 @@
 <header class="top-bar">
-  <div class="brand">
+  <a routerLink="/landing-page" class="brand brand-link" aria-label="Go to home">
     <img class="brand-logo-img" src="brand-logo.png" alt="IronCAP AI Marketplace logo" />
     <div class="brand-text">
       <span class="brand-title">01 Quantum AI Marketplace</span>
       <span class="brand-tag">{{ brandTag() }}</span>
     </div>
-  </div>
+  </a>
   <div class="top-bar-right">
     <div class="trust-badge">
       <lucide-angular class="trust-badge-icon" [img]="ShieldCheckIcon" size="16"></lucide-angular>
