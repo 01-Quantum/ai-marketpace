@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { LucideAngularModule, ShieldCheck, User } from 'lucide-angular';
 import { filter, map, startWith } from 'rxjs';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-top-bar',
@@ -12,9 +13,12 @@ import { filter, map, startWith } from 'rxjs';
 })
 export class AppTopBar {
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
 
   readonly brandTag = input('IronCAP FHE Enclave');
-  readonly username = input('alice');
+
+  readonly displayName = this.auth.displayName;
+  readonly isAuthenticated = this.auth.isAuthenticated;
 
   readonly signOut = output<void>();
 
@@ -39,8 +43,10 @@ export class AppTopBar {
   readonly ShieldCheckIcon = ShieldCheck;
   readonly UserIcon = User;
 
-  onSignOut(): void {
+  async onSignOut(): Promise<void> {
+    await this.auth.signOut();
     this.signOut.emit();
+    this.router.navigate(['/landing-page']);
   }
 
   private isStudioRoute(): boolean {

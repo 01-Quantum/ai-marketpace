@@ -17,6 +17,8 @@ import {
   User,
 } from 'lucide-angular';
 import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
+import { AuthDialog } from '../shared/auth-dialog/auth-dialog';
+import { AuthService } from '../shared/auth.service';
 import { WorkflowRole } from '../shared/workflow.types';
 
 export type ModelChoice = 'tree' | 'logistic';
@@ -24,15 +26,19 @@ export type ModelChoice = 'tree' | 'logistic';
 @Component({
   selector: 'app-landing-page',
   standalone: true,
-  imports: [LucideAngularModule, AppTopBar],
+  imports: [LucideAngularModule, AppTopBar, AuthDialog],
   templateUrl: './landing-page.html',
   styleUrl: './landing-page.css',
 })
 export class LandingPage {
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
 
   readonly role = signal<WorkflowRole>('data');
   readonly selectedModel = signal<ModelChoice>('tree');
+
+  readonly authDialogOpen = signal(false);
+  private pendingDestination: string | null = null;
 
   readonly ShieldCheckIcon = ShieldCheck;
   readonly CircleUserRoundIcon = CircleUserRound;
@@ -51,7 +57,7 @@ export class LandingPage {
   setRole(next: WorkflowRole): void {
     this.role.set(next);
     if (next === 'model') {
-      this.router.navigate(['/model-builder-studio']);
+      this.goWithAuth('/model-builder-studio');
     }
   }
 
@@ -62,8 +68,31 @@ export class LandingPage {
   continueInference(): void {
     const destination =
       this.role() === 'model' ? '/model-builder-studio' : '/data-owner-workspace';
-    this.router.navigate([destination]);
+    this.goWithAuth(destination);
   }
 
-  signOut(): void {}
+  onAuthenticated(): void {
+    this.authDialogOpen.set(false);
+    const destination = this.pendingDestination;
+    this.pendingDestination = null;
+    if (destination) this.router.navigate([destination]);
+  }
+
+  onAuthDialogClosed(): void {
+    this.authDialogOpen.set(false);
+    this.pendingDestination = null;
+  }
+
+  async signOut(): Promise<void> {
+    await this.auth.signOut();
+  }
+
+  private goWithAuth(destination: string): void {
+    if (this.auth.isAuthenticated()) {
+      this.router.navigate([destination]);
+      return;
+    }
+    this.pendingDestination = destination;
+    this.authDialogOpen.set(true);
+  }
 }

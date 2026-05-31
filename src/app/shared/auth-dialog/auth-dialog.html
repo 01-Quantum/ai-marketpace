@@ -1,0 +1,74 @@
+<div class="auth-backdrop" (click)="onBackdropClick($event)">
+  <div class="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <button type="button" class="auth-close" aria-label="Close" (click)="close()">
+      <lucide-angular [img]="CloseIcon" size="18" [strokeWidth]="2"></lucide-angular>
+    </button>
+
+    <div class="auth-head">
+      <span class="auth-icon">
+        <lucide-angular [img]="LockIcon" size="22" [strokeWidth]="2"></lucide-angular>
+      </span>
+      <h2 class="auth-title" id="auth-title">Sign in to continue</h2>
+      <p class="auth-sub">Authenticate with your account to access the workspace.</p>
+    </div>
+
+    <form class="auth-form" (ngSubmit)="submit()">
+      <label class="auth-field">
+        <span class="auth-label">Email</span>
+        <input
+          class="auth-input"
+          type="email"
+          name="email"
+          autocomplete="email"
+          placeholder="you@example.com"
+          [ngModel]="email()"
+          (ngModelChange)="onEmailInput($event)"
+          [disabled]="submitting()"
+        />
+      </label>
+
+      <label class="auth-field">
+        <span class="auth-label">Password</span>
+        <div class="auth-password-wrap">
+          <input
+            class="auth-input auth-input-password"
+            [type]="showPassword() ? 'text' : 'password'"
+            name="password"
+            autocomplete="current-password"
+            placeholder="••••••••"
+            [ngModel]="password()"
+            (ngModelChange)="onPasswordInput($event)"
+            [disabled]="submitting()"
+          />
+          <button
+            type="button"
+            class="auth-password-toggle"
+            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            [attr.aria-pressed]="showPassword()"
+            [disabled]="submitting()"
+            (click)="togglePasswordVisibility()"
+          >
+            <lucide-angular
+              [img]="showPassword() ? EyeOffIcon : EyeIcon"
+              size="18"
+              [strokeWidth]="2"
+            ></lucide-angular>
+          </button>
+        </div>
+      </label>
+
+      @if (errorMessage()) {
+        <p class="auth-error">{{ errorMessage() }}</p>
+      }
+
+      <button type="submit" class="auth-submit" [disabled]="submitting()">
+        @if (submitting()) {
+          <lucide-angular class="auth-spinner" [img]="LoaderIcon" size="18" [strokeWidth]="2"></lucide-angular>
+          Signing in…
+        } @else {
+          Sign in
+        }
+      </button>
+    </form>
+  </div>
+</div>

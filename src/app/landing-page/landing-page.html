@@ -201,4 +201,11 @@
       </div>
     </div>
   </footer>
+
+  @if (authDialogOpen()) {
+    <app-auth-dialog
+      (authenticated)="onAuthenticated()"
+      (closed)="onAuthDialogClosed()"
+    />
+  }
 </div>
