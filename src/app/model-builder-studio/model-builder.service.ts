@@ -1,12 +1,10 @@
-import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, shareReplay } from 'rxjs';
+import { Injectable, inject, signal } from '@angular/core';
+import { BehaviorSubject, combineLatest, filter, map, shareReplay, take } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { AuthService } from '../shared/auth.service';
+import { ModelSupabaseService } from './model-supabase.service';
 import { DecisionTreeModelService } from './decision-tree-model.service';
-import { LinearRegressionModelService } from './linear-regression-model.service';
-import { LogisticRegressionModelService } from './logistic-regression-model.service';
-import {
-  cloneTreeNodes,
-  convertDecisionTreeModelToNodes,
-} from './decision-tree-model.mapper';
+import { convertDecisionTreeModelToNodes, cloneTreeNodes } from './decision-tree-model.mapper';
 import { formatThresholdDisplay } from './format-threshold';
 import {
   DecisionNode,
@@ -18,16 +16,11 @@ import {
   TreeNodeView,
 } from './model-builder.types';
 
-const OTHER_LIBRARY_MODELS: LibraryModel[] = [
-  {
-    id: 'risk-classifier',
-    name: 'Risk Classifier',
-    version: 'v0.9.1',
-    updated: 'Updated 1w ago',
-    iconKind: 'shield',
-    type: 'tree',
-  },
-];
+function iconKindForType(type: import('./model-builder.types').ModelType): LibraryModel['iconKind'] {
+  if (type === 'logistic') return 'scatter';
+  if (type === 'linear') return 'trending';
+  return 'tree';
+}
 
 function toNodeView(node: TreeNode): TreeNodeView {
   const title =
@@ -102,26 +95,40 @@ function placeholderLeaf(
 
 @Injectable({ providedIn: 'root' })
 export class ModelBuilderService {
+  private readonly auth = inject(AuthService);
+  private readonly modelSupabase = inject(ModelSupabaseService);
   private readonly decisionTreeModel = inject(DecisionTreeModelService);
-  private readonly logisticRegressionModel = inject(LogisticRegressionModelService);
-  private readonly linearRegressionModel = inject(LinearRegressionModelService);
-
-  private readonly irisTreeNodes = convertDecisionTreeModelToNodes(
+  private readonly defaultTreeNodes = convertDecisionTreeModelToNodes(
     this.decisionTreeModel.getModel(),
   );
 
-  private readonly libraryModelsSubject = new BehaviorSubject<LibraryModel[]>([
-    this.decisionTreeModel.getLibraryEntry(),
-    this.linearRegressionModel.getLibraryEntry(),
-    this.logisticRegressionModel.getLibraryEntry(),
-    ...OTHER_LIBRARY_MODELS,
-  ]);
-  private readonly selectedModelIdSubject = new BehaviorSubject<string>('iris-dt');
+  readonly saving = signal(false);
+  readonly deleting = signal(false);
+  readonly loading = signal(true);
+
+  private readonly libraryModelsSubject = new BehaviorSubject<LibraryModel[]>([]);
+  private readonly selectedModelIdSubject = new BehaviorSubject<string>('');
   private readonly selectedNodeIdSubject = new BehaviorSubject<number>(1);
-  private readonly nodesByModelSubject = new BehaviorSubject<Record<string, TreeNode[]>>({
-    'iris-dt': cloneTreeNodes(this.irisTreeNodes),
-    'risk-classifier': cloneTreeNodes(this.irisTreeNodes),
-  });
+  private readonly nodesByModelSubject = new BehaviorSubject<Record<string, TreeNode[]>>({});
+
+  constructor() {
+    // Wait until AuthService has restored the session before fetching models.
+    // This avoids a race where initLibrary() runs before getSession() resolves.
+    toObservable(this.auth.initialized)
+      .pipe(filter(Boolean), take(1))
+      .subscribe(() => void this.initLibrary());
+  }
+
+  private async initLibrary(): Promise<void> {
+    this.loading.set(true);
+    try {
+      await this.loadRemoteModels();
+      const first = this.libraryModelsSubject.value[0];
+      if (first) this.selectedModelIdSubject.next(first.id);
+    } finally {
+      this.loading.set(false);
+    }
+  }
 
   readonly libraryModels$ = this.libraryModelsSubject.asObservable();
   readonly selectedModelId$ = this.selectedModelIdSubject.asObservable();
@@ -272,6 +279,93 @@ export class ModelBuilderService {
         node.id === leaf.id ? [decision, leftLeaf, rightLeaf] : [node],
       ),
     );
+  }
+
+  /** Save the currently selected model to Supabase. */
+  async saveCurrentModel(modelJson: unknown): Promise<void> {
+    const model = this.libraryModelsSubject.value.find(
+      (m) => m.id === this.selectedModelIdSubject.value,
+    );
+    if (!model) return;
+
+    this.saving.set(true);
+    try {
+      const saved = await this.modelSupabase.saveModel(model.remoteId?.toString() ?? model.id, {
+        model_type: model.type,
+        model_name: model.name,
+        model_json: modelJson,
+      });
+      if (saved) {
+        this.libraryModelsSubject.next(
+          this.libraryModelsSubject.value.map((m) =>
+            m.id === model.id
+              ? { ...m, remoteId: saved.id, isSaved: true, updated: 'Just saved' }
+              : m,
+          ),
+        );
+      }
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  /** Delete the currently selected model from Supabase and remove from library. */
+  async deleteCurrentModel(): Promise<void> {
+    const model = this.libraryModelsSubject.value.find(
+      (m) => m.id === this.selectedModelIdSubject.value,
+    );
+    if (!model) return;
+
+    this.deleting.set(true);
+    try {
+      if (model.remoteId) {
+        await this.modelSupabase.deleteModel(model.remoteId);
+      }
+      const remaining = this.libraryModelsSubject.value.filter((m) => m.id !== model.id);
+      this.libraryModelsSubject.next(remaining);
+      const next = remaining[0];
+      if (next) this.selectModel(next.id);
+    } finally {
+      this.deleting.set(false);
+    }
+  }
+
+  /** Load all models from Supabase and replace the library. */
+  async loadRemoteModels(): Promise<void> {
+    const remoteModels = await this.modelSupabase.loadModels();
+
+    const nodeMap: Record<string, TreeNode[]> = {};
+
+    const entries: LibraryModel[] = remoteModels.map((rm) => {
+      const localId = `remote-${rm.id}`;
+      if (rm.model_type === 'tree') {
+        const json = rm.model_json as { nodes?: TreeNode[] } | null;
+        const nodes = Array.isArray(json?.['nodes']) && (json!['nodes'] as TreeNode[]).length > 0
+          ? (json!['nodes'] as TreeNode[])
+          : cloneTreeNodes(this.defaultTreeNodes);
+        nodeMap[localId] = nodes;
+      }
+      return {
+        id: localId,
+        remoteId: rm.id,
+        name: rm.model_name,
+        version: 'v1.0.0',
+        updated: new Date(rm.updated_at).toLocaleDateString(),
+        iconKind: iconKindForType(rm.model_type),
+        type: rm.model_type,
+        isSaved: true,
+      };
+    });
+
+    if (Object.keys(nodeMap).length > 0) {
+      this.nodesByModelSubject.next({ ...this.nodesByModelSubject.value, ...nodeMap });
+    }
+    this.libraryModelsSubject.next(entries);
+  }
+
+  /** Returns the tree nodes for the currently selected model (for serialisation). */
+  getCurrentNodes(): TreeNode[] {
+    return this.currentNodes();
   }
 
   private currentNodes(): TreeNode[] {

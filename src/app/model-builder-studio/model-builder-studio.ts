@@ -3,10 +3,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import {
   ChartScatter,
   Check,
-  ChevronDown,
   ChevronRight,
   CircleHelp,
-  Info,
+  CloudUpload,
   LucideAngularModule,
   MoreVertical,
   Network,
@@ -16,7 +15,9 @@ import {
   PanelRightOpen,
   Pencil,
   Plus,
+  Save,
   ShieldCheck,
+  Trash2,
   TrendingUp,
 } from 'lucide-angular';
 import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
@@ -60,9 +61,7 @@ export class ModelBuilderStudio {
   readonly libraryItems = toSignal(this.modelBuilder.libraryModels$, {
     initialValue: [] as LibraryModel[],
   });
-  readonly selectedLibraryId = toSignal(this.modelBuilder.selectedModelId$, {
-    initialValue: 'iris-dt',
-  });
+  readonly selectedLibraryId = toSignal(this.modelBuilder.selectedModelId$, { initialValue: '' });
   readonly selectedModel = toSignal(this.modelBuilder.selectedModel$, { initialValue: null });
 
   readonly editingName = signal(false);
@@ -70,13 +69,15 @@ export class ModelBuilderStudio {
   readonly libraryCollapsed = signal(false);
   readonly propertiesCollapsed = signal(false);
 
+  readonly loading = this.modelBuilder.loading;
+  readonly saving = this.modelBuilder.saving;
+  readonly deleting = this.modelBuilder.deleting;
+
   readonly NetworkIcon = Network;
   readonly ShieldCheckIcon = ShieldCheck;
   readonly PlusIcon = Plus;
   readonly MoreVerticalIcon = MoreVertical;
   readonly CircleHelpIcon = CircleHelp;
-  readonly InfoIcon = Info;
-  readonly ChevronDownIcon = ChevronDown;
   readonly ChevronRightIcon = ChevronRight;
   readonly PencilIcon = Pencil;
   readonly CheckIcon = Check;
@@ -84,6 +85,9 @@ export class ModelBuilderStudio {
   readonly PanelLeftOpenIcon = PanelLeftOpen;
   readonly PanelRightCloseIcon = PanelRightClose;
   readonly PanelRightOpenIcon = PanelRightOpen;
+  readonly SaveIcon = Save;
+  readonly Trash2Icon = Trash2;
+  readonly CloudUploadIcon = CloudUpload;
 
   toggleLibrary(): void {
     this.libraryCollapsed.update((value) => !value);
@@ -134,6 +138,23 @@ export class ModelBuilderStudio {
   }
 
   signOut(): void {}
+
+  async saveModel(): Promise<void> {
+    const type = this.selectedModel()?.type;
+    let modelJson: unknown = null;
+    if (type === 'logistic') {
+      modelJson = this.logisticRegressionModel.getModel();
+    } else if (type === 'linear') {
+      modelJson = this.linearRegressionModel.getModel();
+    } else {
+      modelJson = { nodes: this.modelBuilder.getCurrentNodes() };
+    }
+    await this.modelBuilder.saveCurrentModel(modelJson);
+  }
+
+  async deleteModel(): Promise<void> {
+    await this.modelBuilder.deleteCurrentModel();
+  }
 
   publishToEnclave(): void {
     const type = this.selectedModel()?.type;

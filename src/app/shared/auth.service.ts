@@ -10,7 +10,8 @@ import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly supabase: SupabaseClient = createClient(
+  /** Shared Supabase client — reuse this instead of calling createClient() elsewhere. */
+  readonly client: SupabaseClient = createClient(
     environment.supabaseUrl,
     environment.supabaseAnonKey,
   );
@@ -35,19 +36,19 @@ export class AuthService {
 
   constructor() {
     void this.restoreSession();
-    this.supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
+    this.client.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
       this.userSignal.set(session?.user ?? null);
     });
   }
 
   private async restoreSession(): Promise<void> {
-    const { data } = await this.supabase.auth.getSession();
+    const { data } = await this.client.auth.getSession();
     this.userSignal.set(data.session?.user ?? null);
     this.initializedSignal.set(true);
   }
 
   async signInWithPassword(email: string, password: string): Promise<void> {
-    const { data, error } = await this.supabase.auth.signInWithPassword({
+    const { data, error } = await this.client.auth.signInWithPassword({
       email,
       password,
     });
@@ -56,7 +57,7 @@ export class AuthService {
   }
 
   async signOut(): Promise<void> {
-    await this.supabase.auth.signOut();
+    await this.client.auth.signOut();
     this.userSignal.set(null);
   }
 }

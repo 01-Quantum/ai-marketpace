@@ -1,12 +1,17 @@
 export type ModelType = 'tree' | 'logistic' | 'linear';
 
 export interface LibraryModel {
+  /** Local key used within the studio (matches Supabase row id as string for saved models). */
   id: string;
+  /** Supabase row id — present only after the model has been saved to the DB. */
+  remoteId?: number;
   name: string;
   version: string;
   updated: string;
   iconKind: 'tree' | 'scatter' | 'shield' | 'trending';
   type: ModelType;
+  /** Whether this model has been saved/published to Supabase. */
+  isSaved?: boolean;
 }
 
 export interface NodeLayout {

@@ -32,10 +32,40 @@
       }
     </div>
     <div class="toolbar-right">
-      <button type="button" class="btn-help">
-        <lucide-angular [img]="CircleHelpIcon" size="16" [strokeWidth]="1.8"></lucide-angular>
-        How it works
-      </button>
+      <div class="toolbar-actions">
+        <button
+          type="button"
+          class="btn-toolbar-action"
+          title="Save model to Supabase"
+          [disabled]="saving()"
+          (click)="saveModel()"
+        >
+          <lucide-angular [img]="SaveIcon" size="15" [strokeWidth]="2"></lucide-angular>
+          {{ saving() ? 'Saving…' : 'Save' }}
+        </button>
+        <button
+          type="button"
+          class="btn-toolbar-action btn-toolbar-publish"
+          title="Publish to Enclave"
+          (click)="publishToEnclave()"
+        >
+          <lucide-angular [img]="CloudUploadIcon" size="15" [strokeWidth]="2"></lucide-angular>
+          Publish
+        </button>
+        <button
+          type="button"
+          class="btn-toolbar-action btn-toolbar-delete"
+          title="Delete model"
+          [disabled]="deleting()"
+          (click)="deleteModel()"
+        >
+          <lucide-angular [img]="Trash2Icon" size="15" [strokeWidth]="2"></lucide-angular>
+        </button>
+        <button type="button" class="btn-help">
+          <lucide-angular [img]="CircleHelpIcon" size="16" [strokeWidth]="1.8"></lucide-angular>
+          How it works
+        </button>
+      </div>
     </div>
   </div>
 
@@ -73,37 +103,42 @@
       </header>
 
       @if (!libraryCollapsed()) {
-        <p class="library-section-label">Published Models</p>
+        <p class="library-section-label">Your Models</p>
 
-        <ul class="library-list">
-          @for (item of libraryItems(); track item.id) {
-            <li>
-              <button
-                type="button"
-                class="library-item"
-                [class.selected]="selectedLibraryId() === item.id"
-                (click)="selectLibrary(item.id)"
-              >
-                <span class="lib-icon" [class.coral]="item.iconKind === 'scatter'">
-                  <lucide-angular [img]="iconForLibrary(item.iconKind)" size="22" [strokeWidth]="1.6"></lucide-angular>
-                </span>
-                <div class="lib-body">
-                  <p class="lib-name">{{ item.name }}</p>
-                  <p class="lib-meta">{{ item.version }} &middot; {{ item.updated }}</p>
-                  <span class="lib-status">Published</span>
-                </div>
-                <span class="lib-more" aria-hidden="true">
-                  <lucide-angular [img]="MoreVerticalIcon" size="16"></lucide-angular>
-                </span>
-              </button>
-            </li>
-          }
-        </ul>
-
-        <button type="button" class="library-view-all">
-          View All Models
-          <lucide-angular [img]="ChevronRightIcon" size="16" [strokeWidth]="2"></lucide-angular>
-        </button>
+        @if (loading()) {
+          <div class="library-loading">
+            <span class="library-loading-dot"></span>
+            <span class="library-loading-dot"></span>
+            <span class="library-loading-dot"></span>
+          </div>
+        } @else if (libraryItems().length === 0) {
+          <p class="library-empty">No models yet. Click <strong>New Model</strong> to create one.</p>
+        } @else {
+          <ul class="library-list">
+            @for (item of libraryItems(); track item.id) {
+              <li>
+                <button
+                  type="button"
+                  class="library-item"
+                  [class.selected]="selectedLibraryId() === item.id"
+                  (click)="selectLibrary(item.id)"
+                >
+                  <span class="lib-icon" [class.coral]="item.iconKind === 'scatter'">
+                    <lucide-angular [img]="iconForLibrary(item.iconKind)" size="22" [strokeWidth]="1.6"></lucide-angular>
+                  </span>
+                  <div class="lib-body">
+                    <p class="lib-name">{{ item.name }}</p>
+                    <p class="lib-meta">{{ item.version }} &middot; {{ item.updated }}</p>
+                    <span class="lib-status lib-status-saved">Saved</span>
+                  </div>
+                  <span class="lib-more" aria-hidden="true">
+                    <lucide-angular [img]="MoreVerticalIcon" size="16"></lucide-angular>
+                  </span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
       }
     </aside>
 
@@ -121,75 +156,4 @@
     />
   </div>
 
-  <section class="publish-row">
-    <div class="panel publish-panel">
-      <div class="publish-head">
-        <h2 class="section-title">Model Publish Settings</h2>
-        <p class="publish-sub">Configure how your model will be distributed and executed in the enclave.</p>
-      </div>
-      <div class="publish-form">
-        <label class="form-field">
-          <span class="form-label">Version</span>
-          <input class="form-input form-input-sm" type="text" value="1.2.0" />
-        </label>
-        <label class="form-field">
-          <span class="form-label">Visibility</span>
-          <span class="select">
-            <span class="select-value">Private (Enclave Only)</span>
-            <lucide-angular [img]="ChevronDownIcon" size="16" [strokeWidth]="2"></lucide-angular>
-          </span>
-        </label>
-        <label class="form-field">
-          <span class="form-label">Encryption Compatibility</span>
-          <span class="select">
-            <span class="select-value">FHE (CKKS)</span>
-            <lucide-angular [img]="ChevronDownIcon" size="16" [strokeWidth]="2"></lucide-angular>
-          </span>
-        </label>
-        <div class="publish-cta">
-          <button type="button" class="btn-publish" (click)="publishToEnclave()">
-            <lucide-angular [img]="ShieldCheckIcon" size="16" [strokeWidth]="2"></lucide-angular>
-            Publish to Enclave
-          </button>
-          <p class="publish-hint">Model will be encrypted and deployed</p>
-        </div>
-      </div>
-    </div>
-
-    <aside class="panel note-panel">
-      <header class="note-head">
-        <lucide-angular [img]="InfoIcon" size="16" [strokeWidth]="2"></lucide-angular>
-        <h3 class="note-title">Model Owner Note</h3>
-      </header>
-      <p class="note-body">
-        The model owner can design the model structure, but inference still runs on encrypted user data.
-      </p>
-    </aside>
-  </section>
-
-  <footer class="bottom-bar">
-    <div class="bottom-col">
-      <lucide-angular class="bottom-icon" [img]="NetworkIcon" size="22"></lucide-angular>
-      <div>
-        <span class="bottom-title">Interpretable model</span>
-        <span class="bottom-desc">Easy to understand and explain</span>
-      </div>
-    </div>
-    <div class="bottom-divider"></div>
-    <div class="bottom-col">
-      <lucide-angular class="bottom-icon" [img]="ShieldCheckIcon" size="22"></lucide-angular>
-      <div>
-        <span class="bottom-title">FHE-compatible</span>
-        <span class="bottom-desc">Works with Fully Homomorphic Encryption</span>
-      </div>
-    </div>
-    <div class="bottom-divider"></div>
-    <div class="bottom-col">
-      <lucide-angular class="bottom-icon" [img]="ShieldCheckIcon" size="22"></lucide-angular>
-      <div>
-        <span class="bottom-title">Ready for encrypted inference</span>
-        <span class="bottom-desc">Secure. Private. Verifiable.</span>
-      </div>
-    </div>
-  </footer>
 </div>
