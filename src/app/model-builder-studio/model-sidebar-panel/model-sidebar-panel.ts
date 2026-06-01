@@ -59,7 +59,7 @@ export class ModelSidebarPanel {
   readonly collapsed = input(false);
   readonly collapseToggle = output<void>();
 
-  readonly activeTab = signal<SidebarTab>('test-data');
+  readonly activeTab = signal<SidebarTab>('properties');
   readonly inputMode = signal<InputMode>('single');
   readonly featureValues = signal<number[]>(defaultIrisSample());
   readonly lastResult = signal<InferenceResult | null>(null);
