@@ -10,7 +10,7 @@ export interface LibraryModel {
   updated: string;
   iconKind: 'tree' | 'scatter' | 'shield' | 'trending';
   type: ModelType;
-  /** Whether this model has been saved/published to Supabase. */
+  /** Whether the model matches the last saved Supabase state. */
   isSaved?: boolean;
 }
 

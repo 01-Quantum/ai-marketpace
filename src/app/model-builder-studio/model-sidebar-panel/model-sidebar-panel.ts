@@ -280,12 +280,18 @@ export class ModelSidebarPanel {
 
   onInterceptChange(value: string): void {
     const intercept = Number.parseFloat(value);
-    if (!Number.isNaN(intercept)) this.linearRegressionModel.updateIntercept(intercept);
+    if (!Number.isNaN(intercept)) {
+      this.linearRegressionModel.updateIntercept(intercept);
+      this.modelBuilder.markCurrentModelDirty();
+    }
   }
 
   onCoefficientChange(index: number, value: string): void {
     const weight = Number.parseFloat(value);
-    if (!Number.isNaN(weight)) this.linearRegressionModel.updateCoefficient(index, weight);
+    if (!Number.isNaN(weight)) {
+      this.linearRegressionModel.updateCoefficient(index, weight);
+      this.modelBuilder.markCurrentModelDirty();
+    }
   }
 
   addNode(): void {

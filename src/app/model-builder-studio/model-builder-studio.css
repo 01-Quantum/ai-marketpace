@@ -375,6 +375,11 @@
   color: var(--green);
 }
 
+.lib-status-unsaved {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+}
+
 .lib-status-local {
   background: rgba(148, 163, 184, 0.12);
   color: var(--muted);

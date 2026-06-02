@@ -129,7 +129,11 @@
                   <div class="lib-body">
                     <p class="lib-name">{{ item.name }}</p>
                     <p class="lib-meta">{{ item.version }} &middot; {{ item.updated }}</p>
-                    <span class="lib-status lib-status-saved">Saved</span>
+                    @if (item.isSaved !== false) {
+                      <span class="lib-status lib-status-saved">Saved</span>
+                    } @else {
+                      <span class="lib-status lib-status-unsaved">Not Saved</span>
+                    }
                   </div>
                   <span class="lib-more" aria-hidden="true">
                     <lucide-angular [img]="MoreVerticalIcon" size="16"></lucide-angular>

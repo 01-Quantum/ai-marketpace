@@ -192,6 +192,11 @@ export class ModelBuilderService {
         model.id === modelId ? { ...model, name: trimmed } : model,
       ),
     );
+    this.markModelDirty(modelId);
+  }
+
+  markCurrentModelDirty(): void {
+    this.markModelDirty(this.selectedModelIdSubject.value);
   }
 
   selectNode(nodeId: number): void {
@@ -311,9 +316,11 @@ export class ModelBuilderService {
         sample_data: toSampleDataDocument(this.getSampleData()),
       });
       if (saved) {
+        const modelId = model.id;
+        this.originalSampleDataByModel[modelId] = structuredClone(this.getSampleData());
         this.libraryModelsSubject.next(
           this.libraryModelsSubject.value.map((m) =>
-            m.id === model.id
+            m.id === modelId
               ? { ...m, remoteId: saved.id, isSaved: true, updated: 'Just saved' }
               : m,
           ),
@@ -431,6 +438,7 @@ export class ModelBuilderService {
       ...this.sampleDataByModelSubject.value,
       [modelId]: rows,
     });
+    this.markModelDirty(modelId);
   }
 
   /** Returns the tree nodes for the currently selected model (for serialisation). */
@@ -449,5 +457,17 @@ export class ModelBuilderService {
       ...current,
       [modelId]: updater(current[modelId] ?? []),
     });
+    this.markModelDirty(modelId);
+  }
+
+  private markModelDirty(modelId: string): void {
+    if (!modelId) return;
+    this.libraryModelsSubject.next(
+      this.libraryModelsSubject.value.map((model) =>
+        model.id === modelId && model.isSaved !== false
+          ? { ...model, isSaved: false }
+          : model,
+      ),
+    );
   }
 }
