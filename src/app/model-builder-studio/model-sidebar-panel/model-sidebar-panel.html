@@ -294,19 +294,19 @@
                   <thead>
                     <tr>
                       <th>#</th>
-                      @for (field of batchFields; track field) {
+                      @for (field of batchFields(); track field) {
                         <th>{{ field }}</th>
                       }
                     </tr>
                   </thead>
                   <tbody>
-                    @for (row of batchRows(); track row.id; let i = $index) {
+                    @for (row of batchRows(); track selectedModelId() + ':' + row.id; let i = $index) {
                       <tr
                         [class.selected]="selectedBatchRowId() === row.id"
                         (click)="selectBatchRow(row.id)"
                       >
                         <td>{{ i + 1 }}</td>
-                        @for (field of batchFields; track field) {
+                        @for (field of batchFields(); track field) {
                           <td>
                             <input
                               class="batch-cell-input"

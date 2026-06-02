@@ -22,6 +22,7 @@ import {
 } from 'lucide-angular';
 import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
 import { DecisionTreeDesigner } from './decision-tree-designer/decision-tree-designer';
+import { toDecisionTreeDocument } from './decision-tree-document';
 import { IrisDataService } from './iris-data.service';
 import { LinearRegressionDesigner } from './linear-regression-designer/linear-regression-designer';
 import { LinearRegressionModelService } from './linear-regression-model.service';
@@ -147,7 +148,7 @@ export class ModelBuilderStudio {
     } else if (type === 'linear') {
       modelJson = this.linearRegressionModel.getModel();
     } else {
-      modelJson = { nodes: this.modelBuilder.getCurrentNodes() };
+      modelJson = toDecisionTreeDocument(this.modelBuilder.getCurrentNodes());
     }
     await this.modelBuilder.saveCurrentModel(modelJson);
   }

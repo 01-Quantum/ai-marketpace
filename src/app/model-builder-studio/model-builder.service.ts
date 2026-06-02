@@ -3,9 +3,17 @@ import { BehaviorSubject, combineLatest, filter, map, shareReplay, take } from '
 import { toObservable } from '@angular/core/rxjs-interop';
 import { AuthService } from '../shared/auth.service';
 import { ModelSupabaseService } from './model-supabase.service';
-import { DecisionTreeModelService } from './decision-tree-model.service';
-import { convertDecisionTreeModelToNodes, cloneTreeNodes } from './decision-tree-model.mapper';
+import {
+  DEFAULT_DECISION_TREE_NODES,
+  cloneTreeNodes,
+  parseDecisionTreeDocument,
+} from './decision-tree-document';
 import { formatThresholdDisplay } from './format-threshold';
+import {
+  SampleDataRow,
+  parseSampleDataDocument,
+  toSampleDataDocument,
+} from './sample-data.types';
 import {
   DecisionNode,
   FEATURE_OPTIONS,
@@ -97,10 +105,6 @@ function placeholderLeaf(
 export class ModelBuilderService {
   private readonly auth = inject(AuthService);
   private readonly modelSupabase = inject(ModelSupabaseService);
-  private readonly decisionTreeModel = inject(DecisionTreeModelService);
-  private readonly defaultTreeNodes = convertDecisionTreeModelToNodes(
-    this.decisionTreeModel.getModel(),
-  );
 
   readonly saving = signal(false);
   readonly deleting = signal(false);
@@ -110,6 +114,8 @@ export class ModelBuilderService {
   private readonly selectedModelIdSubject = new BehaviorSubject<string>('');
   private readonly selectedNodeIdSubject = new BehaviorSubject<number>(1);
   private readonly nodesByModelSubject = new BehaviorSubject<Record<string, TreeNode[]>>({});
+  private readonly sampleDataByModelSubject = new BehaviorSubject<Record<string, SampleDataRow[]>>({});
+  private readonly originalSampleDataByModel: Record<string, SampleDataRow[]> = {};
 
   constructor() {
     // Wait until AuthService has restored the session before fetching models.
@@ -144,6 +150,14 @@ export class ModelBuilderService {
 
   readonly nodes$ = combineLatest([this.selectedModelIdSubject, this.nodesByModelSubject]).pipe(
     map(([modelId, nodesByModel]) => nodesByModel[modelId] ?? []),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  readonly sampleData$ = combineLatest([
+    this.selectedModelIdSubject,
+    this.sampleDataByModelSubject,
+  ]).pipe(
+    map(([modelId, sampleByModel]) => sampleByModel[modelId] ?? []),
     shareReplay({ bufferSize: 1, refCount: true }),
   );
 
@@ -294,6 +308,7 @@ export class ModelBuilderService {
         model_type: model.type,
         model_name: model.name,
         model_json: modelJson,
+        sample_data: toSampleDataDocument(this.getSampleData()),
       });
       if (saved) {
         this.libraryModelsSubject.next(
@@ -335,16 +350,17 @@ export class ModelBuilderService {
     const remoteModels = await this.modelSupabase.loadModels();
 
     const nodeMap: Record<string, TreeNode[]> = {};
+    const sampleMap: Record<string, SampleDataRow[]> = {};
 
     const entries: LibraryModel[] = remoteModels.map((rm) => {
       const localId = `remote-${rm.id}`;
       if (rm.model_type === 'tree') {
-        const json = rm.model_json as { nodes?: TreeNode[] } | null;
-        const nodes = Array.isArray(json?.['nodes']) && (json!['nodes'] as TreeNode[]).length > 0
-          ? (json!['nodes'] as TreeNode[])
-          : cloneTreeNodes(this.defaultTreeNodes);
-        nodeMap[localId] = nodes;
+        const parsed = parseDecisionTreeDocument(rm.model_json);
+        nodeMap[localId] = parsed ?? cloneTreeNodes(DEFAULT_DECISION_TREE_NODES);
       }
+      const rows = parseSampleDataDocument(rm.sample_data);
+      sampleMap[localId] = rows;
+      this.originalSampleDataByModel[localId] = structuredClone(rows);
       return {
         id: localId,
         remoteId: rm.id,
@@ -360,7 +376,61 @@ export class ModelBuilderService {
     if (Object.keys(nodeMap).length > 0) {
       this.nodesByModelSubject.next({ ...this.nodesByModelSubject.value, ...nodeMap });
     }
+    this.sampleDataByModelSubject.next(sampleMap);
     this.libraryModelsSubject.next(entries);
+  }
+
+  getSampleData(): SampleDataRow[] {
+    return this.sampleDataByModelSubject.value[this.selectedModelIdSubject.value] ?? [];
+  }
+
+  addSampleRow(): void {
+    const modelId = this.selectedModelIdSubject.value;
+    const rows = this.getSampleData();
+    const nextId = Math.max(0, ...rows.map((row) => row.id)) + 1;
+    const template = rows[rows.length - 1];
+    const newRow: SampleDataRow = template
+      ? { ...structuredClone(template), id: nextId }
+      : { id: nextId, sepal_length: 5.0, sepal_width: 3.0, petal_length: 1.4, petal_width: 0.2, expected: 'setosa' };
+    this.setSampleData(modelId, [...rows, newRow]);
+  }
+
+  removeSampleRow(id: number): void {
+    const modelId = this.selectedModelIdSubject.value;
+    const rows = this.getSampleData();
+    if (rows.length <= 1) return;
+    this.setSampleData(
+      modelId,
+      rows.filter((row) => row.id !== id),
+    );
+  }
+
+  updateSampleRow(id: number, field: string, value: string): void {
+    const modelId = this.selectedModelIdSubject.value;
+    const rows = this.getSampleData();
+    this.setSampleData(
+      modelId,
+      rows.map((row) => {
+        if (row.id !== id) return row;
+        if (field === 'expected') return { ...row, expected: value };
+        const parsed = Number.parseFloat(value);
+        if (Number.isNaN(parsed)) return row;
+        return { ...row, [field]: parsed };
+      }),
+    );
+  }
+
+  resetSampleData(): void {
+    const modelId = this.selectedModelIdSubject.value;
+    const original = this.originalSampleDataByModel[modelId] ?? [];
+    this.setSampleData(modelId, structuredClone(original));
+  }
+
+  private setSampleData(modelId: string, rows: SampleDataRow[]): void {
+    this.sampleDataByModelSubject.next({
+      ...this.sampleDataByModelSubject.value,
+      [modelId]: rows,
+    });
   }
 
   /** Returns the tree nodes for the currently selected model (for serialisation). */

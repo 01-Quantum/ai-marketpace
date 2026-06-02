@@ -55,22 +55,17 @@ export interface BatchRegressionResult {
   total: number;
 }
 
-export const IRIS_PUBLISHED_TEST_DATA: BatchTestRow[] = [
-  { id: 1, sepal_length: 5.1, sepal_width: 3.5, petal_length: 1.4, petal_width: 0.2, expected: 'setosa' },
-  { id: 2, sepal_length: 4.9, sepal_width: 3.0, petal_length: 1.4, petal_width: 0.2, expected: 'setosa' },
-  { id: 3, sepal_length: 4.7, sepal_width: 3.2, petal_length: 1.3, petal_width: 0.2, expected: 'setosa' },
-  { id: 4, sepal_length: 6.0, sepal_width: 2.9, petal_length: 4.5, petal_width: 1.5, expected: 'versicolor' },
-  { id: 5, sepal_length: 5.5, sepal_width: 2.4, petal_length: 3.8, petal_width: 1.1, expected: 'versicolor' },
-  { id: 6, sepal_length: 6.3, sepal_width: 3.3, petal_length: 6.0, petal_width: 2.5, expected: 'virginica' },
-  { id: 7, sepal_length: 6.5, sepal_width: 3.0, petal_length: 5.8, petal_width: 2.2, expected: 'virginica' },
-];
-
-export function batchRowToFeatures(row: BatchTestRow): number[] {
+export function batchRowToFeatures(row: {
+  sepal_length: number;
+  sepal_width: number;
+  petal_length: number;
+  petal_width: number;
+}): number[] {
   return [row.sepal_length, row.sepal_width, row.petal_length, row.petal_width];
 }
 
 export function defaultIrisSample(): number[] {
-  return batchRowToFeatures(IRIS_PUBLISHED_TEST_DATA[0]);
+  return [0, 0, 0, 0];
 }
 
 export function irisClassIndex(className: string): number {

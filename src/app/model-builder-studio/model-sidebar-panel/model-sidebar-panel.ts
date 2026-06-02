@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   Check,
@@ -11,17 +11,17 @@ import {
   Trash2,
   Upload,
 } from 'lucide-angular';
-import { DecisionTreeModelService } from '../decision-tree-model.service';
 import { InferenceResult, predictDecisionTree, runBatchTest } from '../decision-tree-inference';
 import { IrisDataService } from '../iris-data.service';
 import {
-  BatchField,
   BatchRegressionResult,
   BatchTestResult,
   BatchTestRow,
   IRIS_FEATURE_NAMES,
+  batchRowToFeatures,
   defaultIrisSample,
 } from '../iris-dataset';
+import { sampleRowFields, SampleDataRow } from '../sample-data.types';
 import {
   predictLinearRegression,
   runLinearRegressionBatch,
@@ -35,14 +35,6 @@ type SidebarTab = 'properties' | 'test-data' | 'results';
 type InputMode = 'single' | 'batch';
 type TestRunMode = 'single' | 'batch';
 
-const BATCH_FIELDS: BatchField[] = [
-  'sepal_length',
-  'sepal_width',
-  'petal_length',
-  'petal_width',
-  'expected',
-];
-
 @Component({
   selector: 'app-model-sidebar-panel',
   standalone: true,
@@ -52,7 +44,6 @@ const BATCH_FIELDS: BatchField[] = [
 })
 export class ModelSidebarPanel {
   private readonly modelBuilder = inject(ModelBuilderService);
-  private readonly decisionTreeModel = inject(DecisionTreeModelService);
   private readonly linearRegressionModel = inject(LinearRegressionModelService);
   private readonly irisData = inject(IrisDataService);
 
@@ -69,12 +60,46 @@ export class ModelSidebarPanel {
   readonly lastRunMode = signal<TestRunMode | null>(null);
   readonly selectedBatchRowId = signal<number | null>(null);
 
-  readonly batchRows = toSignal(this.irisData.publishedTestData$, {
-    initialValue: [] as BatchTestRow[],
+  readonly batchRows = toSignal(this.modelBuilder.sampleData$, {
+    initialValue: [] as SampleDataRow[],
   });
 
   readonly selectedModel = toSignal(this.modelBuilder.selectedModel$, { initialValue: null });
+  readonly selectedModelId = toSignal(this.modelBuilder.selectedModelId$, { initialValue: '' });
   readonly selectedNode = toSignal(this.modelBuilder.selectedNode$, { initialValue: null });
+  readonly treeNodes = toSignal(this.modelBuilder.nodes$, { initialValue: [] });
+
+  readonly batchFields = computed(() => sampleRowFields(this.batchRows()[0]));
+
+  constructor() {
+    effect(() => {
+      const modelId = this.selectedModelId();
+      if (!modelId) return;
+
+      const model = this.selectedModel();
+      const rows = this.modelBuilder.getSampleData();
+
+      if (model && model.type !== 'logistic') {
+        if (rows.length > 0) {
+          const row = rows[0];
+          this.featureValues.set(
+            batchRowToFeatures({
+              sepal_length: Number(row['sepal_length'] ?? 0),
+              sepal_width: Number(row['sepal_width'] ?? 0),
+              petal_length: Number(row['petal_length'] ?? 0),
+              petal_width: Number(row['petal_width'] ?? 0),
+            }),
+          );
+        } else {
+          this.featureValues.set(defaultIrisSample());
+        }
+      }
+
+      this.clearResults();
+      this.selectedBatchRowId.set(null);
+    });
+  }
+
   readonly linearModel = toSignal(this.linearRegressionModel.model$, {
     initialValue: this.linearRegressionModel.getModel(),
   });
@@ -107,7 +132,6 @@ export class ModelSidebarPanel {
 
   readonly modelFeatures = IRIS_FEATURE_NAMES;
   readonly featureOptions = FEATURE_OPTIONS;
-  readonly batchFields = BATCH_FIELDS;
 
   readonly linearTarget = computed(() => this.linearRegressionModel.getModel().target);
 
@@ -160,7 +184,7 @@ export class ModelSidebarPanel {
       );
       this.lastLinearResult.set(result);
     } else {
-      const result = predictDecisionTree(this.decisionTreeModel.getModel(), this.featureValues());
+      const result = predictDecisionTree(this.treeNodes(), this.featureValues());
       this.lastResult.set(result);
     }
     this.lastRunMode.set('single');
@@ -171,10 +195,13 @@ export class ModelSidebarPanel {
     if (!rows.length) return;
     this.clearResults();
     if (this.selectedModelType() === 'linear') {
-      const result = runLinearRegressionBatch(this.linearRegressionModel.getModel(), rows);
+      const result = runLinearRegressionBatch(
+        this.linearRegressionModel.getModel(),
+        rows as unknown as BatchTestRow[],
+      );
       this.lastLinearBatchResult.set(result);
     } else {
-      const result = runBatchTest(this.decisionTreeModel.getModel(), rows);
+      const result = runBatchTest(this.treeNodes(), rows as unknown as BatchTestRow[]);
       this.lastBatchResult.set(result);
     }
     this.lastRunMode.set('batch');
@@ -207,7 +234,7 @@ export class ModelSidebarPanel {
     this.selectedBatchRowId.set(id);
   }
 
-  onBatchCellChange(rowId: number, field: BatchField, value: string): void {
+  onBatchCellChange(rowId: number, field: string, value: string): void {
     this.irisData.updateTestRow(rowId, field, value);
   }
 

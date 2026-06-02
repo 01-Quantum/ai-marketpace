@@ -1,62 +1,34 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-import {
-  BatchField,
-  BatchTestRow,
-  IRIS_PUBLISHED_TEST_DATA,
-} from './iris-dataset';
+import { Injectable, inject } from '@angular/core';
+import { ModelBuilderService } from './model-builder.service';
+import { SampleDataRow } from './sample-data.types';
 
 @Injectable({ providedIn: 'root' })
 export class IrisDataService {
-  private readonly publishedTestDataSubject = new BehaviorSubject<BatchTestRow[]>(
-    structuredClone(IRIS_PUBLISHED_TEST_DATA),
-  );
+  private readonly modelBuilder = inject(ModelBuilderService);
 
-  readonly publishedTestData$ = this.publishedTestDataSubject.asObservable();
+  readonly publishedTestData$ = this.modelBuilder.sampleData$;
 
-  getPublishedTestData(): BatchTestRow[] {
-    return this.publishedTestDataSubject.value;
+  getPublishedTestData(): SampleDataRow[] {
+    return this.modelBuilder.getSampleData();
   }
 
   addTestRow(): void {
-    const rows = this.publishedTestDataSubject.value;
-    const nextId = Math.max(0, ...rows.map((row) => row.id)) + 1;
-    this.publishedTestDataSubject.next([
-      ...rows,
-      {
-        id: nextId,
-        sepal_length: 5.0,
-        sepal_width: 3.0,
-        petal_length: 1.4,
-        petal_width: 0.2,
-        expected: 'setosa',
-      },
-    ]);
+    this.modelBuilder.addSampleRow();
   }
 
   removeTestRow(id: number): void {
-    const rows = this.publishedTestDataSubject.value;
-    if (rows.length <= 1) return;
-    this.publishedTestDataSubject.next(rows.filter((row) => row.id !== id));
+    this.modelBuilder.removeSampleRow(id);
   }
 
-  updateTestRow(id: number, field: BatchField, value: string): void {
-    this.publishedTestDataSubject.next(
-      this.publishedTestDataSubject.value.map((row) => {
-        if (row.id !== id) return row;
-        if (field === 'expected') return { ...row, expected: value };
-        const parsed = Number.parseFloat(value);
-        if (Number.isNaN(parsed)) return row;
-        return { ...row, [field]: parsed };
-      }),
-    );
+  updateTestRow(id: number, field: string, value: string): void {
+    this.modelBuilder.updateSampleRow(id, field, value);
   }
 
   importPublishedTestData(): void {
-    this.publishedTestDataSubject.next(structuredClone(IRIS_PUBLISHED_TEST_DATA));
+    this.modelBuilder.resetSampleData();
   }
 
   publishTestData(): void {
-    this.publishedTestDataSubject.next(structuredClone(this.publishedTestDataSubject.value));
+    // Test data edits are persisted via Save on the model toolbar.
   }
 }

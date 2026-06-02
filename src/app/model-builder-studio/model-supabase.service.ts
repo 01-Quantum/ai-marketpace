@@ -8,6 +8,7 @@ export interface SupabaseModel {
   model_type: ModelType;
   model_name: string;
   model_json: unknown;
+  sample_data: unknown;
   created_at: string;
   updated_at: string;
 }
@@ -16,6 +17,7 @@ export interface SaveModelPayload {
   model_type: ModelType;
   model_name: string;
   model_json: unknown;
+  sample_data?: unknown;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -54,6 +56,7 @@ export class ModelSupabaseService {
           model_name: payload.model_name,
           model_type: payload.model_type,
           model_json: payload.model_json,
+          sample_data: payload.sample_data,
           updated_at: new Date().toISOString(),
         })
         .eq('id', numericId)
