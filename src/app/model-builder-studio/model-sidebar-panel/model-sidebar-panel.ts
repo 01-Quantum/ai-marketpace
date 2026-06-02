@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input, output, signal } from '@ang
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   Check,
+  Download,
   Leaf,
   LucideAngularModule,
   PanelLeftOpen,
@@ -21,7 +22,7 @@ import {
   batchRowToFeatures,
   defaultIrisSample,
 } from '../iris-dataset';
-import { sampleRowFields, SampleDataRow } from '../sample-data.types';
+import { sampleRowFields, SampleDataRow, toSampleDataDocument } from '../sample-data.types';
 import {
   predictLinearRegression,
   runLinearRegressionBatch,
@@ -155,6 +156,7 @@ export class ModelSidebarPanel {
   readonly PlayIcon = Play;
   readonly LeafIcon = Leaf;
   readonly UploadIcon = Upload;
+  readonly DownloadIcon = Download;
   readonly CheckIcon = Check;
 
   setTab(tab: SidebarTab): void {
@@ -221,6 +223,29 @@ export class ModelSidebarPanel {
   importBatchCsv(): void {
     this.irisData.importPublishedTestData();
     this.selectedBatchRowId.set(null);
+  }
+
+  downloadBatchJson(): void {
+    const rows = this.batchRows();
+    if (!rows.length) return;
+
+    const payload = toSampleDataDocument(rows);
+    const json = JSON.stringify(payload, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const modelName = this.selectedModel()?.name ?? 'model';
+    const slug = modelName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    const filename = `${slug || 'model'}-sample-data.json`;
+
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   removeSelectedBatchRow(): void {

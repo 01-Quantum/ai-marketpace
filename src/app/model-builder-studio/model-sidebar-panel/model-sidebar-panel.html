@@ -279,6 +279,15 @@
                   </button>
                   <button
                     type="button"
+                    class="batch-action-btn"
+                    [disabled]="batchRows().length === 0"
+                    (click)="downloadBatchJson()"
+                  >
+                    <lucide-angular [img]="DownloadIcon" size="12" [strokeWidth]="2.2"></lucide-angular>
+                    Download JSON
+                  </button>
+                  <button
+                    type="button"
                     class="batch-action-btn icon-only"
                     aria-label="Delete selected row"
                     [disabled]="selectedBatchRowId() === null"
