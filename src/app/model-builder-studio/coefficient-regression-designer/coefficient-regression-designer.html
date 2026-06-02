@@ -1,35 +1,38 @@
-<section class="panel lr-panel">
-  <div class="lr-formula">
-    <div class="lr-formula-head">
+<section class="panel coef-panel">
+  <div class="coef-formula">
+    <div class="coef-formula-head">
       <lucide-angular [img]="SigmaIcon" size="18" [strokeWidth]="2"></lucide-angular>
       <h2 class="section-title">Model Formula</h2>
     </div>
-    <div class="lr-formula-body">
-      <p class="lr-equation">
-        <span class="lr-var">z</span>
-        <span class="lr-eq">=</span>
-        <span class="lr-var">b</span>
-        <span class="lr-eq">+</span>
-        <span class="lr-sum">&Sigma;<sub>i=1</sub><sup>n</sup> (w<sub>i</sub> &middot; x<sub>i</sub>)</span>
+    <div class="coef-formula-body">
+      <p class="coef-equation">
+        <span class="coef-var">{{ config().outputVar }}</span>
+        <span class="coef-eq">=</span>
+        <span class="coef-var">b</span>
+        <span class="coef-eq">+</span>
+        <span class="coef-sum">&Sigma;<sub>i=1</sub><sup>n</sup> (w<sub>i</sub> &middot; x<sub>i</sub>)</span>
       </p>
-      <span class="lr-feature-badge">{{ totalFeatures() }}+ features</span>
+      <span class="coef-feature-badge">{{ featureBadgeLabel() }}</span>
     </div>
-    <dl class="lr-legend">
-      <div><dt>z</dt><dd>Linear score (log-odds)</dd></div>
-      <div><dt>b</dt><dd>Intercept ({{ formatIntercept(model().intercept) }})</dd></div>
+    <dl class="coef-legend">
+      <div>
+        <dt>{{ config().outputVar }}</dt>
+        <dd>{{ config().outputDescription }}</dd>
+      </div>
+      <div><dt>b</dt><dd>Intercept ({{ formatIntercept(intercept()) }})</dd></div>
       <div><dt>w<sub>i</sub></dt><dd>Feature coefficient</dd></div>
     </dl>
   </div>
 
-  <div class="lr-body">
-    <div class="lr-main panel lr-weights-panel">
-      <header class="lr-weights-head">
+  <div class="coef-body">
+    <div class="coef-main panel coef-weights-panel">
+      <header class="coef-weights-head">
         <h2 class="section-title">Feature Weights</h2>
-        <span class="lr-count">{{ totalFeatures() }} features total</span>
+        <span class="coef-count">{{ totalFeatures() }} features total</span>
       </header>
 
-      <div class="lr-toolbar">
-        <label class="lr-search">
+      <div class="coef-toolbar">
+        <label class="coef-search">
           <lucide-angular [img]="SearchIcon" size="15" [strokeWidth]="2"></lucide-angular>
           <input
             type="search"
@@ -39,10 +42,10 @@
           />
         </label>
 
-        <div class="lr-filters">
+        <div class="coef-filters">
           <button
             type="button"
-            class="lr-chip"
+            class="coef-chip"
             [class.active]="featureFilter() === 'all'"
             (click)="setFilter('all')"
           >
@@ -50,7 +53,7 @@
           </button>
           <button
             type="button"
-            class="lr-chip"
+            class="coef-chip"
             [class.active]="featureFilter() === 'top'"
             (click)="setFilter('top')"
           >
@@ -58,7 +61,7 @@
           </button>
           <button
             type="button"
-            class="lr-chip"
+            class="coef-chip"
             [class.active]="featureFilter() === 'positive'"
             (click)="setFilter('positive')"
           >
@@ -66,7 +69,7 @@
           </button>
           <button
             type="button"
-            class="lr-chip"
+            class="coef-chip"
             [class.active]="featureFilter() === 'negative'"
             (click)="setFilter('negative')"
           >
@@ -74,20 +77,20 @@
           </button>
         </div>
 
-        <div class="lr-actions">
-          <button type="button" class="lr-btn" (click)="exportFeatures()">
+        <div class="coef-actions">
+          <button type="button" class="coef-btn" (click)="exportFeatures()">
             <lucide-angular [img]="DownloadIcon" size="14" [strokeWidth]="2"></lucide-angular>
             Export
           </button>
-          <button type="button" class="lr-btn lr-btn-muted">
+          <button type="button" class="coef-btn coef-btn-muted">
             Columns
             <lucide-angular [img]="ChevronDownIcon" size="14" [strokeWidth]="2"></lucide-angular>
           </button>
         </div>
       </div>
 
-      <div class="lr-table-wrap">
-        <table class="lr-table">
+      <div class="coef-table-wrap">
+        <table class="coef-table">
           <thead>
             <tr>
               <th>Feature</th>
@@ -98,14 +101,14 @@
           <tbody>
             @for (row of pagedFeatures(); track row.name) {
               <tr>
-                <td class="lr-feature-name">{{ row.name }}</td>
+                <td class="coef-feature-name">{{ row.name }}</td>
                 <td [class.positive]="row.weight > 0" [class.negative]="row.weight < 0">
                   {{ formatCoef(row.weight) }}
                 </td>
                 <td>
-                  <div class="lr-impact">
+                  <div class="coef-impact">
                     <span
-                      class="lr-impact-bar"
+                      class="coef-impact-bar"
                       [class.positive]="row.weight >= 0"
                       [class.negative]="row.weight < 0"
                       [style.width.%]="impactWidth(row.weight, maxAbsWeight())"
@@ -118,14 +121,14 @@
         </table>
       </div>
 
-      <footer class="lr-table-foot">
-        <p class="lr-showing">
+      <footer class="coef-table-foot">
+        <p class="coef-showing">
           Showing {{ pagedFeatures().length }} of {{ filteredFeatures().length }} features
         </p>
-        <div class="lr-pagination">
+        <div class="coef-pagination">
           <button
             type="button"
-            class="lr-page-btn"
+            class="coef-page-btn"
             [disabled]="page() <= 1"
             (click)="setPage(page() - 1)"
             aria-label="Previous page"
@@ -135,7 +138,7 @@
           @for (num of pageNumbers(); track num) {
             <button
               type="button"
-              class="lr-page-num"
+              class="coef-page-num"
               [class.active]="page() === num"
               (click)="setPage(num)"
             >
@@ -144,14 +147,14 @@
           }
           <button
             type="button"
-            class="lr-page-btn"
+            class="coef-page-btn"
             [disabled]="page() >= totalPages()"
             (click)="setPage(page() + 1)"
             aria-label="Next page"
           >
             <lucide-angular [img]="ChevronRightIcon" size="14" [strokeWidth]="2"></lucide-angular>
           </button>
-          <label class="lr-page-size">
+          <label class="coef-page-size">
             <select [value]="pageSize()" (change)="setPageSize(+$any($event.target).value)">
               @for (size of pageSizeOptions; track size) {
                 <option [value]="size">{{ size }} / page</option>
@@ -161,21 +164,20 @@
         </div>
       </footer>
 
-      <p class="lr-footnote">
+      <p class="coef-footnote">
         <lucide-angular [img]="InfoIcon" size="14" [strokeWidth]="2"></lucide-angular>
-        Weights are learned on standardized features. Positive coefficients increase the predicted
-        score; negative coefficients decrease it.
+        {{ config().footnote }}
       </p>
     </div>
 
-    <aside class="lr-side">
-      <div class="panel lr-chart-panel">
-        <header class="lr-chart-head">
-          <h3 class="lr-side-title">Top Coefficients</h3>
-          <div class="lr-chart-toggle">
+    <aside class="coef-side">
+      <div class="panel coef-chart-panel">
+        <header class="coef-chart-head">
+          <h3 class="coef-side-title">Top Coefficients</h3>
+          <div class="coef-chart-toggle">
             <button
               type="button"
-              class="lr-chip"
+              class="coef-chip"
               [class.active]="chartDirection() === 'positive'"
               (click)="setChartDirection('positive')"
             >
@@ -183,7 +185,7 @@
             </button>
             <button
               type="button"
-              class="lr-chip"
+              class="coef-chip"
               [class.active]="chartDirection() === 'negative'"
               (click)="setChartDirection('negative')"
             >
@@ -192,13 +194,13 @@
           </div>
         </header>
 
-        <div class="lr-chart">
+        <div class="coef-chart">
           @for (row of chartFeatures(); track row.name) {
-            <div class="lr-chart-row">
-              <span class="lr-chart-label">{{ row.name }}</span>
-              <div class="lr-chart-track">
+            <div class="coef-chart-row">
+              <span class="coef-chart-label">{{ row.name }}</span>
+              <div class="coef-chart-track">
                 <span
-                  class="lr-chart-bar"
+                  class="coef-chart-bar"
                   [class.positive]="row.weight >= 0"
                   [class.negative]="row.weight < 0"
                   [style.width.%]="impactWidth(row.weight, chartMaxAbs())"

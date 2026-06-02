@@ -14,5 +14,3 @@ export interface LinearPrediction {
   value: number;
   contributions: { name: string; weight: number; input: number; contribution: number }[];
 }
-
-export type LinearFeatureFilter = 'all' | 'top' | 'positive' | 'negative';

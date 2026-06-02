@@ -22,4 +22,4 @@ export interface LogisticPrediction {
   classIndex: number;
 }
 
-export type FeatureFilter = 'all' | 'top' | 'positive' | 'negative';
+export type FeatureFilter = import('./coefficient-regression.types').CoefficientFeatureFilter;

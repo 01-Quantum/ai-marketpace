@@ -1,170 +1,40 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  Info,
-  LucideAngularModule,
-  Search,
-  Sigma,
-} from 'lucide-angular';
+import { CoefficientDesignerConfig } from '../coefficient-regression.types';
+import { CoefficientRegressionDesigner } from '../coefficient-regression-designer/coefficient-regression-designer';
 import { LogisticRegressionModelService } from '../logistic-regression-model.service';
-import { FeatureFilter, LogisticFeature } from '../logistic-regression-model.types';
 
-const PAGE_SIZE_OPTIONS = [10, 20, 30] as const;
-
-function formatSigned(value: number, decimals = 3): string {
-  const fixed = value.toFixed(decimals);
-  return value > 0 ? `+${fixed}` : fixed;
-}
-
-function formatPlain(value: number, decimals = 3): string {
-  return value.toFixed(decimals);
-}
+const LOGISTIC_DESIGNER_CONFIG: CoefficientDesignerConfig = {
+  outputVar: 'z',
+  outputDescription: 'Linear score (log-odds)',
+  featureBadgeSuffix: '+',
+  footnote:
+    'Weights are learned on standardized features. Positive coefficients increase the predicted score; negative coefficients decrease it.',
+  exportFileName: 'logistic-coefficients.csv',
+};
 
 @Component({
   selector: 'app-logistic-regression-designer',
   standalone: true,
-  imports: [LucideAngularModule],
-  templateUrl: './logistic-regression-designer.html',
-  styleUrl: './logistic-regression-designer.css',
+  imports: [CoefficientRegressionDesigner],
+  template: `
+    <app-coefficient-regression-designer
+      [features]="coefficientFeatures()"
+      [intercept]="model().intercept"
+      [config]="designerConfig"
+    />
+  `,
 })
 export class LogisticRegressionDesigner {
   private readonly logisticModel = inject(LogisticRegressionModelService);
+
+  readonly designerConfig = LOGISTIC_DESIGNER_CONFIG;
 
   readonly model = toSignal(this.logisticModel.model$, {
     initialValue: this.logisticModel.getModel(),
   });
 
-  readonly searchQuery = signal('');
-  readonly featureFilter = signal<FeatureFilter>('all');
-  readonly page = signal(1);
-  readonly pageSize = signal<(typeof PAGE_SIZE_OPTIONS)[number]>(10);
-  readonly chartDirection = signal<'positive' | 'negative'>('positive');
-
-  readonly SigmaIcon = Sigma;
-  readonly SearchIcon = Search;
-  readonly DownloadIcon = Download;
-  readonly ChevronDownIcon = ChevronDown;
-  readonly InfoIcon = Info;
-  readonly ChevronLeftIcon = ChevronLeft;
-  readonly ChevronRightIcon = ChevronRight;
-
-  readonly features = computed(() => this.model().features);
-
-  readonly filteredFeatures = computed(() => {
-    const query = this.searchQuery().trim().toLowerCase();
-    let rows: LogisticFeature[] = this.features();
-
-    if (query) {
-      rows = rows.filter((row) => row.name.toLowerCase().includes(query));
-    }
-
-    switch (this.featureFilter()) {
-      case 'positive':
-        rows = rows.filter((row) => row.weight > 0);
-        break;
-      case 'negative':
-        rows = rows.filter((row) => row.weight < 0);
-        break;
-      case 'top':
-        rows = [...rows].sort((a, b) => Math.abs(b.weight) - Math.abs(a.weight));
-        break;
-      default:
-        rows = [...rows];
-    }
-
-    if (this.featureFilter() !== 'top') {
-      rows.sort((a, b) => Math.abs(b.weight) - Math.abs(a.weight));
-    }
-
-    return rows;
-  });
-
-  readonly totalFeatures = computed(() => this.model().features.length);
-
-  readonly totalPages = computed(() =>
-    Math.max(1, Math.ceil(this.filteredFeatures().length / this.pageSize())),
+  readonly coefficientFeatures = computed(() =>
+    this.model().features.map(({ name, weight }) => ({ name, weight })),
   );
-
-  readonly pagedFeatures = computed(() => {
-    const start = (this.page() - 1) * this.pageSize();
-    return this.filteredFeatures().slice(start, start + this.pageSize());
-  });
-
-  readonly maxAbsWeight = computed(() => {
-    const rows = this.pagedFeatures();
-    if (!rows.length) return 1;
-    return Math.max(...rows.map((row) => Math.abs(row.weight)), 0.001);
-  });
-
-  readonly chartFeatures = computed(() => {
-    const direction = this.chartDirection();
-    const filtered =
-      direction === 'positive'
-        ? this.features().filter((row) => row.weight > 0)
-        : this.features().filter((row) => row.weight < 0);
-
-    return [...filtered]
-      .sort((a, b) => Math.abs(b.weight) - Math.abs(a.weight))
-      .slice(0, 8);
-  });
-
-  readonly chartMaxAbs = computed(() => {
-    const rows = this.chartFeatures();
-    if (!rows.length) return 1;
-    return Math.max(...rows.map((row) => Math.abs(row.weight)), 0.001);
-  });
-
-  readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
-
-  formatCoef = formatSigned;
-  formatIntercept = formatPlain;
-
-  impactWidth(value: number, max: number): number {
-    return Math.min(100, (Math.abs(value) / max) * 100);
-  }
-
-  setFilter(filter: FeatureFilter): void {
-    this.featureFilter.set(filter);
-    this.page.set(1);
-  }
-
-  onSearchInput(event: Event): void {
-    this.searchQuery.set((event.target as HTMLInputElement).value);
-    this.page.set(1);
-  }
-
-  setPage(next: number): void {
-    const clamped = Math.min(Math.max(1, next), this.totalPages());
-    this.page.set(clamped);
-  }
-
-  setPageSize(size: number): void {
-    this.pageSize.set(size as (typeof PAGE_SIZE_OPTIONS)[number]);
-    this.page.set(1);
-  }
-
-  setChartDirection(direction: 'positive' | 'negative'): void {
-    this.chartDirection.set(direction);
-  }
-
-  exportFeatures(): void {
-    const header = ['Feature', 'Coef'];
-    const lines = this.filteredFeatures().map((row) => [row.name, row.weight].join(','));
-    const csv = [header.join(','), ...lines].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = 'feature-weights.csv';
-    anchor.click();
-    URL.revokeObjectURL(url);
-  }
-
-  pageNumbers(): number[] {
-    return Array.from({ length: this.totalPages() }, (_, index) => index + 1);
-  }
 }
