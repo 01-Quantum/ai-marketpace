@@ -1,14 +1,9 @@
 import { findRootNode } from './decision-tree-document';
+import { sampleRowToFeatureInputs } from './decision-tree-features';
 import { formatThresholdDisplay } from './format-threshold';
-import {
-  BatchTestResult,
-  BatchTestRow,
-  IRIS_FEATURE_KEYS,
-  IrisFeatureKey,
-  batchRowToFeatures,
-  irisClassIndex,
-} from './iris-dataset';
+import { BatchTestResult } from './dataset';
 import { DecisionNode, TreeNode } from './model-builder.types';
+import { SampleDataRow } from './sample-data.types';
 
 export interface DecisionPathStep {
   nodeIndex: number;
@@ -25,16 +20,27 @@ export interface InferenceResult {
   path: DecisionPathStep[];
 }
 
-function featureValue(features: number[], feature: string): number {
-  const index = IRIS_FEATURE_KEYS.indexOf(feature as IrisFeatureKey);
-  return index >= 0 ? (features[index] ?? 0) : 0;
+type FeatureInputs = Record<string, number | string>;
+
+function featureValue(inputs: FeatureInputs, feature: string): number {
+  const value = inputs[feature];
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
 }
 
 function leafClassName(label: string): string {
-  return label.replace(/^species\s*=\s*/i, '').trim() || 'unknown';
+  const match = label.match(/^[^=]+=\s*(.+)$/);
+  return match ? match[1].trim() : label.trim() || 'unknown';
 }
 
-export function predictDecisionTree(nodes: TreeNode[], features: number[]): InferenceResult {
+export function predictDecisionTree(
+  nodes: TreeNode[],
+  inputs: FeatureInputs,
+): InferenceResult {
   const byId = new Map(nodes.map((node) => [node.id, node]));
   const root = findRootNode(nodes);
   if (!root) {
@@ -47,7 +53,7 @@ export function predictDecisionTree(nodes: TreeNode[], features: number[]): Infe
 
   while (current.type === 'decision') {
     const decision = current as DecisionNode;
-    const value = featureValue(features, decision.feature);
+    const value = featureValue(inputs, decision.feature);
     const goesLeft = value <= decision.threshold;
     const thresholdLabel = formatThresholdDisplay(decision.threshold);
 
@@ -72,15 +78,15 @@ export function predictDecisionTree(nodes: TreeNode[], features: number[]): Infe
       kind: 'leaf',
       leafLabel: current.label,
     });
-    return { className, classIndex: irisClassIndex(className), path };
+    return { className, classIndex: 0, path };
   }
 
   return { className: 'unknown', classIndex: 0, path };
 }
 
-export function runBatchTest(nodes: TreeNode[], rows: BatchTestRow[]): BatchTestResult {
+export function runBatchTest(nodes: TreeNode[], rows: SampleDataRow[]): BatchTestResult {
   const resultRows = rows.map((row) => {
-    const prediction = predictDecisionTree(nodes, batchRowToFeatures(row));
+    const prediction = predictDecisionTree(nodes, sampleRowToFeatureInputs(row));
     return {
       id: row.id,
       prediction: prediction.className,

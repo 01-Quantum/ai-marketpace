@@ -3,12 +3,12 @@ import { ModelBuilderService } from './model-builder.service';
 import { SampleDataRow } from './sample-data.types';
 
 @Injectable({ providedIn: 'root' })
-export class IrisDataService {
+export class SampleDataService {
   private readonly modelBuilder = inject(ModelBuilderService);
 
-  readonly publishedTestData$ = this.modelBuilder.sampleData$;
+  readonly sampleData$ = this.modelBuilder.sampleData$;
 
-  getPublishedTestData(): SampleDataRow[] {
+  getSampleData(): SampleDataRow[] {
     return this.modelBuilder.getSampleData();
   }
 
@@ -24,8 +24,16 @@ export class IrisDataService {
     this.modelBuilder.updateSampleRow(id, field, value);
   }
 
-  importPublishedTestData(): void {
+  resetSampleData(): void {
     this.modelBuilder.resetSampleData();
+  }
+
+  importSampleData(rows: SampleDataRow[]): void {
+    this.modelBuilder.importSampleData(rows);
+  }
+
+  clearAllTestData(): void {
+    this.modelBuilder.clearAllSampleData();
   }
 
   publishTestData(): void {

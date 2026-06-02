@@ -23,7 +23,7 @@ import {
 import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
 import { DecisionTreeDesigner } from './decision-tree-designer/decision-tree-designer';
 import { toDecisionTreeDocument } from './decision-tree-document';
-import { IrisDataService } from './iris-data.service';
+import { SampleDataService } from './sample-data.service';
 import { LinearRegressionDesigner } from './linear-regression-designer/linear-regression-designer';
 import { LinearRegressionModelService } from './linear-regression-model.service';
 import { LogisticRegressionDesigner } from './logistic-regression-designer/logistic-regression-designer';
@@ -55,7 +55,7 @@ const LIBRARY_ICONS: Record<LibraryModel['iconKind'], typeof Network> = {
 })
 export class ModelBuilderStudio {
   private readonly modelBuilder = inject(ModelBuilderService);
-  private readonly irisData = inject(IrisDataService);
+  private readonly sampleData = inject(SampleDataService);
   private readonly logisticRegressionModel = inject(LogisticRegressionModelService);
   private readonly linearRegressionModel = inject(LinearRegressionModelService);
 
@@ -167,6 +167,6 @@ export class ModelBuilderStudio {
       this.linearRegressionModel.publishModel();
       return;
     }
-    this.irisData.publishTestData();
+    this.sampleData.publishTestData();
   }
 }

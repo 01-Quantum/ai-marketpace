@@ -55,9 +55,3 @@ export interface TreeNodeView {
   width: number;
 }
 
-export const FEATURE_OPTIONS = [
-  'petal_length',
-  'petal_width',
-  'sepal_length',
-  'sepal_width',
-] as const;

@@ -8,6 +8,13 @@ import {
   cloneTreeNodes,
   parseDecisionTreeDocument,
 } from './decision-tree-document';
+import {
+  DEFAULT_LINEAR_REGRESSION_MODEL,
+  cloneLinearRegressionModel,
+  parseLinearRegressionDocument,
+} from './linear-regression-document';
+import { LinearRegressionModel } from './linear-regression-model.types';
+import { collectTreeFeatures, createRandomSampleRow, defaultTreeFeature } from './decision-tree-features';
 import { formatThresholdDisplay } from './format-threshold';
 import {
   SampleDataRow,
@@ -16,7 +23,6 @@ import {
 } from './sample-data.types';
 import {
   DecisionNode,
-  FEATURE_OPTIONS,
   LeafNode,
   LibraryModel,
   TreeEdge,
@@ -114,6 +120,9 @@ export class ModelBuilderService {
   private readonly selectedModelIdSubject = new BehaviorSubject<string>('');
   private readonly selectedNodeIdSubject = new BehaviorSubject<number>(1);
   private readonly nodesByModelSubject = new BehaviorSubject<Record<string, TreeNode[]>>({});
+  private readonly linearModelsByModelSubject = new BehaviorSubject<
+    Record<string, LinearRegressionModel>
+  >({});
   private readonly sampleDataByModelSubject = new BehaviorSubject<Record<string, SampleDataRow[]>>({});
   private readonly originalSampleDataByModel: Record<string, SampleDataRow[]> = {};
 
@@ -161,6 +170,14 @@ export class ModelBuilderService {
     shareReplay({ bufferSize: 1, refCount: true }),
   );
 
+  readonly linearModel$ = combineLatest([
+    this.selectedModelIdSubject,
+    this.linearModelsByModelSubject,
+  ]).pipe(
+    map(([modelId, modelsById]) => modelsById[modelId] ?? DEFAULT_LINEAR_REGRESSION_MODEL),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
   readonly nodeViews$ = this.nodes$.pipe(map((nodes) => nodes.map(toNodeView)));
 
   readonly edges$ = this.nodes$.pipe(map(buildEdges));
@@ -180,6 +197,25 @@ export class ModelBuilderService {
     if (!nodes.some((node) => node.id === this.selectedNodeIdSubject.value)) {
       this.selectedNodeIdSubject.next(nodes[0]?.id ?? this.selectedNodeIdSubject.value);
     }
+  }
+
+  getCurrentLinearModel(): LinearRegressionModel {
+    const modelId = this.selectedModelIdSubject.value;
+    return cloneLinearRegressionModel(
+      this.linearModelsByModelSubject.value[modelId] ?? DEFAULT_LINEAR_REGRESSION_MODEL,
+    );
+  }
+
+  updateCurrentLinearModel(
+    updater: (model: LinearRegressionModel) => LinearRegressionModel,
+  ): void {
+    const modelId = this.selectedModelIdSubject.value;
+    const current = this.getCurrentLinearModel();
+    this.linearModelsByModelSubject.next({
+      ...this.linearModelsByModelSubject.value,
+      [modelId]: updater(current),
+    });
+    this.markModelDirty(modelId);
   }
 
   renameModel(name: string): void {
@@ -272,7 +308,7 @@ export class ModelBuilderService {
     const decision: DecisionNode = {
       id: leaf.id,
       type: 'decision',
-      feature: FEATURE_OPTIONS[0],
+      feature: defaultTreeFeature(nodes, this.getSampleData()),
       threshold: 1,
       leftBranchId: leftId,
       rightBranchId: rightId,
@@ -357,6 +393,7 @@ export class ModelBuilderService {
     const remoteModels = await this.modelSupabase.loadModels();
 
     const nodeMap: Record<string, TreeNode[]> = {};
+    const linearMap: Record<string, LinearRegressionModel> = {};
     const sampleMap: Record<string, SampleDataRow[]> = {};
 
     const entries: LibraryModel[] = remoteModels.map((rm) => {
@@ -364,6 +401,9 @@ export class ModelBuilderService {
       if (rm.model_type === 'tree') {
         const parsed = parseDecisionTreeDocument(rm.model_json);
         nodeMap[localId] = parsed ?? cloneTreeNodes(DEFAULT_DECISION_TREE_NODES);
+      } else if (rm.model_type === 'linear') {
+        const parsed = parseLinearRegressionDocument(rm.model_json);
+        linearMap[localId] = parsed ?? cloneLinearRegressionModel(DEFAULT_LINEAR_REGRESSION_MODEL);
       }
       const rows = parseSampleDataDocument(rm.sample_data);
       sampleMap[localId] = rows;
@@ -383,6 +423,12 @@ export class ModelBuilderService {
     if (Object.keys(nodeMap).length > 0) {
       this.nodesByModelSubject.next({ ...this.nodesByModelSubject.value, ...nodeMap });
     }
+    if (Object.keys(linearMap).length > 0) {
+      this.linearModelsByModelSubject.next({
+        ...this.linearModelsByModelSubject.value,
+        ...linearMap,
+      });
+    }
     this.sampleDataByModelSubject.next(sampleMap);
     this.libraryModelsSubject.next(entries);
   }
@@ -393,12 +439,31 @@ export class ModelBuilderService {
 
   addSampleRow(): void {
     const modelId = this.selectedModelIdSubject.value;
+    const model = this.libraryModelsSubject.value.find((entry) => entry.id === modelId);
     const rows = this.getSampleData();
     const nextId = Math.max(0, ...rows.map((row) => row.id)) + 1;
-    const template = rows[rows.length - 1];
-    const newRow: SampleDataRow = template
-      ? { ...structuredClone(template), id: nextId }
-      : { id: nextId, sepal_length: 5.0, sepal_width: 3.0, petal_length: 1.4, petal_width: 0.2, expected: 'setosa' };
+
+    let newRow: SampleDataRow;
+    if (model?.type === 'tree') {
+      const features = collectTreeFeatures(this.currentNodes());
+      const expected = rows[rows.length - 1]?.expected ?? '';
+      newRow = createRandomSampleRow(features, nextId, expected);
+    } else if (model?.type === 'linear') {
+      const features = this.getCurrentLinearModel().features;
+      if (rows.length > 0) {
+        newRow = { ...structuredClone(rows[rows.length - 1]), id: nextId };
+      } else {
+        newRow = { id: nextId, expected: '' };
+        for (const feature of features) {
+          newRow[feature.name] = 0;
+        }
+      }
+    } else if (rows.length > 0) {
+      newRow = { ...structuredClone(rows[rows.length - 1]), id: nextId };
+    } else {
+      newRow = { id: nextId, expected: '' };
+    }
+
     this.setSampleData(modelId, [...rows, newRow]);
   }
 
@@ -431,6 +496,18 @@ export class ModelBuilderService {
     const modelId = this.selectedModelIdSubject.value;
     const original = this.originalSampleDataByModel[modelId] ?? [];
     this.setSampleData(modelId, structuredClone(original));
+  }
+
+  importSampleData(rows: SampleDataRow[]): void {
+    const modelId = this.selectedModelIdSubject.value;
+    if (!modelId || !rows.length) return;
+    this.setSampleData(modelId, structuredClone(rows));
+  }
+
+  clearAllSampleData(): void {
+    const modelId = this.selectedModelIdSubject.value;
+    if (!modelId) return;
+    this.setSampleData(modelId, []);
   }
 
   private setSampleData(modelId: string, rows: SampleDataRow[]): void {

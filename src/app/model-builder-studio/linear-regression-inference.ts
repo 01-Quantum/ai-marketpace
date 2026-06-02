@@ -1,11 +1,10 @@
 import {
   BatchRegressionResult,
-  BatchTestRow,
-  IRIS_CLASSES,
-  batchRowToFeatures,
-  irisClassIndex,
-} from './iris-dataset';
+  batchRowToFeatureVector,
+  parseExpectedValue,
+} from './dataset';
 import { LinearPrediction, LinearRegressionModel } from './linear-regression-model.types';
+import { SampleDataRow } from './sample-data.types';
 
 export function predictLinearRegression(
   model: LinearRegressionModel,
@@ -29,11 +28,13 @@ export function predictLinearRegression(
 
 export function runLinearRegressionBatch(
   model: LinearRegressionModel,
-  rows: BatchTestRow[],
+  rows: SampleDataRow[],
 ): BatchRegressionResult {
+  const featureKeys = model.features.map((feature) => feature.name);
+
   const resultRows = rows.map((row) => {
-    const prediction = predictLinearRegression(model, batchRowToFeatures(row));
-    const expected = irisClassIndex(row.expected);
+    const prediction = predictLinearRegression(model, batchRowToFeatureVector(row, featureKeys));
+    const expected = parseExpectedValue(row.expected);
     return {
       id: row.id,
       prediction: prediction.value,
@@ -51,6 +52,5 @@ export function runLinearRegressionBatch(
 }
 
 export function describeLinearTarget(model: LinearRegressionModel): string {
-  const classNames = IRIS_CLASSES.join(' / ');
-  return `${model.target} (${classNames})`;
+  return model.target;
 }

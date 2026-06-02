@@ -8,7 +8,7 @@ const LINEAR_DESIGNER_CONFIG: CoefficientDesignerConfig = {
   outputVar: 'y',
   outputDescription: 'Predicted value',
   footnote:
-    'Coefficients are fit on the iris dataset. Positive coefficients increase the predicted value; negative coefficients decrease it.',
+    'Coefficients are fit on the sample dataset. Positive coefficients increase the predicted value; negative coefficients decrease it.',
   exportFileName: 'linear-coefficients.csv',
 };
 

@@ -1,74 +1,35 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-import { IRIS_FEATURE_KEYS } from './iris-dataset';
-import {
-  LinearFeature,
-  LinearRegressionModel,
-} from './linear-regression-model.types';
-import { LibraryModel } from './model-builder.types';
-
-const MOCK_COEFFICIENTS: Record<(typeof IRIS_FEATURE_KEYS)[number], number> = {
-  sepal_length: -0.1119,
-  sepal_width: -0.0401,
-  petal_length: 0.2278,
-  petal_width: 0.6092,
-};
-
-function buildIrisFeatures(): LinearFeature[] {
-  return IRIS_FEATURE_KEYS.map((key) => ({
-    name: key,
-    weight: MOCK_COEFFICIENTS[key],
-  }));
-}
-
-const IRIS_LINEAR_REGRESSION_MODEL: LinearRegressionModel = {
-  intercept: 0.1865,
-  features: buildIrisFeatures(),
-  target: 'species_index',
-  rSquared: 0.9304,
-};
+import { Injectable, inject } from '@angular/core';
+import { map, shareReplay } from 'rxjs';
+import { ModelBuilderService } from './model-builder.service';
+import { LinearRegressionModel } from './linear-regression-model.types';
 
 @Injectable({ providedIn: 'root' })
 export class LinearRegressionModelService {
-  private readonly modelSubject = new BehaviorSubject<LinearRegressionModel>(
-    structuredClone(IRIS_LINEAR_REGRESSION_MODEL),
+  private readonly modelBuilder = inject(ModelBuilderService);
+
+  readonly model$ = this.modelBuilder.linearModel$.pipe(
+    map((model) => structuredClone(model)),
+    shareReplay({ bufferSize: 1, refCount: true }),
   );
 
-  readonly model$ = this.modelSubject.asObservable();
-
   getModel(): LinearRegressionModel {
-    return this.modelSubject.value;
-  }
-
-  getLibraryEntry(): LibraryModel {
-    return {
-      id: 'iris-linreg',
-      name: 'Iris Linear Regression',
-      version: 'v1.0.0',
-      updated: 'Updated 1d ago',
-      iconKind: 'trending',
-      type: 'linear',
-    };
+    return structuredClone(this.modelBuilder.getCurrentLinearModel());
   }
 
   updateIntercept(intercept: number): void {
-    this.modelSubject.next({
-      ...this.modelSubject.value,
-      intercept,
-    });
+    this.modelBuilder.updateCurrentLinearModel((model) => ({ ...model, intercept }));
   }
 
   updateCoefficient(index: number, weight: number): void {
-    const model = this.modelSubject.value;
-    this.modelSubject.next({
+    this.modelBuilder.updateCurrentLinearModel((model) => ({
       ...model,
       features: model.features.map((feature, i) =>
         i === index ? { ...feature, weight } : feature,
       ),
-    });
+    }));
   }
 
   publishModel(): void {
-    this.modelSubject.next(structuredClone(this.modelSubject.value));
+    // Edits are held in ModelBuilderService until Save.
   }
 }

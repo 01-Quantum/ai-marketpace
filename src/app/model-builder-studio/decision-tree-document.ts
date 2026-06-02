@@ -4,7 +4,7 @@ export interface DecisionTreeDocument {
   nodes: TreeNode[];
 }
 
-/** Default Iris decision tree in the canonical `{ nodes: [...] }` format. */
+/** Default decision tree in the canonical `{ nodes: [...] }` format. */
 export const DEFAULT_DECISION_TREE_NODES: TreeNode[] = [
   {
     id: 1,

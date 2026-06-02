@@ -323,6 +323,20 @@
   cursor: not-allowed;
 }
 
+.batch-file-input {
+  display: none;
+}
+
+.batch-empty {
+  margin: 0;
+  padding: 1.25rem 0.75rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
 .batch-table-wrap {
   overflow-x: auto;
   border-radius: 10px;
