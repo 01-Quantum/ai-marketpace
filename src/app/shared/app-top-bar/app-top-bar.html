@@ -7,6 +7,26 @@
     </div>
   </a>
   <div class="top-bar-right">
+    <div class="role-toggle-compact top-bar-role-toggle" role="group" aria-label="Workflow role">
+      <button
+        type="button"
+        class="role-btn-compact"
+        [class.active]="activeRole() === 'data'"
+        (click)="setRole('data')"
+      >
+        <lucide-angular [img]="UserIcon" size="16" [strokeWidth]="2"></lucide-angular>
+        Data Owner
+      </button>
+      <button
+        type="button"
+        class="role-btn-compact alt"
+        [class.active]="activeRole() === 'model'"
+        (click)="setRole('model')"
+      >
+        <lucide-angular [img]="LandmarkIcon" size="16" [strokeWidth]="2"></lucide-angular>
+        Model Owner
+      </button>
+    </div>
     <div class="trust-badge">
       <lucide-angular class="trust-badge-icon" [img]="ShieldCheckIcon" size="16"></lucide-angular>
       <span>Secure. Private. Verifiable.</span>

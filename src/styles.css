@@ -150,6 +150,10 @@ lucide-angular svg {
   justify-content: flex-end;
 }
 
+.top-bar-role-toggle {
+  flex-shrink: 0;
+}
+
 .trust-badge {
   display: inline-flex;
   align-items: center;
@@ -236,7 +240,7 @@ lucide-angular svg {
 
 .layout-workspace {
   grid-template-areas:
-    'stepper role'
+    'stepper stepper'
     'main sidebar';
   align-items: start;
 }
@@ -248,12 +252,6 @@ lucide-angular svg {
 .layout-workspace .stepper {
   grid-area: stepper;
   min-width: 0;
-}
-
-.layout-workspace .role-toggle-compact {
-  grid-area: role;
-  justify-self: end;
-  align-self: center;
 }
 
 .layout-workspace > .main {
@@ -1049,13 +1047,12 @@ svg.step-icon {
   .layout-workspace {
     grid-template-areas:
       'stepper'
-      'role'
       'main'
       'sidebar';
   }
 
-  .layout-workspace .role-toggle-compact {
-    justify-self: start;
+  .layout-workspace .stepper {
+    grid-column: 1 / -1;
   }
 }
 

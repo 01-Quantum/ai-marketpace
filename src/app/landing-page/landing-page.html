@@ -1,5 +1,9 @@
 <div class="page">
-  <app-top-bar brandTag="FHE Encrypted Enclave" (signOut)="signOut()" />
+  <app-top-bar
+    brandTag="FHE Encrypted Enclave"
+    (signOut)="signOut()"
+    (authRequired)="goWithAuth($event)"
+  />
 
   <div class="layout">
     <main class="main">
@@ -10,26 +14,6 @@
             <p class="hero-sub">
               End-to-end privacy with Fully Homomorphic Encryption (FHE)
             </p>
-          </div>
-          <div class="role-toggle" role="group" aria-label="Workflow role">
-            <button
-              type="button"
-              class="role-btn"
-              [class.active]="role() === 'data'"
-              (click)="setRole('data')"
-            >
-              <lucide-angular [img]="UserIcon" size="22" [strokeWidth]="2.5"></lucide-angular>
-              Data Owner
-            </button>
-            <button
-              type="button"
-              class="role-btn alt"
-              [class.active]="role() === 'model'"
-              (click)="setRole('model')"
-            >
-              <lucide-angular [img]="LandmarkIcon" size="22" [strokeWidth]="2.2"></lucide-angular>
-              Model Owner
-            </button>
           </div>
         </div>
 

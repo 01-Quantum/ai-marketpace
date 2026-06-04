@@ -26,24 +26,3 @@
     }
   }
 </section>
-
-<div class="role-toggle-compact" role="group" aria-label="Workflow role">
-  <button
-    type="button"
-    class="role-btn-compact"
-    [class.active]="role() === 'data'"
-    (click)="setRole('data')"
-  >
-    <lucide-angular [img]="UserIcon" size="16" [strokeWidth]="2"></lucide-angular>
-    Data Owner
-  </button>
-  <button
-    type="button"
-    class="role-btn-compact alt"
-    [class.active]="role() === 'model'"
-    (click)="setRole('model')"
-  >
-    <lucide-angular [img]="LandmarkIcon" size="16" [strokeWidth]="2"></lucide-angular>
-    Model Owner
-  </button>
-</div>
