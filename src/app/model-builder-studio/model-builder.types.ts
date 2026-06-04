@@ -12,6 +12,8 @@ export interface LibraryModel {
   type: ModelType;
   /** Whether the model matches the last saved Supabase state. */
   isSaved?: boolean;
+  /** Whether the model is published to the enclave (from Supabase `published`). */
+  published?: boolean;
 }
 
 export interface NodeLayout {

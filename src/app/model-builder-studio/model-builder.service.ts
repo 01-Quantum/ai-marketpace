@@ -2,18 +2,26 @@ import { Injectable, inject, signal } from '@angular/core';
 import { BehaviorSubject, combineLatest, filter, map, shareReplay, take } from 'rxjs';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { AuthService } from '../shared/auth.service';
-import { ModelSupabaseService } from './model-supabase.service';
+import { ModelSupabaseService, SupabaseModel } from './model-supabase.service';
 import {
   DEFAULT_DECISION_TREE_NODES,
   cloneTreeNodes,
   parseDecisionTreeDocument,
+  toDecisionTreeDocument,
 } from './decision-tree-document';
 import {
   DEFAULT_LINEAR_REGRESSION_MODEL,
   cloneLinearRegressionModel,
   parseLinearRegressionDocument,
 } from './linear-regression-document';
+import {
+  DEFAULT_LOGISTIC_REGRESSION_MODEL,
+  cloneLogisticRegressionModel,
+  parseLogisticRegressionDocument,
+} from './logistic-regression-document';
+import { ModelExportDocument, parseModelExportDocument } from './model-export';
 import { LinearRegressionModel } from './linear-regression-model.types';
+import { LogisticRegressionModel } from './logistic-regression-model.types';
 import { collectTreeFeatures, createRandomSampleRow, defaultTreeFeature } from './decision-tree-features';
 import { formatThresholdDisplay } from './format-threshold';
 import {
@@ -89,6 +97,18 @@ function collectSubtreeIds(nodes: TreeNode[], rootId: number): Set<number> {
   return ids;
 }
 
+function uniqueCloneName(base: string, models: LibraryModel[]): string {
+  const taken = new Set(models.map((model) => model.name));
+  if (!taken.has(base)) return base;
+  let index = 2;
+  while (taken.has(`${base} (${index})`)) index += 1;
+  return `${base} (${index})`;
+}
+
+function newLocalModelId(): string {
+  return `local-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
 function placeholderLeaf(
   id: number,
   parent: DecisionNode,
@@ -114,6 +134,7 @@ export class ModelBuilderService {
 
   readonly saving = signal(false);
   readonly deleting = signal(false);
+  readonly publishing = signal(false);
   readonly loading = signal(true);
 
   private readonly libraryModelsSubject = new BehaviorSubject<LibraryModel[]>([]);
@@ -122,6 +143,9 @@ export class ModelBuilderService {
   private readonly nodesByModelSubject = new BehaviorSubject<Record<string, TreeNode[]>>({});
   private readonly linearModelsByModelSubject = new BehaviorSubject<
     Record<string, LinearRegressionModel>
+  >({});
+  private readonly logisticModelsByModelSubject = new BehaviorSubject<
+    Record<string, LogisticRegressionModel>
   >({});
   private readonly sampleDataByModelSubject = new BehaviorSubject<Record<string, SampleDataRow[]>>({});
   private readonly originalSampleDataByModel: Record<string, SampleDataRow[]> = {};
@@ -178,6 +202,14 @@ export class ModelBuilderService {
     shareReplay({ bufferSize: 1, refCount: true }),
   );
 
+  readonly logisticModel$ = combineLatest([
+    this.selectedModelIdSubject,
+    this.logisticModelsByModelSubject,
+  ]).pipe(
+    map(([modelId, modelsById]) => modelsById[modelId] ?? DEFAULT_LOGISTIC_REGRESSION_MODEL),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
   readonly nodeViews$ = this.nodes$.pipe(map((nodes) => nodes.map(toNodeView)));
 
   readonly edges$ = this.nodes$.pipe(map(buildEdges));
@@ -216,6 +248,151 @@ export class ModelBuilderService {
       [modelId]: updater(current),
     });
     this.markModelDirty(modelId);
+  }
+
+  getCurrentLogisticModel(): LogisticRegressionModel {
+    const modelId = this.selectedModelIdSubject.value;
+    return cloneLogisticRegressionModel(
+      this.logisticModelsByModelSubject.value[modelId] ?? DEFAULT_LOGISTIC_REGRESSION_MODEL,
+    );
+  }
+
+  updateCurrentLogisticModel(
+    updater: (model: LogisticRegressionModel) => LogisticRegressionModel,
+  ): void {
+    const modelId = this.selectedModelIdSubject.value;
+    const current = this.getCurrentLogisticModel();
+    this.logisticModelsByModelSubject.next({
+      ...this.logisticModelsByModelSubject.value,
+      [modelId]: updater(current),
+    });
+    this.markModelDirty(modelId);
+  }
+
+  cloneModel(modelId: string): string | null {
+    const source = this.libraryModelsSubject.value.find((entry) => entry.id === modelId);
+    if (!source) return null;
+
+    const newId = newLocalModelId();
+    const name = uniqueCloneName(`${source.name} (copy)`, this.libraryModelsSubject.value);
+    const cloned: LibraryModel = {
+      id: newId,
+      name,
+      version: source.version,
+      updated: 'Not saved',
+      iconKind: source.iconKind,
+      type: source.type,
+      isSaved: false,
+    };
+
+    const nodesByModel = this.nodesByModelSubject.value;
+    const linearByModel = this.linearModelsByModelSubject.value;
+    const logisticByModel = this.logisticModelsByModelSubject.value;
+    const sampleByModel = this.sampleDataByModelSubject.value;
+
+    if (source.type === 'tree') {
+      const nodes = nodesByModel[modelId] ?? cloneTreeNodes(DEFAULT_DECISION_TREE_NODES);
+      this.nodesByModelSubject.next({
+        ...nodesByModel,
+        [newId]: cloneTreeNodes(nodes),
+      });
+    } else if (source.type === 'linear') {
+      const linear =
+        linearByModel[modelId] ?? cloneLinearRegressionModel(DEFAULT_LINEAR_REGRESSION_MODEL);
+      this.linearModelsByModelSubject.next({
+        ...linearByModel,
+        [newId]: cloneLinearRegressionModel(linear),
+      });
+    } else if (source.type === 'logistic') {
+      const logistic =
+        logisticByModel[modelId] ?? cloneLogisticRegressionModel(DEFAULT_LOGISTIC_REGRESSION_MODEL);
+      this.logisticModelsByModelSubject.next({
+        ...logisticByModel,
+        [newId]: cloneLogisticRegressionModel(logistic),
+      });
+    }
+
+    const sampleRows = sampleByModel[modelId];
+    if (sampleRows) {
+      const copied = structuredClone(sampleRows);
+      this.sampleDataByModelSubject.next({ ...sampleByModel, [newId]: copied });
+      this.originalSampleDataByModel[newId] = structuredClone(copied);
+    }
+
+    this.libraryModelsSubject.next([cloned, ...this.libraryModelsSubject.value]);
+    this.selectModel(newId);
+    return newId;
+  }
+
+  buildExportDocument(modelId: string): ModelExportDocument | null {
+    const model = this.libraryModelsSubject.value.find((entry) => entry.id === modelId);
+    if (!model) return null;
+
+    return {
+      name: model.name,
+      type: model.type,
+      version: model.version,
+      model_json: this.getModelJsonForId(modelId, model.type),
+      sample_data: toSampleDataDocument(this.getSampleDataForModel(modelId)),
+      exported_at: new Date().toISOString(),
+    };
+  }
+
+  /** Import a model from a parsed export document into the local library. */
+  importModelFromExport(doc: ModelExportDocument): string | null {
+    const newId = newLocalModelId();
+    const name = uniqueCloneName(doc.name.trim(), this.libraryModelsSubject.value);
+    const entry: LibraryModel = {
+      id: newId,
+      name,
+      version: doc.version || 'v1.0.0',
+      updated: 'Imported',
+      iconKind: iconKindForType(doc.type),
+      type: doc.type,
+      isSaved: false,
+    };
+
+    if (doc.type === 'tree') {
+      const parsed = parseDecisionTreeDocument(doc.model_json);
+      this.nodesByModelSubject.next({
+        ...this.nodesByModelSubject.value,
+        [newId]: parsed ?? cloneTreeNodes(DEFAULT_DECISION_TREE_NODES),
+      });
+    } else if (doc.type === 'linear') {
+      const parsed = parseLinearRegressionDocument(doc.model_json);
+      this.linearModelsByModelSubject.next({
+        ...this.linearModelsByModelSubject.value,
+        [newId]: parsed ?? cloneLinearRegressionModel(DEFAULT_LINEAR_REGRESSION_MODEL),
+      });
+    } else if (doc.type === 'logistic') {
+      const parsed = parseLogisticRegressionDocument(doc.model_json);
+      this.logisticModelsByModelSubject.next({
+        ...this.logisticModelsByModelSubject.value,
+        [newId]: parsed ?? cloneLogisticRegressionModel(DEFAULT_LOGISTIC_REGRESSION_MODEL),
+      });
+    }
+
+    this.sampleDataByModelSubject.next({
+      ...this.sampleDataByModelSubject.value,
+      [newId]: [],
+    });
+    this.originalSampleDataByModel[newId] = [];
+
+    this.libraryModelsSubject.next([entry, ...this.libraryModelsSubject.value]);
+    this.selectModel(newId);
+    return newId;
+  }
+
+  /** Parse JSON text and import into the library. */
+  importModelFromJsonText(text: string): string | null {
+    try {
+      const json = JSON.parse(text) as unknown;
+      const doc = parseModelExportDocument(json);
+      if (!doc) return null;
+      return this.importModelFromExport(doc);
+    } catch {
+      return null;
+    }
   }
 
   renameModel(name: string): void {
@@ -354,24 +531,67 @@ export class ModelBuilderService {
       if (saved) {
         const modelId = model.id;
         this.originalSampleDataByModel[modelId] = structuredClone(this.getSampleData());
-        this.libraryModelsSubject.next(
-          this.libraryModelsSubject.value.map((m) =>
-            m.id === modelId
-              ? { ...m, remoteId: saved.id, isSaved: true, updated: 'Just saved' }
-              : m,
-          ),
-        );
+        this.applyRemoteModelToLibrary(modelId, saved, 'Just saved');
       }
     } finally {
       this.saving.set(false);
     }
   }
 
-  /** Delete the currently selected model from Supabase and remove from library. */
-  async deleteCurrentModel(): Promise<void> {
+  /** Publish the current model to the enclave (persists latest definition + sample data). */
+  async publishCurrentModel(modelJson: unknown): Promise<boolean> {
     const model = this.libraryModelsSubject.value.find(
       (m) => m.id === this.selectedModelIdSubject.value,
     );
+    if (!model?.remoteId) return false;
+
+    this.publishing.set(true);
+    try {
+      const saved = await this.modelSupabase.setPublished(model.remoteId, true, {
+        model_type: model.type,
+        model_name: model.name,
+        model_json: modelJson,
+        sample_data: toSampleDataDocument(this.getSampleData()),
+      });
+      if (saved) {
+        this.originalSampleDataByModel[model.id] = structuredClone(this.getSampleData());
+        this.applyRemoteModelToLibrary(model.id, saved, 'Published');
+        return true;
+      }
+      return false;
+    } finally {
+      this.publishing.set(false);
+    }
+  }
+
+  /** Unpublish the current model from the enclave. */
+  async unpublishCurrentModel(): Promise<boolean> {
+    const model = this.libraryModelsSubject.value.find(
+      (m) => m.id === this.selectedModelIdSubject.value,
+    );
+    if (!model?.remoteId) return false;
+
+    this.publishing.set(true);
+    try {
+      const saved = await this.modelSupabase.setPublished(model.remoteId, false);
+      if (saved) {
+        this.applyRemoteModelToLibrary(model.id, saved, 'Unpublished');
+        return true;
+      }
+      return false;
+    } finally {
+      this.publishing.set(false);
+    }
+  }
+
+  /** Delete the currently selected model from Supabase and remove from library. */
+  async deleteCurrentModel(): Promise<void> {
+    await this.deleteModelById(this.selectedModelIdSubject.value);
+  }
+
+  /** Delete a model from Supabase (if saved) and remove it from the library. */
+  async deleteModelById(modelId: string): Promise<void> {
+    const model = this.libraryModelsSubject.value.find((entry) => entry.id === modelId);
     if (!model) return;
 
     this.deleting.set(true);
@@ -379,10 +599,15 @@ export class ModelBuilderService {
       if (model.remoteId) {
         await this.modelSupabase.deleteModel(model.remoteId);
       }
-      const remaining = this.libraryModelsSubject.value.filter((m) => m.id !== model.id);
-      this.libraryModelsSubject.next(remaining);
-      const next = remaining[0];
-      if (next) this.selectModel(next.id);
+      this.removeModelFromState(model.id);
+      const remaining = this.libraryModelsSubject.value;
+      if (remaining.length === 0) {
+        this.selectedModelIdSubject.next('');
+        return;
+      }
+      if (this.selectedModelIdSubject.value === model.id) {
+        this.selectModel(remaining[0].id);
+      }
     } finally {
       this.deleting.set(false);
     }
@@ -394,6 +619,7 @@ export class ModelBuilderService {
 
     const nodeMap: Record<string, TreeNode[]> = {};
     const linearMap: Record<string, LinearRegressionModel> = {};
+    const logisticMap: Record<string, LogisticRegressionModel> = {};
     const sampleMap: Record<string, SampleDataRow[]> = {};
 
     const entries: LibraryModel[] = remoteModels.map((rm) => {
@@ -404,6 +630,10 @@ export class ModelBuilderService {
       } else if (rm.model_type === 'linear') {
         const parsed = parseLinearRegressionDocument(rm.model_json);
         linearMap[localId] = parsed ?? cloneLinearRegressionModel(DEFAULT_LINEAR_REGRESSION_MODEL);
+      } else if (rm.model_type === 'logistic') {
+        const parsed = parseLogisticRegressionDocument(rm.model_json);
+        logisticMap[localId] =
+          parsed ?? cloneLogisticRegressionModel(DEFAULT_LOGISTIC_REGRESSION_MODEL);
       }
       const rows = parseSampleDataDocument(rm.sample_data);
       sampleMap[localId] = rows;
@@ -417,6 +647,7 @@ export class ModelBuilderService {
         iconKind: iconKindForType(rm.model_type),
         type: rm.model_type,
         isSaved: true,
+        published: !!rm.published,
       };
     });
 
@@ -429,12 +660,22 @@ export class ModelBuilderService {
         ...linearMap,
       });
     }
+    if (Object.keys(logisticMap).length > 0) {
+      this.logisticModelsByModelSubject.next({
+        ...this.logisticModelsByModelSubject.value,
+        ...logisticMap,
+      });
+    }
     this.sampleDataByModelSubject.next(sampleMap);
     this.libraryModelsSubject.next(entries);
   }
 
   getSampleData(): SampleDataRow[] {
-    return this.sampleDataByModelSubject.value[this.selectedModelIdSubject.value] ?? [];
+    return this.getSampleDataForModel(this.selectedModelIdSubject.value);
+  }
+
+  getSampleDataForModel(modelId: string): SampleDataRow[] {
+    return this.sampleDataByModelSubject.value[modelId] ?? [];
   }
 
   addSampleRow(): void {
@@ -537,14 +778,72 @@ export class ModelBuilderService {
     this.markModelDirty(modelId);
   }
 
+  private applyRemoteModelToLibrary(
+    modelId: string,
+    saved: SupabaseModel,
+    updatedLabel: string,
+  ): void {
+    this.libraryModelsSubject.next(
+      this.libraryModelsSubject.value.map((m) =>
+        m.id === modelId
+          ? {
+              ...m,
+              remoteId: saved.id,
+              isSaved: true,
+              published: !!saved.published,
+              updated: updatedLabel,
+            }
+          : m,
+      ),
+    );
+  }
+
   private markModelDirty(modelId: string): void {
     if (!modelId) return;
     this.libraryModelsSubject.next(
       this.libraryModelsSubject.value.map((model) =>
         model.id === modelId && model.isSaved !== false
-          ? { ...model, isSaved: false }
+          ? { ...model, isSaved: false, updated: 'Unsaved changes' }
           : model,
       ),
     );
+  }
+
+  private getModelJsonForId(modelId: string, type: LibraryModel['type']): unknown {
+    if (type === 'tree') {
+      const nodes = this.nodesByModelSubject.value[modelId] ?? [];
+      return toDecisionTreeDocument(nodes);
+    }
+    if (type === 'linear') {
+      return cloneLinearRegressionModel(
+        this.linearModelsByModelSubject.value[modelId] ?? DEFAULT_LINEAR_REGRESSION_MODEL,
+      );
+    }
+    if (type === 'logistic') {
+      return cloneLogisticRegressionModel(
+        this.logisticModelsByModelSubject.value[modelId] ?? DEFAULT_LOGISTIC_REGRESSION_MODEL,
+      );
+    }
+    return null;
+  }
+
+  private removeModelFromState(modelId: string): void {
+    this.libraryModelsSubject.next(
+      this.libraryModelsSubject.value.filter((entry) => entry.id !== modelId),
+    );
+
+    const { [modelId]: _nodes, ...nodesByModel } = this.nodesByModelSubject.value;
+    this.nodesByModelSubject.next(nodesByModel);
+
+    const { [modelId]: _linear, ...linearByModel } = this.linearModelsByModelSubject.value;
+    this.linearModelsByModelSubject.next(linearByModel);
+
+    const { [modelId]: _logistic, ...logisticByModel } = this.logisticModelsByModelSubject.value;
+    this.logisticModelsByModelSubject.next(logisticByModel);
+
+    const { [modelId]: _sample, ...sampleByModel } = this.sampleDataByModelSubject.value;
+    this.sampleDataByModelSubject.next(sampleByModel);
+
+    delete this.originalSampleDataByModel[modelId];
   }
 }

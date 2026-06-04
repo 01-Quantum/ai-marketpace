@@ -1,4 +1,4 @@
-# IronCAP AI Marketplace
+# 01 Quantum AI Marketplace
 
 **Live app:** [https://01-quantum.github.io/ai-marketpace/](https://01-quantum.github.io/ai-marketpace/)
 

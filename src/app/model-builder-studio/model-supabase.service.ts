@@ -9,6 +9,7 @@ export interface SupabaseModel {
   model_name: string;
   model_json: unknown;
   sample_data: unknown;
+  published: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -84,6 +85,40 @@ export class ModelSupabaseService {
 
     if (error) {
       console.error('insertModel error', error.message);
+      return null;
+    }
+    return data as SupabaseModel;
+  }
+
+  async setPublished(
+    remoteId: number,
+    published: boolean,
+    payload?: SaveModelPayload,
+  ): Promise<SupabaseModel | null> {
+    const userId = this.auth.user()?.id;
+    if (!userId) return null;
+
+    const update: Record<string, unknown> = {
+      published,
+      updated_at: new Date().toISOString(),
+    };
+    if (payload) {
+      update['model_name'] = payload.model_name;
+      update['model_type'] = payload.model_type;
+      update['model_json'] = payload.model_json;
+      update['sample_data'] = payload.sample_data;
+    }
+
+    const { data, error } = await this.db
+      .from('models')
+      .update(update)
+      .eq('id', remoteId)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('setPublished error', error.message);
       return null;
     }
     return data as SupabaseModel;

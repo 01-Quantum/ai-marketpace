@@ -15,7 +15,7 @@ export class AppTopBar {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
 
-  readonly brandTag = input('IronCAP FHE Enclave');
+  readonly brandTag = input('Quantum FHE Enclave');
 
   readonly displayName = this.auth.displayName;
   readonly isAuthenticated = this.auth.isAuthenticated;

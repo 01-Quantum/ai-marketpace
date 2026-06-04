@@ -46,11 +46,13 @@
         <button
           type="button"
           class="btn-toolbar-action btn-toolbar-publish"
-          title="Publish to Enclave"
-          (click)="publishToEnclave()"
+          [class.btn-toolbar-unpublish]="selectedModel()?.published"
+          [title]="selectedModel()?.published ? 'Remove from enclave' : 'Publish to enclave'"
+          [disabled]="!canTogglePublish()"
+          (click)="togglePublish()"
         >
           <lucide-angular [img]="CloudUploadIcon" size="15" [strokeWidth]="2"></lucide-angular>
-          Publish
+          {{ publishing() ? 'Updating…' : publishButtonLabel() }}
         </button>
         <button
           type="button"
@@ -95,9 +97,20 @@
           </button>
         </div>
         @if (!libraryCollapsed()) {
-          <button type="button" class="btn-new-model">
-            <lucide-angular [img]="PlusIcon" size="14" [strokeWidth]="2.2"></lucide-angular>
-            New Model
+          <input
+            #modelUploadInput
+            type="file"
+            accept=".json,application/json"
+            hidden
+            (change)="onModelFileSelected($event)"
+          />
+          <button
+            type="button"
+            class="btn-upload-model"
+            (click)="triggerModelUpload()"
+          >
+            <lucide-angular [img]="UploadIcon" size="14" [strokeWidth]="2.2"></lucide-angular>
+            Upload Model
           </button>
         }
       </header>
@@ -112,33 +125,80 @@
             <span class="library-loading-dot"></span>
           </div>
         } @else if (libraryItems().length === 0) {
-          <p class="library-empty">No models yet. Click <strong>New Model</strong> to create one.</p>
+          <p class="library-empty">No models yet. Click <strong>Upload Model</strong> to import a JSON file.</p>
         } @else {
           <ul class="library-list">
             @for (item of libraryItems(); track item.id) {
-              <li>
-                <button
-                  type="button"
+              <li class="library-list-item">
+                <div
                   class="library-item"
                   [class.selected]="selectedLibraryId() === item.id"
-                  (click)="selectLibrary(item.id)"
                 >
-                  <span class="lib-icon" [class.coral]="item.iconKind === 'scatter'">
-                    <lucide-angular [img]="iconForLibrary(item.iconKind)" size="22" [strokeWidth]="1.6"></lucide-angular>
-                  </span>
-                  <div class="lib-body">
-                    <p class="lib-name">{{ item.name }}</p>
-                    <p class="lib-meta">{{ item.version }} &middot; {{ item.updated }}</p>
-                    @if (item.isSaved !== false) {
-                      <span class="lib-status lib-status-saved">Saved</span>
-                    } @else {
-                      <span class="lib-status lib-status-unsaved">Not Saved</span>
+                  <button
+                    type="button"
+                    class="library-item-main"
+                    (click)="selectLibrary(item.id)"
+                  >
+                    <span class="lib-icon" [class.coral]="item.iconKind === 'scatter'">
+                      <lucide-angular [img]="iconForLibrary(item.iconKind)" size="22" [strokeWidth]="1.6"></lucide-angular>
+                    </span>
+                    <div class="lib-body">
+                      <p class="lib-name">{{ item.name }}</p>
+                      <p class="lib-meta">{{ item.version }} &middot; {{ item.updated }}</p>
+                      @if (item.published) {
+                        <span class="lib-status lib-status-published">Published</span>
+                      } @else if (item.isSaved !== false) {
+                        <span class="lib-status lib-status-saved">Saved</span>
+                      } @else {
+                        <span class="lib-status lib-status-unsaved">Not Saved</span>
+                      }
+                    </div>
+                  </button>
+                  <div class="lib-menu-anchor">
+                    <button
+                      type="button"
+                      class="lib-menu-btn"
+                      [attr.aria-expanded]="openLibraryMenuId() === item.id"
+                      aria-haspopup="menu"
+                      [attr.aria-label]="'Actions for ' + item.name"
+                      (click)="toggleLibraryMenu(item.id, $event)"
+                    >
+                      <lucide-angular [img]="MoreVerticalIcon" size="16"></lucide-angular>
+                    </button>
+                    @if (openLibraryMenuId() === item.id) {
+                      <div class="lib-menu" role="menu" (click)="$event.stopPropagation()">
+                        <button
+                          type="button"
+                          class="lib-menu-item"
+                          role="menuitem"
+                          (click)="cloneLibraryModel(item.id, $event)"
+                        >
+                          <lucide-angular [img]="CopyIcon" size="14" [strokeWidth]="2"></lucide-angular>
+                          Clone
+                        </button>
+                        <button
+                          type="button"
+                          class="lib-menu-item"
+                          role="menuitem"
+                          (click)="exportLibraryModel(item.id, $event)"
+                        >
+                          <lucide-angular [img]="DownloadIcon" size="14" [strokeWidth]="2"></lucide-angular>
+                          Export
+                        </button>
+                        <button
+                          type="button"
+                          class="lib-menu-item lib-menu-item-danger"
+                          role="menuitem"
+                          [disabled]="deleting()"
+                          (click)="deleteLibraryModel(item.id, $event)"
+                        >
+                          <lucide-angular [img]="Trash2Icon" size="14" [strokeWidth]="2"></lucide-angular>
+                          Delete
+                        </button>
+                      </div>
                     }
                   </div>
-                  <span class="lib-more" aria-hidden="true">
-                    <lucide-angular [img]="MoreVerticalIcon" size="16"></lucide-angular>
-                  </span>
-                </button>
+                </div>
               </li>
             }
           </ul>
