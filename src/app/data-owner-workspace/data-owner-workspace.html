@@ -27,27 +27,57 @@
               <lucide-angular class="key-visual-badge" [img]="ShieldCheckIcon" size="14"></lucide-angular>
             </div>
 
-            <dl class="key-info">
-              <div class="key-row">
-                <dt>Key Name</dt>
-                <dd class="key-chip">{{ keyInfo.name }}</dd>
-              </div>
-              <div class="key-row">
-                <dt>Scheme</dt>
-                <dd class="key-chip">{{ keyInfo.scheme }}</dd>
-              </div>
-              <div class="key-row">
-                <dt>Multiplicative Depth</dt>
-                <dd class="key-chip">{{ keyInfo.depth }}</dd>
-              </div>
-              <div class="key-row">
-                <dt>Created</dt>
-                <dd class="key-chip">{{ keyInfo.created }}</dd>
-              </div>
-            </dl>
+            @if (loadingKey()) {
+              <dl class="key-info">
+                <p class="key-empty">
+                  <lucide-angular class="spin" [img]="LoaderIcon" size="16"></lucide-angular>
+                  Loading your key…
+                </p>
+              </dl>
+            } @else if (currentKey(); as key) {
+              <dl class="key-info">
+                <div class="key-row">
+                  <dt>Key Name</dt>
+                  <dd class="key-chip">{{ key.key_name }}</dd>
+                </div>
+                <div class="key-row">
+                  <dt>Scheme</dt>
+                  <dd class="key-chip">{{ key.scheme }}</dd>
+                </div>
+                <div class="key-row">
+                  <dt>Multiplicative Depth</dt>
+                  <dd class="key-chip">{{ key.multiplicative_depth }}</dd>
+                </div>
+                <div class="key-row">
+                  <dt>Created</dt>
+                  <dd class="key-chip">{{ formatCreated(key.created_at) }}</dd>
+                </div>
+              </dl>
+            } @else {
+              <dl class="key-info">
+                <p class="key-empty">No key yet. Generate one to get started.</p>
+              </dl>
+            }
           </div>
 
-          <button type="button" class="btn-primary btn-block" (click)="generateKeyPair()">
+          @if (currentKey(); as key) {
+            <div class="key-actions">
+              <button type="button" class="btn-secondary" (click)="openSelectModal()" [disabled]="busy()">
+                <lucide-angular [img]="ListIcon" size="15" [strokeWidth]="2"></lucide-angular>
+                Select
+              </button>
+              <button type="button" class="btn-secondary" (click)="openEditModal()" [disabled]="busy()">
+                <lucide-angular [img]="PencilIcon" size="15" [strokeWidth]="2"></lucide-angular>
+                Rename
+              </button>
+              <button type="button" class="btn-secondary danger" (click)="deleteKey()" [disabled]="busy()">
+                <lucide-angular [img]="Trash2Icon" size="15" [strokeWidth]="2"></lucide-angular>
+                Delete
+              </button>
+            </div>
+          }
+
+          <button type="button" class="btn-primary btn-block" (click)="openGenerateModal()" [disabled]="busy() || loadingKey()">
             <lucide-angular [img]="KeyRoundIcon" size="18" [strokeWidth]="2"></lucide-angular>
             Generate New Key Pair
           </button>
@@ -249,4 +279,118 @@
       </div>
     </div>
   </footer>
+
+  @if (showKeyModal()) {
+    <div class="key-modal-backdrop" (click)="onModalBackdropClick($event)">
+      <div class="key-modal" role="dialog" aria-modal="true">
+        <header class="key-modal-head">
+          <h3 class="key-modal-title">
+            {{ isEditing() ? 'Rename Key' : 'Generate Key Pair' }}
+          </h3>
+          <button type="button" class="icon-btn" aria-label="Close" (click)="closeKeyModal()" [disabled]="busy()">
+            <lucide-angular [img]="CloseIcon" size="16"></lucide-angular>
+          </button>
+        </header>
+
+        <div class="key-modal-body">
+          <label class="field">
+            <span class="field-label">Key Name</span>
+            <input
+              class="field-input"
+              type="text"
+              placeholder="e.g. alice_key_01"
+              [ngModel]="formName()"
+              (ngModelChange)="formName.set($event)"
+            />
+          </label>
+
+          <label class="field">
+            <span class="field-label">Scheme</span>
+            <input class="field-input" type="text" [value]="formScheme()" disabled />
+          </label>
+
+          <label class="field">
+            <span class="field-label">Multiplicative Depth</span>
+            <input
+              class="field-input"
+              type="number"
+              min="1"
+              [ngModel]="formDepth()"
+              (ngModelChange)="formDepth.set($event)"
+              [disabled]="isEditing()"
+            />
+          </label>
+
+          @if (isEditing()) {
+            <p class="field-hint">Scheme and depth are fixed when the key is generated.</p>
+          }
+
+          @if (keyError()) {
+            <p class="key-modal-error">{{ keyError() }}</p>
+          }
+        </div>
+
+        <footer class="key-modal-foot">
+          <button type="button" class="btn-secondary" (click)="closeKeyModal()" [disabled]="busy()">
+            Cancel
+          </button>
+          <button type="button" class="btn-primary" (click)="saveKey()" [disabled]="busy()">
+            @if (busy()) {
+              <lucide-angular class="spin" [img]="LoaderIcon" size="16"></lucide-angular>
+            }
+            {{ isEditing() ? 'Save' : 'Generate' }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+
+  @if (showSelectModal()) {
+    <div class="key-modal-backdrop" (click)="onSelectBackdropClick($event)">
+      <div class="key-modal key-select-modal" role="dialog" aria-modal="true">
+        <header class="key-modal-head">
+          <h3 class="key-modal-title">Select a Key</h3>
+          <button type="button" class="icon-btn" aria-label="Close" (click)="closeSelectModal()" [disabled]="busy()">
+            <lucide-angular [img]="CloseIcon" size="16"></lucide-angular>
+          </button>
+        </header>
+
+        <div class="key-modal-body">
+          @if (loadingAllKeys()) {
+            <p class="key-empty">
+              <lucide-angular class="spin" [img]="LoaderIcon" size="16"></lucide-angular>
+              Loading keys…
+            </p>
+          } @else if (allKeys().length === 0) {
+            <p class="key-empty">No keys found. Generate one to get started.</p>
+          } @else {
+            <ul class="key-list">
+              @for (key of allKeys(); track key.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="key-list-item"
+                    [class.selected]="key.id === currentKey()?.id"
+                    (click)="selectKey(key)"
+                    [disabled]="busy()"
+                  >
+                    <lucide-angular class="key-list-icon" [img]="KeyRoundIcon" size="18" [strokeWidth]="1.8"></lucide-angular>
+                    <span class="key-list-info">
+                      <span class="key-list-name">{{ key.key_name }}</span>
+                      <span class="key-list-meta">
+                        {{ key.scheme }} · depth {{ key.multiplicative_depth }} · {{ formatCreated(key.created_at) }}
+                      </span>
+                    </span>
+                    @if (key.id === currentKey()?.id) {
+                      <lucide-angular class="key-list-check" [img]="CircleCheckIcon" size="18"></lucide-angular>
+                    }
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+    </div>
+  }
 </div>

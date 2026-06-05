@@ -87,7 +87,8 @@
               "buildTarget": "ai-marketpace:build:production"
             },
             "development": {
-              "buildTarget": "ai-marketpace:build:development"
+              "buildTarget": "ai-marketpace:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

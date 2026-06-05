@@ -60,4 +60,10 @@ export class AuthService {
     await this.client.auth.signOut();
     this.userSignal.set(null);
   }
+
+  /** Current Supabase access token (JWT) for authorizing external API calls. */
+  async getAccessToken(): Promise<string | null> {
+    const { data } = await this.client.auth.getSession();
+    return data.session?.access_token ?? null;
+  }
 }
