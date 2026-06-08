@@ -260,9 +260,30 @@
         <header class="table-head">
           <lucide-angular class="table-head-icon" [img]="DatabaseIcon" size="20"></lucide-angular>
           <h2 class="section-title">Encrypted Datasets</h2>
+          <button
+            type="button"
+            class="icon-btn table-head-refresh"
+            aria-label="Refresh encrypted datasets"
+            (click)="refreshEncryptedDatasets()"
+            [disabled]="loadingDatasets()"
+          >
+            <lucide-angular
+              [class.spin]="loadingDatasets()"
+              [img]="RefreshCwIcon"
+              size="15"
+              [strokeWidth]="2"
+            ></lucide-angular>
+          </button>
         </header>
 
-        @if (datasets().length === 0) {
+        @if (loadingDatasets() && datasets().length === 0) {
+          <p class="datasets-empty">
+            <lucide-angular class="spin" [img]="LoaderIcon" size="14"></lucide-angular>
+            Loading encrypted datasets…
+          </p>
+        } @else if (datasetsError()) {
+          <p class="datasets-error">{{ datasetsError() }}</p>
+        } @else if (datasets().length === 0) {
           <p class="datasets-empty">No encrypted datasets yet. Complete encryption above to see them here.</p>
         } @else {
           <div class="table-wrap" role="table">
@@ -273,18 +294,18 @@
               <span role="columnheader">Submitted To</span>
               <span role="columnheader" class="col-action">Action</span>
             </div>
-            @for (ds of datasets(); track ds.name) {
+            @for (ds of datasets(); track ds.id) {
               <div class="table-row" role="row">
                 <span class="cell-name" role="cell">
                   <lucide-angular [img]="FileTextIcon" size="18" [strokeWidth]="1.6"></lucide-angular>
-                  {{ ds.name }}
+                  {{ ds.source_file_name }}
                 </span>
-                <span role="cell">{{ ds.owner }}</span>
+                <span role="cell">{{ ownerLabel() }}</span>
                 <span class="cell-status" role="cell">
                   <lucide-angular [img]="LockIcon" size="14" [strokeWidth]="2"></lucide-angular>
-                  {{ ds.status }}
+                  Encrypted
                 </span>
-                <span class="cell-muted" role="cell">{{ ds.submittedTo ?? '—' }}</span>
+                <span class="cell-muted" role="cell">{{ ds.model_name }}</span>
                 <span class="cell-actions col-action" role="cell">
                   <button type="button" class="icon-btn" aria-label="View dataset" (click)="viewDataset(ds)">
                     <lucide-angular [img]="EyeIcon" size="16"></lucide-angular>

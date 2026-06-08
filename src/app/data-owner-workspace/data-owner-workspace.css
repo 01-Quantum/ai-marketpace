@@ -712,6 +712,25 @@
   padding: 0.5rem 0 0.15rem;
   font-size: 0.82rem;
   color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.datasets-error {
+  margin: 0;
+  padding: 0.5rem 0 0.15rem;
+  font-size: 0.82rem;
+  color: var(--coral);
+}
+
+.table-head-refresh {
+  margin-left: 0.15rem;
+  color: var(--muted);
+}
+
+.table-head-refresh:hover:not(:disabled) {
+  color: var(--teal);
 }
 
 /* ===== Encrypted datasets table grid ===== */

@@ -20,6 +20,7 @@ import {
   LucideAngularModule,
   Network,
   Pencil,
+  RefreshCw,
   ShieldCheck,
   Trash2,
   User,
@@ -38,6 +39,10 @@ import {
   ModelSupabaseService,
   SupabaseModel,
 } from '../model-builder-studio/model-supabase.service';
+import {
+  FheEncryptedDataset,
+  FheEncryptedDatasetsService,
+} from './fhe-encrypted-datasets.service';
 import { FheKey, FheKeysService } from './fhe-keys.service';
 import { FheEncryptService } from './fhe-encrypt.service';
 import { formatFileSize, validateCsvFile } from './csv-upload';
@@ -46,13 +51,6 @@ function parseOptionalModelId(value: string | null): number | null {
   if (!value) return null;
   const id = Number(value);
   return Number.isInteger(id) && id > 0 ? id : null;
-}
-
-interface EncryptedDataset {
-  name: string;
-  owner: string;
-  status: 'Encrypted';
-  submittedTo: string | null;
 }
 
 @Component({
@@ -67,6 +65,7 @@ export class DataOwnerWorkspace {
   private readonly route = inject(ActivatedRoute);
   private readonly fheKeys = inject(FheKeysService);
   private readonly fheEncrypt = inject(FheEncryptService);
+  private readonly fheEncryptedDatasets = inject(FheEncryptedDatasetsService);
   private readonly auth = inject(AuthService);
   private readonly modelSupabase = inject(ModelSupabaseService);
   private readonly sampleDataDownload = inject(SampleDataDownloadService);
@@ -139,7 +138,18 @@ export class DataOwnerWorkspace {
       !!this.publishedModel(),
   );
 
-  readonly datasets = signal<EncryptedDataset[]>([]);
+  readonly datasets = signal<FheEncryptedDataset[]>([]);
+  readonly loadingDatasets = signal(false);
+  readonly datasetsError = signal('');
+
+  readonly ownerLabel = computed(() => {
+    const slug =
+      (this.auth.displayName() || 'user')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '') || 'user';
+    return slug;
+  });
 
   readonly ShieldCheckIcon = ShieldCheck;
   readonly KeyRoundIcon = KeyRound;
@@ -158,6 +168,7 @@ export class DataOwnerWorkspace {
   readonly ListIcon = List;
   readonly DownloadIcon = Download;
   readonly LoaderIcon = LoaderCircle;
+  readonly RefreshCwIcon = RefreshCw;
   readonly CloseIcon = X;
   readonly UserIcon = User;
 
@@ -169,6 +180,7 @@ export class DataOwnerWorkspace {
       .subscribe(() => {
         void this.refreshLatestKey();
         void this.refreshPublishedModels();
+        void this.refreshEncryptedDatasets();
       });
 
     this.route.queryParamMap.subscribe((params) => {
@@ -179,8 +191,25 @@ export class DataOwnerWorkspace {
       this.selectedPublishedModelId.set(modelId);
       if (this.auth.initialized() && typeChanged) {
         void this.refreshPublishedModels();
+        void this.refreshEncryptedDatasets();
       }
     });
+  }
+
+  async refreshEncryptedDatasets(): Promise<void> {
+    this.loadingDatasets.set(true);
+    this.datasetsError.set('');
+
+    const { datasets, error } = await this.fheEncryptedDatasets.loadByModelType(
+      this.selectedModelType(),
+    );
+    this.datasets.set(datasets);
+
+    if (error) {
+      this.datasetsError.set(`Could not load encrypted datasets: ${error}`);
+    }
+
+    this.loadingDatasets.set(false);
   }
 
   private async refreshPublishedModels(): Promise<void> {
@@ -278,22 +307,8 @@ export class DataOwnerWorkspace {
         return;
       }
 
-      const owner =
-        (this.auth.displayName() || 'user')
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '_')
-          .replace(/^_+|_+$/g, '') || 'user';
-
-      this.datasets.update((list) => [
-        {
-          name: file.name,
-          owner,
-          status: 'Encrypted',
-          submittedTo: model.model_name,
-        },
-        ...list,
-      ]);
       this.encryptSuccess.set(`"${file.name}" encrypted successfully.`);
+      await this.refreshEncryptedDatasets();
       this.selectedCsvFile.set(null);
     } finally {
       this.encrypting.set(false);
@@ -511,10 +526,21 @@ export class DataOwnerWorkspace {
     this.selectedCsvFile.set(file);
   }
 
-  viewDataset(_: EncryptedDataset): void {}
+  viewDataset(_: FheEncryptedDataset): void {}
 
-  deleteDataset(target: EncryptedDataset): void {
-    this.datasets.update((list) => list.filter((ds) => ds !== target));
+  async deleteDataset(target: FheEncryptedDataset): Promise<void> {
+    if (
+      !confirm(`Delete encrypted dataset "${target.source_file_name}"? This cannot be undone.`)
+    ) {
+      return;
+    }
+
+    const ok = await this.fheEncryptedDatasets.deleteDataset(target.id);
+    if (!ok) {
+      this.datasetsError.set('Could not delete the dataset. Please try again.');
+      return;
+    }
+    await this.refreshEncryptedDatasets();
   }
 
   signOut(): void {}
