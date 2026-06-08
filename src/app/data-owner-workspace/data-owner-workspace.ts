@@ -356,7 +356,7 @@ export class DataOwnerWorkspace {
     this.formName.set(key.key_name);
     this.formScheme.set(key.scheme);
     this.formDepth.set(key.multiplicative_depth);
-    this.formSlots.set(key.slots ?? 8192);
+    this.formSlots.set(key.slots);
     this.showKeyModal.set(true);
   }
 

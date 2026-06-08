@@ -50,7 +50,7 @@
                 </div>
                 <div class="key-row">
                   <dt>Slots</dt>
-                  <dd class="key-chip">{{ key.slots ?? '—' }}</dd>
+                  <dd class="key-chip">{{ key.slots }}</dd>
                 </div>
                 <div class="key-row">
                   <dt>Created</dt>
@@ -511,7 +511,7 @@
                     <span class="key-list-info">
                       <span class="key-list-name">{{ key.key_name }}</span>
                       <span class="key-list-meta">
-                        {{ key.scheme }} · depth {{ key.multiplicative_depth }} · {{ key.slots ?? '—' }} slots · {{ formatCreated(key.created_at) }}
+                        {{ key.scheme }} · depth {{ key.multiplicative_depth }} · {{ key.slots }} slots · {{ formatCreated(key.created_at) }}
                       </span>
                     </span>
                     @if (key.id === currentKey()?.id) {
