@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { AuthService } from '../shared/auth.service';
 import { ModelType } from './model-builder.types';
+import { computeParamsCount } from './params-count';
 
 export interface SupabaseModel {
   id: number;
@@ -9,6 +10,7 @@ export interface SupabaseModel {
   model_name: string;
   model_json: unknown;
   sample_data: unknown;
+  params_count: number;
   published: boolean;
   created_at: string;
   updated_at: string;
@@ -50,6 +52,8 @@ export class ModelSupabaseService {
     const numericId = Number(localId);
     const isRemoteId = !isNaN(numericId) && numericId > 0 && Number.isInteger(numericId);
 
+    const paramsCount = computeParamsCount(payload.model_type, payload.model_json);
+
     if (isRemoteId) {
       const { data, error } = await this.db
         .from('models')
@@ -58,6 +62,7 @@ export class ModelSupabaseService {
           model_type: payload.model_type,
           model_json: payload.model_json,
           sample_data: payload.sample_data,
+          params_count: paramsCount,
           updated_at: new Date().toISOString(),
         })
         .eq('id', numericId)
@@ -79,6 +84,7 @@ export class ModelSupabaseService {
         model_name: payload.model_name,
         model_type: payload.model_type,
         model_json: payload.model_json,
+        params_count: paramsCount,
       })
       .select()
       .single();
@@ -107,6 +113,7 @@ export class ModelSupabaseService {
       update['model_type'] = payload.model_type;
       update['model_json'] = payload.model_json;
       update['sample_data'] = payload.sample_data;
+      update['params_count'] = computeParamsCount(payload.model_type, payload.model_json);
     }
 
     const { data, error } = await this.db
