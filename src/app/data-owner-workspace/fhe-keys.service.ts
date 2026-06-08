@@ -8,6 +8,7 @@ export interface FheKey {
   key_name: string;
   scheme: string;
   multiplicative_depth: number;
+  slots: number;
   public_key_json: unknown | null;
   public_key_storage_path: string | null;
   is_active: boolean;
@@ -19,6 +20,7 @@ export interface FheKeyInput {
   key_name: string;
   scheme: string;
   multiplicative_depth: number;
+  slots: number;
 }
 
 interface GenerateKeyResponse {
@@ -123,6 +125,7 @@ export class FheKeysService {
         name: input.key_name,
         'key-type': input.scheme === 'OpenFHE CKKS' ? 'CKKS' : input.scheme,
         'mult-depth': input.multiplicative_depth,
+        'num-slots': input.slots,
       }),
     });
 

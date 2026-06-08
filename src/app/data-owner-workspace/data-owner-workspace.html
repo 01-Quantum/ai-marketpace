@@ -49,6 +49,10 @@
                   <dd class="key-chip">{{ key.multiplicative_depth }}</dd>
                 </div>
                 <div class="key-row">
+                  <dt>Slots</dt>
+                  <dd class="key-chip">{{ key.slots ?? '—' }}</dd>
+                </div>
+                <div class="key-row">
                   <dt>Created</dt>
                   <dd class="key-chip">{{ formatCreated(key.created_at) }}</dd>
                 </div>
@@ -202,43 +206,83 @@
         </section>
       </div>
 
+      @if (canEncrypt()) {
+        <section class="panel encrypt-action">
+          <div class="encrypt-action-body">
+            <div class="encrypt-action-copy">
+              <lucide-angular class="encrypt-action-icon" [img]="LockIcon" size="22" [strokeWidth]="1.8"></lucide-angular>
+              <div>
+                <p class="encrypt-action-title">Ready to encrypt</p>
+                <p class="encrypt-action-desc">
+                  Key, model, and CSV are set. Run FHE encryption via the enclave.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn-primary encrypt-action-btn"
+              (click)="encryptDataset()"
+              [disabled]="encrypting()"
+            >
+              @if (encrypting()) {
+                <lucide-angular class="spin" [img]="LoaderIcon" size="18"></lucide-angular>
+                Encrypting…
+              } @else {
+                <lucide-angular [img]="LockIcon" size="18" [strokeWidth]="2"></lucide-angular>
+                Encrypt
+              }
+            </button>
+          </div>
+          @if (encryptError()) {
+            <p class="encrypt-action-error">{{ encryptError() }}</p>
+          }
+          @if (encryptSuccess()) {
+            <p class="encrypt-action-success">{{ encryptSuccess() }}</p>
+          }
+        </section>
+      }
+
       <section class="panel table-panel datasets-table">
         <header class="table-head">
           <lucide-angular class="table-head-icon" [img]="DatabaseIcon" size="20"></lucide-angular>
           <h2 class="section-title">Encrypted Datasets</h2>
         </header>
 
-        <div class="table-wrap" role="table">
-          <div class="table-row table-header" role="row">
-            <span role="columnheader">Dataset Name</span>
-            <span role="columnheader">Owner</span>
-            <span role="columnheader">Encryption Status</span>
-            <span role="columnheader">Submitted To</span>
-            <span role="columnheader" class="col-action">Action</span>
-          </div>
-          @for (ds of datasets; track ds.name) {
-            <div class="table-row" role="row">
-              <span class="cell-name" role="cell">
-                <lucide-angular [img]="FileTextIcon" size="18" [strokeWidth]="1.6"></lucide-angular>
-                {{ ds.name }}
-              </span>
-              <span role="cell">{{ ds.owner }}</span>
-              <span class="cell-status" role="cell">
-                <lucide-angular [img]="LockIcon" size="14" [strokeWidth]="2"></lucide-angular>
-                {{ ds.status }}
-              </span>
-              <span class="cell-muted" role="cell">{{ ds.submittedTo ?? '—' }}</span>
-              <span class="cell-actions col-action" role="cell">
-                <button type="button" class="icon-btn" aria-label="View dataset" (click)="viewDataset(ds)">
-                  <lucide-angular [img]="EyeIcon" size="16"></lucide-angular>
-                </button>
-                <button type="button" class="icon-btn danger" aria-label="Delete dataset" (click)="deleteDataset(ds)">
-                  <lucide-angular [img]="Trash2Icon" size="16"></lucide-angular>
-                </button>
-              </span>
+        @if (datasets().length === 0) {
+          <p class="datasets-empty">No encrypted datasets yet. Complete encryption above to see them here.</p>
+        } @else {
+          <div class="table-wrap" role="table">
+            <div class="table-row table-header" role="row">
+              <span role="columnheader">Dataset Name</span>
+              <span role="columnheader">Owner</span>
+              <span role="columnheader">Encryption Status</span>
+              <span role="columnheader">Submitted To</span>
+              <span role="columnheader" class="col-action">Action</span>
             </div>
-          }
-        </div>
+            @for (ds of datasets(); track ds.name) {
+              <div class="table-row" role="row">
+                <span class="cell-name" role="cell">
+                  <lucide-angular [img]="FileTextIcon" size="18" [strokeWidth]="1.6"></lucide-angular>
+                  {{ ds.name }}
+                </span>
+                <span role="cell">{{ ds.owner }}</span>
+                <span class="cell-status" role="cell">
+                  <lucide-angular [img]="LockIcon" size="14" [strokeWidth]="2"></lucide-angular>
+                  {{ ds.status }}
+                </span>
+                <span class="cell-muted" role="cell">{{ ds.submittedTo ?? '—' }}</span>
+                <span class="cell-actions col-action" role="cell">
+                  <button type="button" class="icon-btn" aria-label="View dataset" (click)="viewDataset(ds)">
+                    <lucide-angular [img]="EyeIcon" size="16"></lucide-angular>
+                  </button>
+                  <button type="button" class="icon-btn danger" aria-label="Delete dataset" (click)="deleteDataset(ds)">
+                    <lucide-angular [img]="Trash2Icon" size="16"></lucide-angular>
+                  </button>
+                </span>
+              </div>
+            }
+          </div>
+        }
       </section>
     </main>
 
@@ -363,8 +407,20 @@
             />
           </label>
 
+          <label class="field">
+            <span class="field-label">Number of Slots</span>
+            <input
+              class="field-input"
+              type="number"
+              min="1"
+              [ngModel]="formSlots()"
+              (ngModelChange)="formSlots.set($event)"
+              [disabled]="isEditing()"
+            />
+          </label>
+
           @if (isEditing()) {
-            <p class="field-hint">Scheme and depth are fixed when the key is generated.</p>
+            <p class="field-hint">Scheme, depth, and slots are fixed when the key is generated.</p>
           }
 
           @if (keyError()) {
@@ -420,7 +476,7 @@
                     <span class="key-list-info">
                       <span class="key-list-name">{{ key.key_name }}</span>
                       <span class="key-list-meta">
-                        {{ key.scheme }} · depth {{ key.multiplicative_depth }} · {{ formatCreated(key.created_at) }}
+                        {{ key.scheme }} · depth {{ key.multiplicative_depth }} · {{ key.slots ?? '—' }} slots · {{ formatCreated(key.created_at) }}
                       </span>
                     </span>
                     @if (key.id === currentKey()?.id) {

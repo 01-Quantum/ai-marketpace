@@ -632,6 +632,76 @@
   opacity: 1;
 }
 
+/* ===== Encrypt action bar ===== */
+.encrypt-action {
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  background: linear-gradient(180deg, rgba(45, 212, 191, 0.08), transparent 70%), var(--card);
+}
+
+.encrypt-action-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.encrypt-action-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.encrypt-action-icon {
+  color: var(--teal);
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.encrypt-action-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.encrypt-action-desc {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.encrypt-action-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 1.1rem;
+  font-size: 0.88rem;
+}
+
+.encrypt-action-error {
+  margin: 0.65rem 0 0;
+  font-size: 0.78rem;
+  color: var(--coral);
+}
+
+.encrypt-action-success {
+  margin: 0.65rem 0 0;
+  font-size: 0.78rem;
+  color: var(--teal);
+}
+
+.datasets-empty {
+  margin: 0;
+  padding: 0.5rem 0 0.15rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
 /* ===== Encrypted datasets table grid ===== */
 .datasets-table .table-row {
   grid-template-columns:

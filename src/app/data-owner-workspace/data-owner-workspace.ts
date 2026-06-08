@@ -37,6 +37,7 @@ import {
   SupabaseModel,
 } from '../model-builder-studio/model-supabase.service';
 import { FheKey, FheKeysService } from './fhe-keys.service';
+import { FheEncryptService } from './fhe-encrypt.service';
 import { formatFileSize, validateCsvFile } from './csv-upload';
 
 function parseOptionalModelId(value: string | null): number | null {
@@ -63,6 +64,7 @@ export class DataOwnerWorkspace {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly fheKeys = inject(FheKeysService);
+  private readonly fheEncrypt = inject(FheEncryptService);
   private readonly auth = inject(AuthService);
   private readonly modelSupabase = inject(ModelSupabaseService);
 
@@ -100,6 +102,7 @@ export class DataOwnerWorkspace {
   readonly formName = signal('');
   readonly formScheme = signal('OpenFHE CKKS');
   readonly formDepth = signal(16);
+  readonly formSlots = signal(8192);
 
   readonly showSelectModal = signal(false);
   readonly allKeys = signal<FheKey[]>([]);
@@ -115,11 +118,20 @@ export class DataOwnerWorkspace {
     return file ? formatFileSize(file.size) : '';
   });
 
-  readonly datasets: EncryptedDataset[] = [
-    { name: 'Iris Sample A', owner: 'alice', status: 'Encrypted', submittedTo: null },
-    { name: 'Customer Risk Batch 01', owner: 'alice', status: 'Encrypted', submittedTo: null },
-    { name: 'Fraud Features Q2', owner: 'alice', status: 'Encrypted', submittedTo: null },
-  ];
+  readonly encrypting = signal(false);
+  readonly encryptError = signal('');
+  readonly encryptSuccess = signal('');
+
+  readonly canEncrypt = computed(
+    () =>
+      !this.loadingKey() &&
+      !this.loadingModel() &&
+      !!this.currentKey() &&
+      !!this.selectedCsvFile() &&
+      !!this.publishedModel(),
+  );
+
+  readonly datasets = signal<EncryptedDataset[]>([]);
 
   readonly ShieldCheckIcon = ShieldCheck;
   readonly KeyRoundIcon = KeyRound;
@@ -213,6 +225,48 @@ export class DataOwnerWorkspace {
   selectPublishedModel(model: SupabaseModel): void {
     this.selectedPublishedModelId.set(model.id);
     this.showModelSelectModal.set(false);
+    this.encryptSuccess.set('');
+  }
+
+  async encryptDataset(): Promise<void> {
+    if (!this.canEncrypt() || this.encrypting()) return;
+
+    const model = this.publishedModel();
+    const file = this.selectedCsvFile();
+    const key = this.currentKey();
+    if (!model || !file || !key) return;
+
+    this.encrypting.set(true);
+    this.encryptError.set('');
+    this.encryptSuccess.set('');
+
+    try {
+      const result = await this.fheEncrypt.encrypt(model.id, key.id, file);
+      if (!result.ok) {
+        this.encryptError.set(result.error);
+        return;
+      }
+
+      const owner =
+        (this.auth.displayName() || 'user')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '') || 'user';
+
+      this.datasets.update((list) => [
+        {
+          name: file.name,
+          owner,
+          status: 'Encrypted',
+          submittedTo: model.model_name,
+        },
+        ...list,
+      ]);
+      this.encryptSuccess.set(`"${file.name}" encrypted successfully.`);
+      this.selectedCsvFile.set(null);
+    } finally {
+      this.encrypting.set(false);
+    }
   }
 
   openGenerateModal(): void {
@@ -221,6 +275,7 @@ export class DataOwnerWorkspace {
     this.formName.set(this.suggestKeyName());
     this.formScheme.set('OpenFHE CKKS');
     this.formDepth.set(16);
+    this.formSlots.set(8192);
     this.showKeyModal.set(true);
   }
 
@@ -254,6 +309,7 @@ export class DataOwnerWorkspace {
     this.formName.set(key.key_name);
     this.formScheme.set(key.scheme);
     this.formDepth.set(key.multiplicative_depth);
+    this.formSlots.set(key.slots ?? 8192);
     this.showKeyModal.set(true);
   }
 
@@ -301,10 +357,17 @@ export class DataOwnerWorkspace {
         return;
       }
 
+      const slots = Number(this.formSlots());
+      if (!Number.isInteger(slots) || slots <= 0) {
+        this.keyError.set('Number of slots must be a positive integer.');
+        return;
+      }
+
       const created = await this.fheKeys.generateKey({
         key_name: name,
         scheme: this.formScheme(),
         multiplicative_depth: depth,
+        slots,
       });
       if (!created) {
         this.keyError.set('Key generation failed. Check the vault service and try again.');
@@ -395,6 +458,7 @@ export class DataOwnerWorkspace {
   clearSelectedCsv(): void {
     this.selectedCsvFile.set(null);
     this.uploadError.set('');
+    this.encryptSuccess.set('');
   }
 
   private acceptCsvFiles(files: FileList | null): void {
@@ -419,8 +483,7 @@ export class DataOwnerWorkspace {
   viewDataset(_: EncryptedDataset): void {}
 
   deleteDataset(target: EncryptedDataset): void {
-    const idx = this.datasets.indexOf(target);
-    if (idx > -1) this.datasets.splice(idx, 1);
+    this.datasets.update((list) => list.filter((ds) => ds !== target));
   }
 
   signOut(): void {}
