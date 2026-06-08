@@ -2,7 +2,7 @@ import { Component, computed, ElementRef, inject, signal, viewChild } from '@ang
 import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { filter, take } from 'rxjs';
+import { distinctUntilChanged, filter, map, skip, take } from 'rxjs';
 import {
   ArrowRight,
   ChartScatter,
@@ -53,6 +53,8 @@ function parseOptionalModelId(value: string | null): number | null {
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
+const DEFAULT_KEY_SLOTS = 8192;
+
 @Component({
   selector: 'app-data-owner-workspace',
   standalone: true,
@@ -66,7 +68,7 @@ export class DataOwnerWorkspace {
   private readonly fheKeys = inject(FheKeysService);
   private readonly fheEncrypt = inject(FheEncryptService);
   private readonly fheEncryptedDatasets = inject(FheEncryptedDatasetsService);
-  private readonly auth = inject(AuthService);
+  readonly auth = inject(AuthService);
   private readonly modelSupabase = inject(ModelSupabaseService);
   private readonly sampleDataDownload = inject(SampleDataDownloadService);
 
@@ -109,7 +111,6 @@ export class DataOwnerWorkspace {
   readonly formName = signal('');
   readonly formScheme = signal('OpenFHE CKKS');
   readonly formDepth = signal(16);
-  readonly formSlots = signal(8192);
 
   readonly showSelectModal = signal(false);
   readonly allKeys = signal<FheKey[]>([]);
@@ -184,6 +185,18 @@ export class DataOwnerWorkspace {
         void this.refreshEncryptedDatasets();
       });
 
+    toObservable(this.auth.user)
+      .pipe(
+        skip(1),
+        map((user) => user?.id ?? null),
+        distinctUntilChanged(),
+        filter(() => this.auth.initialized()),
+      )
+      .subscribe(() => {
+        void this.refreshLatestKey();
+        void this.refreshEncryptedDatasets();
+      });
+
     this.route.queryParamMap.subscribe((params) => {
       const modelType = parseInferenceModelChoice(params.get('model'));
       const modelId = parseOptionalModelId(params.get('modelId'));
@@ -192,7 +205,6 @@ export class DataOwnerWorkspace {
       this.selectedPublishedModelId.set(modelId);
       if (this.auth.initialized() && typeChanged) {
         void this.refreshPublishedModels();
-        void this.refreshEncryptedDatasets();
       }
     });
   }
@@ -201,9 +213,7 @@ export class DataOwnerWorkspace {
     this.loadingDatasets.set(true);
     this.datasetsError.set('');
 
-    const { datasets, error } = await this.fheEncryptedDatasets.loadByModelType(
-      this.selectedModelType(),
-    );
+    const { datasets, error } = await this.fheEncryptedDatasets.loadAll();
     this.datasets.set(datasets);
 
     if (error) {
@@ -322,7 +332,6 @@ export class DataOwnerWorkspace {
     this.formName.set(this.suggestKeyName());
     this.formScheme.set('OpenFHE CKKS');
     this.formDepth.set(16);
-    this.formSlots.set(8192);
     this.showKeyModal.set(true);
   }
 
@@ -356,7 +365,6 @@ export class DataOwnerWorkspace {
     this.formName.set(key.key_name);
     this.formScheme.set(key.scheme);
     this.formDepth.set(key.multiplicative_depth);
-    this.formSlots.set(key.slots);
     this.showKeyModal.set(true);
   }
 
@@ -404,17 +412,11 @@ export class DataOwnerWorkspace {
         return;
       }
 
-      const slots = Number(this.formSlots());
-      if (!Number.isInteger(slots) || slots <= 0) {
-        this.keyError.set('Number of slots must be a positive integer.');
-        return;
-      }
-
       const created = await this.fheKeys.generateKey({
         key_name: name,
         scheme: this.formScheme(),
         multiplicative_depth: depth,
-        slots,
+        slots: DEFAULT_KEY_SLOTS,
       });
       if (!created) {
         this.keyError.set('Key generation failed. Check the vault service and try again.');
@@ -551,9 +553,9 @@ export class DataOwnerWorkspace {
       return;
     }
 
-    const ok = await this.fheEncryptedDatasets.deleteDataset(target.id);
-    if (!ok) {
-      this.datasetsError.set('Could not delete the dataset. Please try again.');
+    const result = await this.fheEncrypt.deleteDataset(target.id);
+    if (!result.ok) {
+      this.datasetsError.set(result.error);
       return;
     }
     await this.refreshEncryptedDatasets();

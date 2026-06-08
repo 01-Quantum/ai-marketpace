@@ -1,6 +1,5 @@
 import { Injectable, inject } from '@angular/core';
 import { AuthService } from '../shared/auth.service';
-import { InferenceModelChoice } from '../shared/workflow.types';
 
 export interface FheEncryptedDataset {
   id: number;
@@ -32,41 +31,28 @@ export class FheEncryptedDatasetsService {
     return this.auth.client;
   }
 
-  async loadByModelType(
-    modelType: InferenceModelChoice,
-  ): Promise<{ datasets: FheEncryptedDataset[]; error: string | null }> {
+  async loadAll(): Promise<{ datasets: FheEncryptedDataset[]; error: string | null }> {
     const userId = this.auth.user()?.id;
-    if (!userId) return { datasets: [], error: null };
+    if (!userId) {
+      return { datasets: [], error: 'Not signed in.' };
+    }
 
     const { data, error } = await this.db
       .from('fhe_encrypted_datasets')
       .select('*')
       .eq('user_id', userId)
-      .eq('model_type', modelType)
-      .order('created_at', { ascending: false });
+      .order('id', { ascending: false });
 
     if (error) {
-      console.error('loadEncryptedDatasets error', error.message, { modelType });
+      console.error('loadEncryptedDatasets error', error.message);
       return { datasets: [], error: error.message };
     }
 
-    return { datasets: (data ?? []) as FheEncryptedDataset[], error: null };
-  }
-
-  async deleteDataset(id: number): Promise<boolean> {
-    const userId = this.auth.user()?.id;
-    if (!userId) return false;
-
-    const { error } = await this.db
-      .from('fhe_encrypted_datasets')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', userId);
-
-    if (error) {
-      console.error('deleteEncryptedDataset error', error.message);
-      return false;
-    }
-    return true;
+    const datasets = (data ?? []) as FheEncryptedDataset[];
+    console.info(
+      `loadEncryptedDatasets: ${datasets.length} dataset(s) for user ${userId}`,
+      datasets.map((d) => ({ id: d.id, name: d.source_file_name, model_type: d.model_type })),
+    );
+    return { datasets, error: null };
   }
 }

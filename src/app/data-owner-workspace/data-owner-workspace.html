@@ -284,7 +284,13 @@
         } @else if (datasetsError()) {
           <p class="datasets-error">{{ datasetsError() }}</p>
         } @else if (datasets().length === 0) {
-          <p class="datasets-empty">No encrypted datasets yet. Complete encryption above to see them here.</p>
+          <p class="datasets-empty">
+            @if (!auth.isAuthenticated()) {
+              Sign in to view your encrypted datasets.
+            } @else {
+              No encrypted datasets yet. Complete encryption above to see them here.
+            }
+          </p>
         } @else {
           <div class="table-wrap" role="table">
             <div class="table-row table-header" role="row">
@@ -442,20 +448,8 @@
             />
           </label>
 
-          <label class="field">
-            <span class="field-label">Number of Slots</span>
-            <input
-              class="field-input"
-              type="number"
-              min="1"
-              [ngModel]="formSlots()"
-              (ngModelChange)="formSlots.set($event)"
-              [disabled]="isEditing()"
-            />
-          </label>
-
           @if (isEditing()) {
-            <p class="field-hint">Scheme, depth, and slots are fixed when the key is generated.</p>
+            <p class="field-hint">Scheme and depth are fixed when the key is generated.</p>
           }
 
           @if (keyError()) {
