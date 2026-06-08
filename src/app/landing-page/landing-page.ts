@@ -17,8 +17,7 @@ import {
 import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
 import { AuthDialog } from '../shared/auth-dialog/auth-dialog';
 import { AuthService } from '../shared/auth.service';
-
-export type ModelChoice = 'tree' | 'logistic';
+import { InferenceModelChoice } from '../shared/workflow.types';
 
 @Component({
   selector: 'app-landing-page',
@@ -31,7 +30,7 @@ export class LandingPage {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
 
-  readonly selectedModel = signal<ModelChoice>('tree');
+  readonly selectedModel = signal<InferenceModelChoice>('tree');
 
   readonly authDialogOpen = signal(false);
   private pendingDestination: string | null = null;
@@ -48,33 +47,39 @@ export class LandingPage {
   readonly CircleCheckIcon = CircleCheck;
   readonly CircleIcon = Circle;
 
-  selectModel(next: ModelChoice): void {
+  selectModel(next: InferenceModelChoice): void {
     this.selectedModel.set(next);
   }
 
   continueInference(): void {
-    this.goWithAuth('/data-owner-workspace');
+    this.goWithAuth('/data-owner-workspace', { model: this.selectedModel() });
   }
 
-  goWithAuth(destination: string): void {
+  goWithAuth(destination: string, queryParams?: Record<string, string>): void {
     if (this.auth.isAuthenticated()) {
-      void this.router.navigate([destination]);
+      void this.router.navigate([destination], { queryParams });
       return;
     }
     this.pendingDestination = destination;
+    this.pendingQueryParams = queryParams ?? null;
     this.authDialogOpen.set(true);
   }
+
+  private pendingQueryParams: Record<string, string> | null = null;
 
   onAuthenticated(): void {
     this.authDialogOpen.set(false);
     const destination = this.pendingDestination;
+    const queryParams = this.pendingQueryParams ?? undefined;
     this.pendingDestination = null;
-    if (destination) void this.router.navigate([destination]);
+    this.pendingQueryParams = null;
+    if (destination) void this.router.navigate([destination], { queryParams });
   }
 
   onAuthDialogClosed(): void {
     this.authDialogOpen.set(false);
     this.pendingDestination = null;
+    this.pendingQueryParams = null;
   }
 
   async signOut(): Promise<void> {

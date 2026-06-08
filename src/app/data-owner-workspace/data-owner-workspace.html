@@ -85,35 +85,45 @@
 
         <section class="model-row">
           <span class="model-row-label">Selected model</span>
-          <div class="toggle-pills" role="group" aria-label="Selected model">
-            <button
-              type="button"
-              class="toggle-pill"
-              [class.active]="selectedModel() === 'tree'"
-              (click)="selectModel('tree')"
-            >
-              <lucide-angular [img]="NetworkIcon" size="14" [strokeWidth]="1.8"></lucide-angular>
-              <span>Decision Tree</span>
-              @if (selectedModel() === 'tree') {
+          <div class="model-row-body">
+            @if (loadingModel()) {
+              <div class="model-summary loading">
+                <lucide-angular class="spin" [img]="LoaderIcon" size="14"></lucide-angular>
+                <span>Looking up published {{ modelTypeLabel() }}…</span>
+              </div>
+            } @else if (publishedModel(); as model) {
+              <div
+                class="model-summary"
+                [class.alt]="selectedModelType() === 'logistic'"
+              >
+                <lucide-angular
+                  [img]="selectedModelType() === 'tree' ? NetworkIcon : ChartScatterIcon"
+                  size="14"
+                  [strokeWidth]="1.8"
+                ></lucide-angular>
+                <span class="model-summary-type">{{ modelTypeLabel() }}</span>
+                <span class="model-summary-sep">·</span>
+                <span class="model-summary-name">{{ model.model_name }}</span>
+                <span class="model-summary-sep">·</span>
+                <span class="model-summary-meta">{{ model.params_count }} params</span>
                 <lucide-angular class="pill-mark active" [img]="CircleCheckIcon" size="14"></lucide-angular>
-              } @else {
-                <lucide-angular class="pill-mark" [img]="CircleDashedIcon" size="14"></lucide-angular>
+              </div>
+              @if (hasMultiplePublishedModels()) {
+                <button type="button" class="btn-secondary model-select-btn" (click)="openModelSelectModal()">
+                  <lucide-angular [img]="ListIcon" size="15" [strokeWidth]="2"></lucide-angular>
+                  Change
+                </button>
               }
-            </button>
-            <button
-              type="button"
-              class="toggle-pill alt"
-              [class.active]="selectedModel() === 'logistic'"
-              (click)="selectModel('logistic')"
-            >
-              <lucide-angular [img]="ChartScatterIcon" size="14" [strokeWidth]="1.8"></lucide-angular>
-              <span>Logistic Regression</span>
-              @if (selectedModel() === 'logistic') {
-                <lucide-angular class="pill-mark active" [img]="CircleCheckIcon" size="14"></lucide-angular>
-              } @else {
-                <lucide-angular class="pill-mark" [img]="CircleDashedIcon" size="14"></lucide-angular>
-              }
-            </button>
+            } @else {
+              <div class="model-summary empty">
+                <lucide-angular
+                  [img]="selectedModelType() === 'tree' ? NetworkIcon : ChartScatterIcon"
+                  size="14"
+                  [strokeWidth]="1.8"
+                ></lucide-angular>
+                <span>{{ modelError() }}</span>
+              </div>
+            }
           </div>
         </section>
         </div>
@@ -389,6 +399,50 @@
               }
             </ul>
           }
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showModelSelectModal()) {
+    <div class="key-modal-backdrop" (click)="onModelSelectBackdropClick($event)">
+      <div class="key-modal key-select-modal" role="dialog" aria-modal="true">
+        <header class="key-modal-head">
+          <h3 class="key-modal-title">Select a {{ modelTypeLabel() }} Model</h3>
+          <button type="button" class="icon-btn" aria-label="Close" (click)="closeModelSelectModal()">
+            <lucide-angular [img]="CloseIcon" size="16"></lucide-angular>
+          </button>
+        </header>
+
+        <div class="key-modal-body">
+          <ul class="key-list">
+            @for (model of publishedModels(); track model.id) {
+              <li>
+                <button
+                  type="button"
+                  class="key-list-item"
+                  [class.selected]="model.id === selectedPublishedModelId()"
+                  (click)="selectPublishedModel(model)"
+                >
+                  <lucide-angular
+                    class="key-list-icon"
+                    [img]="selectedModelType() === 'tree' ? NetworkIcon : ChartScatterIcon"
+                    size="18"
+                    [strokeWidth]="1.8"
+                  ></lucide-angular>
+                  <span class="key-list-info">
+                    <span class="key-list-name">{{ model.model_name }}</span>
+                    <span class="key-list-meta">
+                      {{ model.params_count }} params · updated {{ formatCreated(model.updated_at) }}
+                    </span>
+                  </span>
+                  @if (model.id === selectedPublishedModelId()) {
+                    <lucide-angular class="key-list-check" [img]="CircleCheckIcon" size="18"></lucide-angular>
+                  }
+                </button>
+              </li>
+            }
+          </ul>
         </div>
       </div>
     </div>

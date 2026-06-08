@@ -28,6 +28,22 @@ export class ModelSupabaseService {
   private readonly auth = inject(AuthService);
   private get db() { return this.auth.client; }
 
+  /** Published models of the given type (marketplace catalog for data owners). */
+  async loadPublishedModelsByType(modelType: ModelType): Promise<SupabaseModel[]> {
+    const { data, error } = await this.db
+      .from('models')
+      .select('*')
+      .eq('published', true)
+      .eq('model_type', modelType)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('loadPublishedModelsByType error', error.message);
+      return [];
+    }
+    return (data ?? []) as SupabaseModel[];
+  }
+
   async loadModels(): Promise<SupabaseModel[]> {
     const userId = this.auth.user()?.id;
     if (!userId) return [];

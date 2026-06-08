@@ -478,12 +478,12 @@
   height: 14px !important;
 }
 
-/* ===== Selected model row (compact toggle pills) ===== */
+/* ===== Selected model row ===== */
 .model-row {
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
 }
 
 .model-row-label {
@@ -491,65 +491,109 @@
   color: var(--muted);
   font-weight: 500;
   flex-shrink: 0;
+  width: 100%;
 }
 
-.toggle-pills {
-  display: inline-flex;
-  gap: 0.4rem;
-  flex-wrap: nowrap;
+.model-row-body {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
   min-width: 0;
+  flex-wrap: wrap;
 }
 
-.toggle-pill {
+.model-select-btn {
+  flex-shrink: 0;
+  padding: 0.38rem 0.65rem;
+  font-size: 0.78rem;
+}
+
+.model-summary {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
   padding: 0.38rem 0.7rem;
   border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  background: rgba(45, 212, 191, 0.1);
   color: var(--text);
   font-size: 0.78rem;
   font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  min-width: 0;
+  flex: 1;
 }
 
-.toggle-pill lucide-angular {
+.model-summary lucide-angular {
   color: var(--teal);
+  flex-shrink: 0;
 }
 
-.toggle-pill.alt lucide-angular {
+.model-summary.alt {
+  border-color: rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.model-summary.alt lucide-angular {
   color: var(--coral);
 }
 
-.toggle-pill:hover {
-  border-color: rgba(45, 212, 191, 0.35);
+.model-summary.alt .pill-mark.active {
+  color: var(--coral);
 }
 
-.toggle-pill.active {
-  border-color: var(--teal);
-  background: rgba(45, 212, 191, 0.1);
+.model-summary.loading {
+  border-color: var(--border);
+  background: var(--bg-elevated);
+  color: var(--muted);
 }
 
-.toggle-pill.alt.active {
-  border-color: var(--coral);
-  background: rgba(248, 113, 113, 0.1);
+.model-summary.loading lucide-angular {
+  color: var(--muted);
+}
+
+.model-summary.empty {
+  border-color: rgba(248, 113, 113, 0.25);
+  background: rgba(248, 113, 113, 0.06);
+  color: var(--muted);
+  flex: 1;
+  line-height: 1.35;
+}
+
+.model-summary.empty lucide-angular {
+  color: var(--coral);
+}
+
+.model-summary-type {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.model-summary-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-summary-meta {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.model-summary-sep {
+  color: var(--muted-soft);
 }
 
 .pill-mark {
   color: var(--muted-soft);
   opacity: 0.8;
+  flex-shrink: 0;
 }
 
 .pill-mark.active {
   color: var(--teal);
   opacity: 1;
-}
-
-.toggle-pill.alt .pill-mark.active {
-  color: var(--coral);
 }
 
 /* ===== Encrypted datasets table grid ===== */

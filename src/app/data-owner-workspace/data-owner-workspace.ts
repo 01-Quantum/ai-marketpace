@@ -1,13 +1,12 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { filter, take } from 'rxjs';
 import {
   ArrowRight,
   ChartScatter,
   CircleCheck,
-  CircleDashed,
   CloudUpload,
   Database,
   Eye,
@@ -28,9 +27,22 @@ import {
 import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
 import { AuthService } from '../shared/auth.service';
 import { WorkflowHeader } from '../shared/workflow-header/workflow-header';
+import {
+  INFERENCE_MODEL_LABELS,
+  InferenceModelChoice,
+  parseInferenceModelChoice,
+} from '../shared/workflow.types';
+import {
+  ModelSupabaseService,
+  SupabaseModel,
+} from '../model-builder-studio/model-supabase.service';
 import { FheKey, FheKeysService } from './fhe-keys.service';
 
-export type ModelChoice = 'tree' | 'logistic';
+function parseOptionalModelId(value: string | null): number | null {
+  if (!value) return null;
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
 
 interface EncryptedDataset {
   name: string;
@@ -48,10 +60,34 @@ interface EncryptedDataset {
 })
 export class DataOwnerWorkspace {
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly fheKeys = inject(FheKeysService);
   private readonly auth = inject(AuthService);
+  private readonly modelSupabase = inject(ModelSupabaseService);
 
-  readonly selectedModel = signal<ModelChoice>('tree');
+  readonly selectedModelType = signal<InferenceModelChoice>(
+    parseInferenceModelChoice(this.route.snapshot.queryParamMap.get('model')),
+  );
+  readonly publishedModels = signal<SupabaseModel[]>([]);
+  readonly selectedPublishedModelId = signal<number | null>(
+    parseOptionalModelId(this.route.snapshot.queryParamMap.get('modelId')),
+  );
+  readonly loadingModel = signal(true);
+  readonly modelError = signal('');
+  readonly showModelSelectModal = signal(false);
+
+  readonly publishedModel = computed(() => {
+    const models = this.publishedModels();
+    const selectedId = this.selectedPublishedModelId();
+    if (selectedId !== null) {
+      return models.find((m) => m.id === selectedId) ?? models[0] ?? null;
+    }
+    return models[0] ?? null;
+  });
+
+  readonly hasMultiplePublishedModels = computed(() => this.publishedModels().length > 1);
+
+  readonly modelTypeLabel = computed(() => INFERENCE_MODEL_LABELS[this.selectedModelType()]);
 
   readonly currentKey = signal<FheKey | null>(null);
   readonly loadingKey = signal(true);
@@ -83,7 +119,6 @@ export class DataOwnerWorkspace {
   readonly NetworkIcon = Network;
   readonly ChartScatterIcon = ChartScatter;
   readonly CircleCheckIcon = CircleCheck;
-  readonly CircleDashedIcon = CircleDashed;
   readonly FileTextIcon = FileText;
   readonly DatabaseIcon = Database;
   readonly EyeIcon = Eye;
@@ -99,7 +134,31 @@ export class DataOwnerWorkspace {
     // user()?.id is still null on a fresh page load and the key query returns nothing.
     toObservable(this.auth.initialized)
       .pipe(filter(Boolean), take(1))
-      .subscribe(() => void this.refreshLatestKey());
+      .subscribe(() => {
+        void this.refreshLatestKey();
+        void this.refreshPublishedModels();
+      });
+  }
+
+  private async refreshPublishedModels(): Promise<void> {
+    this.loadingModel.set(true);
+    this.modelError.set('');
+    const models = await this.modelSupabase.loadPublishedModelsByType(this.selectedModelType());
+    this.publishedModels.set(models);
+
+    if (models.length === 0) {
+      this.selectedPublishedModelId.set(null);
+      this.modelError.set(
+        `No published ${this.modelTypeLabel()} model is available yet. Ask a model owner to publish one in Model Builder Studio.`,
+      );
+    } else {
+      const preferredId = this.selectedPublishedModelId();
+      const match = preferredId !== null ? models.find((m) => m.id === preferredId) : null;
+      this.selectedPublishedModelId.set(match?.id ?? models[0].id);
+      this.modelError.set('');
+    }
+
+    this.loadingModel.set(false);
   }
 
   private async refreshLatestKey(): Promise<void> {
@@ -118,8 +177,31 @@ export class DataOwnerWorkspace {
     });
   }
 
-  selectModel(next: ModelChoice): void {
-    this.selectedModel.set(next);
+  continueToModelOwner(): void {
+    const modelId = this.publishedModel()?.id;
+    this.router.navigate(['/model-owner-workspace'], {
+      queryParams: {
+        model: this.selectedModelType(),
+        ...(modelId ? { modelId: String(modelId) } : {}),
+      },
+    });
+  }
+
+  openModelSelectModal(): void {
+    this.showModelSelectModal.set(true);
+  }
+
+  closeModelSelectModal(): void {
+    this.showModelSelectModal.set(false);
+  }
+
+  onModelSelectBackdropClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) this.closeModelSelectModal();
+  }
+
+  selectPublishedModel(model: SupabaseModel): void {
+    this.selectedPublishedModelId.set(model.id);
+    this.showModelSelectModal.set(false);
   }
 
   openGenerateModal(): void {
@@ -269,10 +351,6 @@ export class DataOwnerWorkspace {
   }
 
   browseFiles(): void {}
-
-  continueToModelOwner(): void {
-    this.router.navigate(['/model-owner-workspace']);
-  }
 
   viewDataset(_: EncryptedDataset): void {}
 
