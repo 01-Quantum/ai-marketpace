@@ -527,6 +527,118 @@
     </div>
   }
 
+  @if (viewingDataset(); as ds) {
+    <div class="key-modal-backdrop" (click)="onDatasetModalBackdropClick($event)">
+      <div class="key-modal dataset-details-modal" role="dialog" aria-modal="true">
+        <header class="key-modal-head">
+          <h3 class="key-modal-title">Dataset Details</h3>
+          <button type="button" class="icon-btn" aria-label="Close" (click)="closeDatasetModal()">
+            <lucide-angular [img]="CloseIcon" size="16"></lucide-angular>
+          </button>
+        </header>
+
+        <div class="key-modal-body dataset-details-body">
+          <section class="dataset-detail-section">
+            <h4 class="dataset-detail-heading">File</h4>
+            <dl class="key-info">
+              <div class="key-row">
+                <dt>Source file</dt>
+                <dd class="key-chip">{{ ds.source_file_name }}</dd>
+              </div>
+              <div class="key-row">
+                <dt>Encrypt ID</dt>
+                <dd class="key-chip mono">{{ ds.encrypt_id }}</dd>
+              </div>
+              <div class="key-row">
+                <dt>Encrypt path</dt>
+                <dd class="key-chip mono wrap">{{ ds.encrypt_path }}</dd>
+              </div>
+              <div class="key-row">
+                <dt>Created</dt>
+                <dd class="key-chip">{{ formatCreated(ds.created_at) }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="dataset-detail-section">
+            <h4 class="dataset-detail-heading">Model</h4>
+            <dl class="key-info">
+              <div class="key-row">
+                <dt>Model name</dt>
+                <dd class="key-chip">{{ ds.model_name }}</dd>
+              </div>
+              <div class="key-row">
+                <dt>Model ID</dt>
+                <dd class="key-chip">{{ ds.model_id }}</dd>
+              </div>
+              <div class="key-row">
+                <dt>Model type</dt>
+                <dd class="key-chip">{{ ds.model_type }}</dd>
+              </div>
+              <div class="key-row">
+                <dt>Params count</dt>
+                <dd class="key-chip">{{ ds.params_count }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="dataset-detail-section">
+            <h4 class="dataset-detail-heading">FHE Key</h4>
+            <dl class="key-info">
+              <div class="key-row">
+                <dt>Key ID</dt>
+                <dd class="key-chip">{{ ds.fhe_key_id }}</dd>
+              </div>
+              <div class="key-row">
+                <dt>Key storage path</dt>
+                <dd class="key-chip mono wrap">{{ ds.fhe_key_storage_path }}</dd>
+              </div>
+              <div class="key-row">
+                <dt>Slots</dt>
+                <dd class="key-chip">{{ ds.slots }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="dataset-detail-section">
+            <h4 class="dataset-detail-heading">Ciphertext</h4>
+            <dl class="key-info">
+              <div class="key-row">
+                <dt>Total rows</dt>
+                <dd class="key-chip">{{ ds.total_rows }}</dd>
+              </div>
+              <div class="key-row">
+                <dt>Rows per ciphertext</dt>
+                <dd class="key-chip">{{ ds.rows_per_ciphertext }}</dd>
+              </div>
+              <div class="key-row">
+                <dt>Ciphertext count</dt>
+                <dd class="key-chip">{{ ds.ciphertext_count }}</dd>
+              </div>
+              <div class="key-row">
+                <dt>Feature columns</dt>
+                <dd class="key-chip wrap">{{ formatStringList(ds.columns) }}</dd>
+              </div>
+              <div class="key-row">
+                <dt>Removed columns</dt>
+                <dd class="key-chip wrap">{{ formatStringList(ds.removed_columns) }}</dd>
+              </div>
+              <div class="key-row">
+                <dt>Ciphertext files</dt>
+                <dd class="key-chip wrap">{{ formatStringList(ds.ciphertext_files) }}</dd>
+              </div>
+            </dl>
+          </section>
+
+        </div>
+
+        <footer class="key-modal-foot">
+          <button type="button" class="btn-primary" (click)="closeDatasetModal()">Close</button>
+        </footer>
+      </div>
+    </div>
+  }
+
   @if (showModelSelectModal()) {
     <div class="key-modal-backdrop" (click)="onModelSelectBackdropClick($event)">
       <div class="key-modal key-select-modal" role="dialog" aria-modal="true">

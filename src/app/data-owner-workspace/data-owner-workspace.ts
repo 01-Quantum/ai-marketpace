@@ -141,6 +141,7 @@ export class DataOwnerWorkspace {
   readonly datasets = signal<FheEncryptedDataset[]>([]);
   readonly loadingDatasets = signal(false);
   readonly datasetsError = signal('');
+  readonly viewingDataset = signal<FheEncryptedDataset | null>(null);
 
   readonly ownerLabel = computed(() => {
     const slug =
@@ -526,7 +527,22 @@ export class DataOwnerWorkspace {
     this.selectedCsvFile.set(file);
   }
 
-  viewDataset(_: FheEncryptedDataset): void {}
+  viewDataset(dataset: FheEncryptedDataset): void {
+    this.viewingDataset.set(dataset);
+  }
+
+  closeDatasetModal(): void {
+    this.viewingDataset.set(null);
+  }
+
+  onDatasetModalBackdropClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) this.closeDatasetModal();
+  }
+
+  formatStringList(values: string[] | null | undefined): string {
+    if (!values?.length) return '—';
+    return values.join(', ');
+  }
 
   async deleteDataset(target: FheEncryptedDataset): Promise<void> {
     if (

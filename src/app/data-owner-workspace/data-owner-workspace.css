@@ -367,6 +367,43 @@
   gap: 0.4rem;
 }
 
+.dataset-details-modal {
+  max-width: 560px;
+}
+
+.dataset-details-body {
+  max-height: 70vh;
+  overflow-y: auto;
+  gap: 1rem;
+}
+
+.dataset-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dataset-detail-heading {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.key-chip.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+}
+
+.key-chip.wrap {
+  white-space: normal;
+  word-break: break-all;
+  width: 100%;
+  max-width: 100%;
+}
+
 /* ===== Step 2: Upload ===== */
 .upload-zone {
   border: 1.5px dashed rgba(45, 212, 191, 0.35);
