@@ -9,6 +9,7 @@ import {
   CircleCheck,
   CloudUpload,
   Database,
+  Download,
   Eye,
   FileLock,
   FileText,
@@ -26,6 +27,7 @@ import {
 } from 'lucide-angular';
 import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
 import { AuthService } from '../shared/auth.service';
+import { SampleDataDownloadService } from '../shared/sample-data-download.service';
 import { WorkflowHeader } from '../shared/workflow-header/workflow-header';
 import {
   INFERENCE_MODEL_LABELS,
@@ -67,6 +69,7 @@ export class DataOwnerWorkspace {
   private readonly fheEncrypt = inject(FheEncryptService);
   private readonly auth = inject(AuthService);
   private readonly modelSupabase = inject(ModelSupabaseService);
+  private readonly sampleDataDownload = inject(SampleDataDownloadService);
 
   readonly selectedModelType = signal<InferenceModelChoice>(
     parseInferenceModelChoice(this.route.snapshot.queryParamMap.get('model')),
@@ -88,7 +91,12 @@ export class DataOwnerWorkspace {
     return models[0] ?? null;
   });
 
-  readonly hasMultiplePublishedModels = computed(() => this.publishedModels().length > 1);
+  readonly publishedModelCount = computed(() => this.publishedModels().length);
+
+  readonly canDownloadSampleData = computed(() => {
+    const model = this.publishedModel();
+    return model ? this.sampleDataDownload.hasSampleRows(model.sample_data) : false;
+  });
 
   readonly modelTypeLabel = computed(() => INFERENCE_MODEL_LABELS[this.selectedModelType()]);
 
@@ -148,6 +156,7 @@ export class DataOwnerWorkspace {
   readonly Trash2Icon = Trash2;
   readonly PencilIcon = Pencil;
   readonly ListIcon = List;
+  readonly DownloadIcon = Download;
   readonly LoaderIcon = LoaderCircle;
   readonly CloseIcon = X;
   readonly UserIcon = User;
@@ -161,15 +170,31 @@ export class DataOwnerWorkspace {
         void this.refreshLatestKey();
         void this.refreshPublishedModels();
       });
+
+    this.route.queryParamMap.subscribe((params) => {
+      const modelType = parseInferenceModelChoice(params.get('model'));
+      const modelId = parseOptionalModelId(params.get('modelId'));
+      const typeChanged = modelType !== this.selectedModelType();
+      this.selectedModelType.set(modelType);
+      this.selectedPublishedModelId.set(modelId);
+      if (this.auth.initialized() && typeChanged) {
+        void this.refreshPublishedModels();
+      }
+    });
   }
 
   private async refreshPublishedModels(): Promise<void> {
     this.loadingModel.set(true);
     this.modelError.set('');
-    const models = await this.modelSupabase.loadPublishedModelsByType(this.selectedModelType());
+    const { models, error } = await this.modelSupabase.loadPublishedModelsByType(
+      this.selectedModelType(),
+    );
     this.publishedModels.set(models);
 
-    if (models.length === 0) {
+    if (error) {
+      this.selectedPublishedModelId.set(null);
+      this.modelError.set(`Could not load published models: ${error}`);
+    } else if (models.length === 0) {
       this.selectedPublishedModelId.set(null);
       this.modelError.set(
         `No published ${this.modelTypeLabel()} model is available yet. Ask a model owner to publish one in Model Builder Studio.`,
@@ -226,6 +251,12 @@ export class DataOwnerWorkspace {
     this.selectedPublishedModelId.set(model.id);
     this.showModelSelectModal.set(false);
     this.encryptSuccess.set('');
+  }
+
+  downloadSampleData(): void {
+    const model = this.publishedModel();
+    if (!model) return;
+    this.sampleDataDownload.downloadFromDocument(model.sample_data, model.model_name);
   }
 
   async encryptDataset(): Promise<void> {

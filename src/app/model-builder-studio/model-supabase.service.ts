@@ -29,7 +29,9 @@ export class ModelSupabaseService {
   private get db() { return this.auth.client; }
 
   /** Published models of the given type (marketplace catalog for data owners). */
-  async loadPublishedModelsByType(modelType: ModelType): Promise<SupabaseModel[]> {
+  async loadPublishedModelsByType(
+    modelType: ModelType,
+  ): Promise<{ models: SupabaseModel[]; error: string | null }> {
     const { data, error } = await this.db
       .from('models')
       .select('*')
@@ -38,10 +40,16 @@ export class ModelSupabaseService {
       .order('updated_at', { ascending: false });
 
     if (error) {
-      console.error('loadPublishedModelsByType error', error.message);
-      return [];
+      console.error('loadPublishedModelsByType error', error.message, { modelType });
+      return { models: [], error: error.message };
     }
-    return (data ?? []) as SupabaseModel[];
+
+    const models = (data ?? []) as SupabaseModel[];
+    console.info(
+      `loadPublishedModelsByType: ${models.length} published ${modelType} model(s)`,
+      models.map((m) => ({ id: m.id, name: m.model_name })),
+    );
+    return { models, error: null };
   }
 
   async loadModels(): Promise<SupabaseModel[]> {

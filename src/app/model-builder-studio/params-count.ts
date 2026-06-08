@@ -4,7 +4,7 @@ function countCoefficientParams(modelJson: unknown): number {
   if (!modelJson || typeof modelJson !== 'object') return 0;
   const features = (modelJson as { features?: unknown }).features;
   const featureCount = Array.isArray(features) ? features.length : 0;
-  return 1 + featureCount;
+  return featureCount;
 }
 
 function countTreeParams(modelJson: unknown): number {

@@ -86,50 +86,6 @@
             Generate New Key Pair
           </button>
         </section>
-
-        <section class="model-row">
-          <span class="model-row-label">Selected model</span>
-          <div class="model-row-body">
-            @if (loadingModel()) {
-              <div class="model-summary loading">
-                <lucide-angular class="spin" [img]="LoaderIcon" size="14"></lucide-angular>
-                <span>Looking up published {{ modelTypeLabel() }}…</span>
-              </div>
-            } @else if (publishedModel(); as model) {
-              <div
-                class="model-summary"
-                [class.alt]="selectedModelType() === 'logistic'"
-              >
-                <lucide-angular
-                  [img]="selectedModelType() === 'tree' ? NetworkIcon : ChartScatterIcon"
-                  size="14"
-                  [strokeWidth]="1.8"
-                ></lucide-angular>
-                <span class="model-summary-type">{{ modelTypeLabel() }}</span>
-                <span class="model-summary-sep">·</span>
-                <span class="model-summary-name">{{ model.model_name }}</span>
-                <span class="model-summary-sep">·</span>
-                <span class="model-summary-meta">{{ model.params_count }} params</span>
-                <lucide-angular class="pill-mark active" [img]="CircleCheckIcon" size="14"></lucide-angular>
-              </div>
-              @if (hasMultiplePublishedModels()) {
-                <button type="button" class="btn-secondary model-select-btn" (click)="openModelSelectModal()">
-                  <lucide-angular [img]="ListIcon" size="15" [strokeWidth]="2"></lucide-angular>
-                  Change
-                </button>
-              }
-            } @else {
-              <div class="model-summary empty">
-                <lucide-angular
-                  [img]="selectedModelType() === 'tree' ? NetworkIcon : ChartScatterIcon"
-                  size="14"
-                  [strokeWidth]="1.8"
-                ></lucide-angular>
-                <span>{{ modelError() }}</span>
-              </div>
-            }
-          </div>
-        </section>
         </div>
 
         <section class="panel step-panel">
@@ -202,6 +158,64 @@
               </div>
               <span class="mini-label">Submit encrypted dataset</span>
             </div>
+          </div>
+        </section>
+
+        <section class="model-row model-row-span">
+          <span class="model-row-label">Selected model</span>
+          <div class="model-row-body">
+            @if (loadingModel()) {
+              <div class="model-summary loading">
+                <lucide-angular class="spin" [img]="LoaderIcon" size="14"></lucide-angular>
+                <span>Looking up published {{ modelTypeLabel() }}…</span>
+              </div>
+            } @else if (publishedModel(); as model) {
+              <div
+                class="model-summary"
+                [class.alt]="selectedModelType() === 'logistic'"
+              >
+                <lucide-angular
+                  [img]="selectedModelType() === 'tree' ? NetworkIcon : ChartScatterIcon"
+                  size="14"
+                  [strokeWidth]="1.8"
+                ></lucide-angular>
+                <span class="model-summary-type">{{ modelTypeLabel() }}</span>
+                <span class="model-summary-sep">·</span>
+                <span class="model-summary-name">{{ model.model_name }}</span>
+                <span class="model-summary-sep">·</span>
+                <span class="model-summary-meta">{{ model.params_count }} params</span>
+                <lucide-angular class="pill-mark active" [img]="CircleCheckIcon" size="14"></lucide-angular>
+                @if (publishedModelCount() > 1) {
+                  <span class="model-summary-sep">·</span>
+                  <span class="model-summary-meta">{{ publishedModelCount() }} available</span>
+                }
+              </div>
+              <div class="model-row-actions">
+                <button type="button" class="btn-secondary model-select-btn" (click)="openModelSelectModal()">
+                  <lucide-angular [img]="ListIcon" size="15" [strokeWidth]="2"></lucide-angular>
+                  Change
+                </button>
+                @if (canDownloadSampleData()) {
+                  <button
+                    type="button"
+                    class="btn-secondary model-select-btn"
+                    (click)="downloadSampleData()"
+                  >
+                    <lucide-angular [img]="DownloadIcon" size="15" [strokeWidth]="2"></lucide-angular>
+                    Sample CSV
+                  </button>
+                }
+              </div>
+            } @else {
+              <div class="model-summary empty">
+                <lucide-angular
+                  [img]="selectedModelType() === 'tree' ? NetworkIcon : ChartScatterIcon"
+                  size="14"
+                  [strokeWidth]="1.8"
+                ></lucide-angular>
+                <span>{{ modelError() }}</span>
+              </div>
+            }
           </div>
         </section>
       </div>

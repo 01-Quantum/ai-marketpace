@@ -26,7 +26,8 @@ import {
   batchRowToFeatureVector,
   defaultFeatureVector,
 } from '../dataset';
-import { sampleRowFields, SampleDataRow, parseSampleDataCsv, sampleDataToCsv } from '../sample-data.types';
+import { SampleDataDownloadService } from '../../shared/sample-data-download.service';
+import { sampleRowFields, SampleDataRow, parseSampleDataCsv } from '../sample-data.types';
 import {
   predictLinearRegression,
   runLinearRegressionBatch,
@@ -51,6 +52,7 @@ export class ModelSidebarPanel {
   private readonly modelBuilder = inject(ModelBuilderService);
   private readonly linearRegressionModel = inject(LinearRegressionModelService);
   private readonly sampleData = inject(SampleDataService);
+  private readonly sampleDataDownload = inject(SampleDataDownloadService);
 
   readonly csvFileInput = viewChild<ElementRef<HTMLInputElement>>('csvFileInput');
 
@@ -257,24 +259,8 @@ export class ModelSidebarPanel {
 
   downloadBatchCsv(): void {
     const rows = this.batchRows();
-    if (!rows.length) return;
-
-    const csv = sampleDataToCsv(rows);
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-
     const modelName = this.selectedModel()?.name ?? 'model';
-    const slug = modelName
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-    const filename = `${slug || 'model'}-sample-data.csv`;
-
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    this.sampleDataDownload.downloadCsv(rows, modelName);
   }
 
   clearAllTestData(): void {

@@ -514,33 +514,45 @@
   height: 14px !important;
 }
 
-/* ===== Selected model row ===== */
+/* ===== Selected model row (full width below Step 1 + Step 2) ===== */
+.model-row-span {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
 .model-row {
   display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.45rem;
 }
 
 .model-row-label {
   font-size: 0.78rem;
   color: var(--muted);
   font-weight: 500;
-  flex-shrink: 0;
-  width: 100%;
 }
 
 .model-row-body {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  flex: 1;
+  gap: 0.65rem;
+  width: 100%;
   min-width: 0;
-  flex-wrap: wrap;
+}
+
+.model-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .model-select-btn {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   padding: 0.38rem 0.65rem;
   font-size: 0.78rem;
 }
@@ -771,5 +783,15 @@
   .mini-arrow {
     transform: rotate(90deg);
     margin: 0;
+  }
+
+  .model-row-body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .model-row-actions {
+    margin-left: 0;
+    justify-content: flex-end;
   }
 }
