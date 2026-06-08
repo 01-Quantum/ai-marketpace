@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -37,6 +37,7 @@ import {
   SupabaseModel,
 } from '../model-builder-studio/model-supabase.service';
 import { FheKey, FheKeysService } from './fhe-keys.service';
+import { formatFileSize, validateCsvFile } from './csv-upload';
 
 function parseOptionalModelId(value: string | null): number | null {
   if (!value) return null;
@@ -103,6 +104,16 @@ export class DataOwnerWorkspace {
   readonly showSelectModal = signal(false);
   readonly allKeys = signal<FheKey[]>([]);
   readonly loadingAllKeys = signal(false);
+
+  readonly csvFileInput = viewChild<ElementRef<HTMLInputElement>>('csvFileInput');
+  readonly selectedCsvFile = signal<File | null>(null);
+  readonly uploadError = signal('');
+  readonly dragOver = signal(false);
+
+  readonly selectedCsvFileSize = computed(() => {
+    const file = this.selectedCsvFile();
+    return file ? formatFileSize(file.size) : '';
+  });
 
   readonly datasets: EncryptedDataset[] = [
     { name: 'Iris Sample A', owner: 'alice', status: 'Encrypted', submittedTo: null },
@@ -350,7 +361,60 @@ export class DataOwnerWorkspace {
     if (ok) await this.refreshLatestKey();
   }
 
-  browseFiles(): void {}
+  browseFiles(): void {
+    this.uploadError.set('');
+    this.csvFileInput()?.nativeElement.click();
+  }
+
+  onCsvFileInputChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.acceptCsvFiles(input.files);
+    input.value = '';
+  }
+
+  onUploadDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.dragOver.set(true);
+  }
+
+  onUploadDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.dragOver.set(false);
+  }
+
+  onUploadDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.dragOver.set(false);
+    this.uploadError.set('');
+    this.acceptCsvFiles(event.dataTransfer?.files ?? null);
+  }
+
+  clearSelectedCsv(): void {
+    this.selectedCsvFile.set(null);
+    this.uploadError.set('');
+  }
+
+  private acceptCsvFiles(files: FileList | null): void {
+    if (!files?.length) return;
+
+    if (files.length > 1) {
+      this.uploadError.set('Please upload one CSV file at a time.');
+      return;
+    }
+
+    const file = files[0];
+    const error = validateCsvFile(file);
+    if (error) {
+      this.uploadError.set(error);
+      return;
+    }
+
+    this.uploadError.set('');
+    this.selectedCsvFile.set(file);
+  }
 
   viewDataset(_: EncryptedDataset): void {}
 

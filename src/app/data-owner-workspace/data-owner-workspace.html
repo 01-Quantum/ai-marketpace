@@ -134,13 +134,45 @@
             <h2 class="step-panel-title">Step 2: Upload &amp; Encrypt Data</h2>
           </header>
 
-          <div class="upload-zone" tabindex="0">
-            <lucide-angular class="upload-icon" [img]="CloudUploadIcon" size="32" [strokeWidth]="1.6"></lucide-angular>
-            <p class="upload-title">Drag &amp; drop your file here</p>
-            <p class="upload-or">or</p>
-            <button type="button" class="btn-secondary" (click)="browseFiles()">Browse Files</button>
-            <p class="upload-meta">Accepted file types: CSV, JSON · Max size: 50 MB</p>
+          <input
+            #csvFileInput
+            type="file"
+            accept=".csv,text/csv"
+            hidden
+            (change)="onCsvFileInputChange($event)"
+          />
+
+          <div
+            class="upload-zone"
+            tabindex="0"
+            [class.drag-over]="dragOver()"
+            [class.has-file]="selectedCsvFile()"
+            (dragover)="onUploadDragOver($event)"
+            (dragleave)="onUploadDragLeave($event)"
+            (drop)="onUploadDrop($event)"
+            (keydown.enter)="browseFiles()"
+            (keydown.space)="browseFiles(); $event.preventDefault()"
+          >
+            @if (selectedCsvFile(); as file) {
+              <lucide-angular class="upload-icon" [img]="FileTextIcon" size="32" [strokeWidth]="1.6"></lucide-angular>
+              <p class="upload-title">{{ file.name }}</p>
+              <p class="upload-meta">{{ selectedCsvFileSize() }} · CSV ready for encryption</p>
+              <div class="upload-file-actions">
+                <button type="button" class="btn-secondary" (click)="browseFiles()">Replace file</button>
+                <button type="button" class="btn-secondary danger" (click)="clearSelectedCsv()">Remove</button>
+              </div>
+            } @else {
+              <lucide-angular class="upload-icon" [img]="CloudUploadIcon" size="32" [strokeWidth]="1.6"></lucide-angular>
+              <p class="upload-title">Drag &amp; drop your file here</p>
+              <p class="upload-or">or</p>
+              <button type="button" class="btn-secondary" (click)="browseFiles()">Browse Files</button>
+              <p class="upload-meta">CSV only · One file · Max size: 50 MB</p>
+            }
           </div>
+
+          @if (uploadError()) {
+            <p class="upload-error">{{ uploadError() }}</p>
+          }
 
           <div class="mini-flow" aria-label="Upload flow">
             <div class="mini-step">

@@ -378,6 +378,23 @@
   align-items: center;
   text-align: center;
   gap: 0.3rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.upload-zone:focus-visible {
+  outline: 2px solid rgba(45, 212, 191, 0.45);
+  outline-offset: 2px;
+}
+
+.upload-zone.drag-over {
+  border-color: var(--teal);
+  background: rgba(45, 212, 191, 0.12);
+}
+
+.upload-zone.has-file {
+  border-style: solid;
+  cursor: default;
 }
 
 .upload-icon {
@@ -406,6 +423,25 @@
   margin: 0.25rem 0 0;
   font-size: 0.72rem;
   color: var(--muted-soft);
+}
+
+.upload-file-actions {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.upload-file-actions .btn-secondary {
+  padding: 0.38rem 0.65rem;
+  font-size: 0.76rem;
+}
+
+.upload-error {
+  margin: 0.45rem 0 0;
+  font-size: 0.76rem;
+  color: var(--coral);
 }
 
 .mini-flow {
