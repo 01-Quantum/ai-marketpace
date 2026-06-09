@@ -20,13 +20,10 @@ import {
   Upload,
   ShieldCheck,
   Trash2,
-  TrendingUp,
 } from 'lucide-angular';
 import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
 import { DecisionTreeDesigner } from './decision-tree-designer/decision-tree-designer';
 import { toDecisionTreeDocument } from './decision-tree-document';
-import { LinearRegressionDesigner } from './linear-regression-designer/linear-regression-designer';
-import { LinearRegressionModelService } from './linear-regression-model.service';
 import { LogisticRegressionDesigner } from './logistic-regression-designer/logistic-regression-designer';
 import { LogisticRegressionModelService } from './logistic-regression-model.service';
 import { downloadModelExport } from './model-export';
@@ -38,7 +35,6 @@ const LIBRARY_ICONS: Record<LibraryModel['iconKind'], typeof Network> = {
   tree: Network,
   scatter: ChartScatter,
   shield: ShieldCheck,
-  trending: TrendingUp,
 };
 
 @Component({
@@ -48,7 +44,6 @@ const LIBRARY_ICONS: Record<LibraryModel['iconKind'], typeof Network> = {
     LucideAngularModule,
     AppTopBar,
     DecisionTreeDesigner,
-    LinearRegressionDesigner,
     LogisticRegressionDesigner,
     ModelSidebarPanel,
   ],
@@ -60,7 +55,6 @@ export class ModelBuilderStudio {
 
   private readonly modelBuilder = inject(ModelBuilderService);
   private readonly logisticRegressionModel = inject(LogisticRegressionModelService);
-  private readonly linearRegressionModel = inject(LinearRegressionModelService);
 
   readonly libraryItems = toSignal(this.modelBuilder.libraryModels$, {
     initialValue: [] as LibraryModel[],
@@ -182,8 +176,6 @@ export class ModelBuilderStudio {
     let modelJson: unknown = null;
     if (type === 'logistic') {
       modelJson = this.logisticRegressionModel.getModel();
-    } else if (type === 'linear') {
-      modelJson = this.linearRegressionModel.getModel();
     } else {
       modelJson = toDecisionTreeDocument(this.modelBuilder.getCurrentNodes());
     }
@@ -229,7 +221,6 @@ export class ModelBuilderStudio {
   private currentModelJson(): unknown {
     const type = this.selectedModel()?.type;
     if (type === 'logistic') return this.logisticRegressionModel.getModel();
-    if (type === 'linear') return this.linearRegressionModel.getModel();
     return toDecisionTreeDocument(this.modelBuilder.getCurrentNodes());
   }
 

@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { AuthService } from '../shared/auth.service';
+export type InferenceJobStatus = 'encrypted' | 'inference_running' | 'inference_complete';
 
 export interface FheEncryptedDataset {
   id: number;
@@ -21,7 +22,40 @@ export interface FheEncryptedDataset {
   columns: string[];
   ciphertext_files: string[];
   manifest_json: unknown;
+  status: InferenceJobStatus | string;
+  submitted_at: string | null;
   created_at: string;
+  updated_at: string;
+}
+
+export interface InferenceJob {
+  id: number;
+  jobId: string;
+  dataset: string;
+  model: string;
+  status: InferenceJobStatus;
+  startedAt: string | null;
+  completedAt: string | null;
+}
+
+function normalizeJobStatus(value: string | null | undefined): InferenceJobStatus {
+  if (value === 'inference_complete' || value === 'inference_running') {
+    return value;
+  }
+  return 'encrypted';
+}
+
+export function toInferenceJob(dataset: FheEncryptedDataset): InferenceJob {
+  const status = normalizeJobStatus(dataset.status);
+  return {
+    id: dataset.id,
+    jobId: dataset.encrypt_id,
+    dataset: dataset.source_file_name,
+    model: dataset.model_name,
+    status,
+    startedAt: dataset.submitted_at,
+    completedAt: status === 'inference_complete' ? dataset.updated_at : null,
+  };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -41,6 +75,7 @@ export class FheEncryptedDatasetsService {
       .from('fhe_encrypted_datasets')
       .select('*')
       .eq('user_id', userId)
+      .is('submitted_at', null)
       .order('id', { ascending: false });
 
     if (error) {
@@ -54,5 +89,31 @@ export class FheEncryptedDatasetsService {
       datasets.map((d) => ({ id: d.id, name: d.source_file_name, model_type: d.model_type })),
     );
     return { datasets, error: null };
+  }
+
+  async loadSubmittedJobs(): Promise<{ jobs: InferenceJob[]; error: string | null }> {
+    const userId = this.auth.user()?.id;
+    if (!userId) {
+      return { jobs: [], error: 'Not signed in.' };
+    }
+
+    const { data, error } = await this.db
+      .from('fhe_encrypted_datasets')
+      .select('*')
+      .eq('user_id', userId)
+      .not('submitted_at', 'is', null)
+      .order('submitted_at', { ascending: false });
+
+    if (error) {
+      console.error('loadInferenceJobs error', error.message);
+      return { jobs: [], error: error.message };
+    }
+
+    const jobs = ((data ?? []) as FheEncryptedDataset[]).map(toInferenceJob);
+    console.info(
+      `loadInferenceJobs: ${jobs.length} submitted job(s) for user ${userId}`,
+      jobs.map((j) => ({ id: j.id, status: j.status, dataset: j.dataset })),
+    );
+    return { jobs, error: null };
   }
 }

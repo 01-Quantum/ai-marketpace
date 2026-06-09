@@ -10,17 +10,11 @@ import {
   toDecisionTreeDocument,
 } from './decision-tree-document';
 import {
-  DEFAULT_LINEAR_REGRESSION_MODEL,
-  cloneLinearRegressionModel,
-  parseLinearRegressionDocument,
-} from './linear-regression-document';
-import {
   DEFAULT_LOGISTIC_REGRESSION_MODEL,
   cloneLogisticRegressionModel,
   parseLogisticRegressionDocument,
 } from './logistic-regression-document';
 import { ModelExportDocument, parseModelExportDocument } from './model-export';
-import { LinearRegressionModel } from './linear-regression-model.types';
 import { LogisticRegressionModel } from './logistic-regression-model.types';
 import { collectTreeFeatures, createRandomSampleRow, defaultTreeFeature } from './decision-tree-features';
 import { formatThresholdDisplay } from './format-threshold';
@@ -40,7 +34,6 @@ import {
 
 function iconKindForType(type: import('./model-builder.types').ModelType): LibraryModel['iconKind'] {
   if (type === 'logistic') return 'scatter';
-  if (type === 'linear') return 'trending';
   return 'tree';
 }
 
@@ -141,9 +134,6 @@ export class ModelBuilderService {
   private readonly selectedModelIdSubject = new BehaviorSubject<string>('');
   private readonly selectedNodeIdSubject = new BehaviorSubject<number>(1);
   private readonly nodesByModelSubject = new BehaviorSubject<Record<string, TreeNode[]>>({});
-  private readonly linearModelsByModelSubject = new BehaviorSubject<
-    Record<string, LinearRegressionModel>
-  >({});
   private readonly logisticModelsByModelSubject = new BehaviorSubject<
     Record<string, LogisticRegressionModel>
   >({});
@@ -194,14 +184,6 @@ export class ModelBuilderService {
     shareReplay({ bufferSize: 1, refCount: true }),
   );
 
-  readonly linearModel$ = combineLatest([
-    this.selectedModelIdSubject,
-    this.linearModelsByModelSubject,
-  ]).pipe(
-    map(([modelId, modelsById]) => modelsById[modelId] ?? DEFAULT_LINEAR_REGRESSION_MODEL),
-    shareReplay({ bufferSize: 1, refCount: true }),
-  );
-
   readonly logisticModel$ = combineLatest([
     this.selectedModelIdSubject,
     this.logisticModelsByModelSubject,
@@ -229,25 +211,6 @@ export class ModelBuilderService {
     if (!nodes.some((node) => node.id === this.selectedNodeIdSubject.value)) {
       this.selectedNodeIdSubject.next(nodes[0]?.id ?? this.selectedNodeIdSubject.value);
     }
-  }
-
-  getCurrentLinearModel(): LinearRegressionModel {
-    const modelId = this.selectedModelIdSubject.value;
-    return cloneLinearRegressionModel(
-      this.linearModelsByModelSubject.value[modelId] ?? DEFAULT_LINEAR_REGRESSION_MODEL,
-    );
-  }
-
-  updateCurrentLinearModel(
-    updater: (model: LinearRegressionModel) => LinearRegressionModel,
-  ): void {
-    const modelId = this.selectedModelIdSubject.value;
-    const current = this.getCurrentLinearModel();
-    this.linearModelsByModelSubject.next({
-      ...this.linearModelsByModelSubject.value,
-      [modelId]: updater(current),
-    });
-    this.markModelDirty(modelId);
   }
 
   getCurrentLogisticModel(): LogisticRegressionModel {
@@ -286,7 +249,6 @@ export class ModelBuilderService {
     };
 
     const nodesByModel = this.nodesByModelSubject.value;
-    const linearByModel = this.linearModelsByModelSubject.value;
     const logisticByModel = this.logisticModelsByModelSubject.value;
     const sampleByModel = this.sampleDataByModelSubject.value;
 
@@ -295,13 +257,6 @@ export class ModelBuilderService {
       this.nodesByModelSubject.next({
         ...nodesByModel,
         [newId]: cloneTreeNodes(nodes),
-      });
-    } else if (source.type === 'linear') {
-      const linear =
-        linearByModel[modelId] ?? cloneLinearRegressionModel(DEFAULT_LINEAR_REGRESSION_MODEL);
-      this.linearModelsByModelSubject.next({
-        ...linearByModel,
-        [newId]: cloneLinearRegressionModel(linear),
       });
     } else if (source.type === 'logistic') {
       const logistic =
@@ -357,12 +312,6 @@ export class ModelBuilderService {
       this.nodesByModelSubject.next({
         ...this.nodesByModelSubject.value,
         [newId]: parsed ?? cloneTreeNodes(DEFAULT_DECISION_TREE_NODES),
-      });
-    } else if (doc.type === 'linear') {
-      const parsed = parseLinearRegressionDocument(doc.model_json);
-      this.linearModelsByModelSubject.next({
-        ...this.linearModelsByModelSubject.value,
-        [newId]: parsed ?? cloneLinearRegressionModel(DEFAULT_LINEAR_REGRESSION_MODEL),
       });
     } else if (doc.type === 'logistic') {
       const parsed = parseLogisticRegressionDocument(doc.model_json);
@@ -618,47 +567,39 @@ export class ModelBuilderService {
     const remoteModels = await this.modelSupabase.loadModels();
 
     const nodeMap: Record<string, TreeNode[]> = {};
-    const linearMap: Record<string, LinearRegressionModel> = {};
     const logisticMap: Record<string, LogisticRegressionModel> = {};
     const sampleMap: Record<string, SampleDataRow[]> = {};
 
-    const entries: LibraryModel[] = remoteModels.map((rm) => {
-      const localId = `remote-${rm.id}`;
-      if (rm.model_type === 'tree') {
-        const parsed = parseDecisionTreeDocument(rm.model_json);
-        nodeMap[localId] = parsed ?? cloneTreeNodes(DEFAULT_DECISION_TREE_NODES);
-      } else if (rm.model_type === 'linear') {
-        const parsed = parseLinearRegressionDocument(rm.model_json);
-        linearMap[localId] = parsed ?? cloneLinearRegressionModel(DEFAULT_LINEAR_REGRESSION_MODEL);
-      } else if (rm.model_type === 'logistic') {
-        const parsed = parseLogisticRegressionDocument(rm.model_json);
-        logisticMap[localId] =
-          parsed ?? cloneLogisticRegressionModel(DEFAULT_LOGISTIC_REGRESSION_MODEL);
-      }
-      const rows = parseSampleDataDocument(rm.sample_data);
-      sampleMap[localId] = rows;
-      this.originalSampleDataByModel[localId] = structuredClone(rows);
-      return {
-        id: localId,
-        remoteId: rm.id,
-        name: rm.model_name,
-        version: 'v1.0.0',
-        updated: new Date(rm.updated_at).toLocaleDateString(),
-        iconKind: iconKindForType(rm.model_type),
-        type: rm.model_type,
-        isSaved: true,
-        published: !!rm.published,
-      };
-    });
+    const entries: LibraryModel[] = remoteModels
+      .filter((rm) => rm.model_type === 'tree' || rm.model_type === 'logistic')
+      .map((rm) => {
+        const localId = `remote-${rm.id}`;
+        if (rm.model_type === 'tree') {
+          const parsed = parseDecisionTreeDocument(rm.model_json);
+          nodeMap[localId] = parsed ?? cloneTreeNodes(DEFAULT_DECISION_TREE_NODES);
+        } else if (rm.model_type === 'logistic') {
+          const parsed = parseLogisticRegressionDocument(rm.model_json);
+          logisticMap[localId] =
+            parsed ?? cloneLogisticRegressionModel(DEFAULT_LOGISTIC_REGRESSION_MODEL);
+        }
+        const rows = parseSampleDataDocument(rm.sample_data);
+        sampleMap[localId] = rows;
+        this.originalSampleDataByModel[localId] = structuredClone(rows);
+        return {
+          id: localId,
+          remoteId: rm.id,
+          name: rm.model_name,
+          version: 'v1.0.0',
+          updated: new Date(rm.updated_at).toLocaleDateString(),
+          iconKind: iconKindForType(rm.model_type),
+          type: rm.model_type,
+          isSaved: true,
+          published: !!rm.published,
+        };
+      });
 
     if (Object.keys(nodeMap).length > 0) {
       this.nodesByModelSubject.next({ ...this.nodesByModelSubject.value, ...nodeMap });
-    }
-    if (Object.keys(linearMap).length > 0) {
-      this.linearModelsByModelSubject.next({
-        ...this.linearModelsByModelSubject.value,
-        ...linearMap,
-      });
     }
     if (Object.keys(logisticMap).length > 0) {
       this.logisticModelsByModelSubject.next({
@@ -689,16 +630,6 @@ export class ModelBuilderService {
       const features = collectTreeFeatures(this.currentNodes());
       const expected = rows[rows.length - 1]?.expected ?? '';
       newRow = createRandomSampleRow(features, nextId, expected);
-    } else if (model?.type === 'linear') {
-      const features = this.getCurrentLinearModel().features;
-      if (rows.length > 0) {
-        newRow = { ...structuredClone(rows[rows.length - 1]), id: nextId };
-      } else {
-        newRow = { id: nextId, expected: '' };
-        for (const feature of features) {
-          newRow[feature.name] = 0;
-        }
-      }
     } else if (rows.length > 0) {
       newRow = { ...structuredClone(rows[rows.length - 1]), id: nextId };
     } else {
@@ -814,11 +745,6 @@ export class ModelBuilderService {
       const nodes = this.nodesByModelSubject.value[modelId] ?? [];
       return toDecisionTreeDocument(nodes);
     }
-    if (type === 'linear') {
-      return cloneLinearRegressionModel(
-        this.linearModelsByModelSubject.value[modelId] ?? DEFAULT_LINEAR_REGRESSION_MODEL,
-      );
-    }
     if (type === 'logistic') {
       return cloneLogisticRegressionModel(
         this.logisticModelsByModelSubject.value[modelId] ?? DEFAULT_LOGISTIC_REGRESSION_MODEL,
@@ -834,9 +760,6 @@ export class ModelBuilderService {
 
     const { [modelId]: _nodes, ...nodesByModel } = this.nodesByModelSubject.value;
     this.nodesByModelSubject.next(nodesByModel);
-
-    const { [modelId]: _linear, ...linearByModel } = this.linearModelsByModelSubject.value;
-    this.linearModelsByModelSubject.next(linearByModel);
 
     const { [modelId]: _logistic, ...logisticByModel } = this.logisticModelsByModelSubject.value;
     this.logisticModelsByModelSubject.next(logisticByModel);

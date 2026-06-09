@@ -17,146 +17,163 @@
         <span>You can see ciphertext only. No plaintext user data is visible.</span>
       </div>
 
-      <section class="select-model-section">
-        <h2 class="select-model-title">Select Model</h2>
-        <div class="model-cards">
-          <button
-            type="button"
-            class="model-card"
-            [class.selected]="selectedModel() === 'tree'"
-            (click)="selectModel('tree')"
-          >
-            <lucide-angular class="model-icon teal" [img]="NetworkIcon" size="44" [strokeWidth]="1.6"></lucide-angular>
-            <div class="model-card-body">
-              <h3 class="model-name">Decision Tree</h3>
-              <p class="model-desc">Tree-based classification model. Fast and interpretable.</p>
-            </div>
-            @if (selectedModel() === 'tree') {
-              <lucide-angular class="select-mark active" [img]="CircleCheckIcon" size="22"></lucide-angular>
-            } @else {
-              <lucide-angular class="select-mark" [img]="CircleDashedIcon" size="22"></lucide-angular>
-            }
-          </button>
-
-          <button
-            type="button"
-            class="model-card"
-            [class.selected]="selectedModel() === 'logistic'"
-            (click)="selectModel('logistic')"
-          >
-            <lucide-angular class="model-icon coral" [img]="ChartScatterIcon" size="44" [strokeWidth]="1.6"></lucide-angular>
-            <div class="model-card-body">
-              <h3 class="model-name">Logistic Regression</h3>
-              <p class="model-desc">Linear model for binary classification.</p>
-            </div>
-            @if (selectedModel() === 'logistic') {
-              <lucide-angular class="select-mark active" [img]="CircleCheckIcon" size="22"></lucide-angular>
-            } @else {
-              <lucide-angular class="select-mark" [img]="CircleDashedIcon" size="22"></lucide-angular>
-            }
-          </button>
-        </div>
-      </section>
-
       <section class="panel table-panel datasets-table">
         <header class="table-head">
           <lucide-angular class="table-head-icon" [img]="DatabaseIcon" size="20"></lucide-angular>
           <h2 class="section-title">Incoming Encrypted Datasets</h2>
+          <button
+            type="button"
+            class="icon-btn table-head-refresh"
+            aria-label="Refresh incoming datasets"
+            (click)="refreshWorkspace()"
+            [disabled]="loadingDatasets() || loadingJobs()"
+          >
+            <lucide-angular
+              [class.spin]="loadingDatasets() || loadingJobs()"
+              [img]="RefreshCwIcon"
+              size="15"
+              [strokeWidth]="2"
+            ></lucide-angular>
+          </button>
         </header>
 
-        <div class="table-wrap" role="table">
-          <div class="table-row table-header" role="row">
-            <span role="columnheader">Dataset</span>
-            <span role="columnheader">Submitted By</span>
-            <span role="columnheader">Model</span>
-            <span role="columnheader">Encryption Status</span>
-            <span role="columnheader">Records</span>
-            <span role="columnheader">Submitted At</span>
-            <span role="columnheader" class="col-action">Action</span>
-          </div>
-          @for (ds of datasets; track ds.name) {
-            <div class="table-row" role="row">
-              <span class="cell-name" role="cell">
-                <lucide-angular [img]="FileLockIcon" size="16" [strokeWidth]="1.6"></lucide-angular>
-                <span>{{ ds.name }}</span>
-              </span>
-              <span role="cell">{{ ds.submittedBy }}</span>
-              <span role="cell">{{ ds.model }}</span>
-              <span class="cell-status" role="cell">
-                <lucide-angular [img]="LockIcon" size="12" [strokeWidth]="2"></lucide-angular>
-                {{ ds.status }}
-              </span>
-              <span role="cell">{{ ds.records | number }}</span>
-              <span class="cell-muted" role="cell">{{ ds.submittedAt }}</span>
-              <span class="col-action" role="cell">
-                <button type="button" class="btn-action coral" (click)="runInference(ds)">
-                  <lucide-angular [img]="PlayIcon" size="12" [strokeWidth]="2.2"></lucide-angular>
-                  Run Encrypted Inference
-                </button>
-              </span>
+        @if (inferenceError()) {
+          <p class="datasets-error">{{ inferenceError() }}</p>
+        }
+        @if (inferenceSuccess()) {
+          <p class="inference-success">{{ inferenceSuccess() }}</p>
+        }
+
+        @if (loadingDatasets() && datasets().length === 0) {
+          <p class="datasets-empty">
+            <lucide-angular class="spin" [img]="LoaderIcon" size="14"></lucide-angular>
+            Loading incoming datasets…
+          </p>
+        } @else if (datasetsError()) {
+          <p class="datasets-error">{{ datasetsError() }}</p>
+        } @else if (datasets().length === 0) {
+          <p class="datasets-empty">No pending encrypted datasets yet.</p>
+        } @else {
+          <div class="table-wrap" role="table">
+            <div class="table-row table-header" role="row">
+              <span role="columnheader">Dataset</span>
+              <span role="columnheader">Submitted By</span>
+              <span role="columnheader">Model</span>
+              <span role="columnheader">Encryption Status</span>
+              <span role="columnheader">Records</span>
+              <span role="columnheader">Submitted At</span>
+              <span role="columnheader" class="col-action">Action</span>
             </div>
-          }
-        </div>
+            @for (ds of datasets(); track ds.id) {
+              <div class="table-row" role="row">
+                <span class="cell-name" role="cell">
+                  <lucide-angular [img]="FileLockIcon" size="16" [strokeWidth]="1.6"></lucide-angular>
+                  <span>{{ ds.source_file_name }}</span>
+                </span>
+                <span role="cell">{{ submitterLabel(ds.user_id) }}</span>
+                <span role="cell">{{ ds.model_name }}</span>
+                <span class="cell-status" role="cell">
+                  <lucide-angular [img]="LockIcon" size="12" [strokeWidth]="2"></lucide-angular>
+                  FHE Encrypted
+                </span>
+                <span role="cell">{{ ds.total_rows | number }}</span>
+                <span class="cell-muted" role="cell">{{ formatCreated(ds.created_at) }}</span>
+                <span class="col-action" role="cell">
+                  <button
+                    type="button"
+                    class="btn-action coral"
+                    (click)="runInference(ds)"
+                    [disabled]="isInferring(ds)"
+                  >
+                    @if (isInferring(ds)) {
+                      <lucide-angular class="spin" [img]="LoaderIcon" size="12" [strokeWidth]="2"></lucide-angular>
+                      Running…
+                    } @else {
+                      <lucide-angular [img]="PlayIcon" size="12" [strokeWidth]="2.2"></lucide-angular>
+                      Run Encrypted Inference
+                    }
+                  </button>
+                </span>
+              </div>
+            }
+          </div>
+        }
       </section>
 
       <section class="panel table-panel jobs-table">
         <header class="table-head">
           <lucide-angular class="table-head-icon" [img]="ListChecksIcon" size="20"></lucide-angular>
           <h2 class="section-title">Inference Jobs</h2>
+          <button
+            type="button"
+            class="icon-btn table-head-refresh"
+            aria-label="Refresh inference jobs"
+            (click)="refreshWorkspace()"
+            [disabled]="loadingDatasets() || loadingJobs()"
+          >
+            <lucide-angular
+              [class.spin]="loadingDatasets() || loadingJobs()"
+              [img]="RefreshCwIcon"
+              size="15"
+              [strokeWidth]="2"
+            ></lucide-angular>
+          </button>
         </header>
 
-        <div class="table-wrap" role="table">
-          <div class="table-row table-header" role="row">
-            <span role="columnheader">Job ID</span>
-            <span role="columnheader">Dataset</span>
-            <span role="columnheader">Model</span>
-            <span role="columnheader">Status</span>
-            <span role="columnheader">Started At</span>
-            <span role="columnheader">Completed At</span>
-            <span role="columnheader" class="col-action">Action</span>
-          </div>
-          @for (job of jobs; track job.jobId) {
-            <div class="table-row" role="row">
-              <span class="cell-mono" role="cell">{{ job.jobId }}</span>
-              <span role="cell">{{ job.dataset }}</span>
-              <span role="cell">{{ job.model }}</span>
-              <span role="cell">
-                @switch (job.status) {
-                  @case ('queued') {
-                    <span class="cell-status amber">
-                      <lucide-angular [img]="ClockIcon" size="12" [strokeWidth]="2"></lucide-angular>
-                      Queued
-                    </span>
-                  }
-                  @case ('running') {
-                    <span class="cell-status blue">
-                      <lucide-angular class="spin" [img]="LoaderIcon" size="12" [strokeWidth]="2"></lucide-angular>
-                      Running
-                    </span>
-                  }
-                  @case ('completed') {
-                    <span class="cell-status green">
-                      <lucide-angular [img]="CircleCheckIcon" size="12" [strokeWidth]="2"></lucide-angular>
-                      Completed
-                    </span>
-                  }
-                }
-              </span>
-              <span class="cell-muted" role="cell">{{ job.startedAt ?? '—' }}</span>
-              <span class="cell-muted" role="cell">{{ job.completedAt ?? '—' }}</span>
-              <span class="col-action" role="cell">
-                @if (job.status === 'completed') {
-                  <button type="button" class="btn-action teal" (click)="saveResult(job)">
-                    <lucide-angular [img]="DownloadIcon" size="12" [strokeWidth]="2.2"></lucide-angular>
-                    Save Encrypted Result
-                  </button>
-                } @else {
-                  <span class="cell-muted">—</span>
-                }
-              </span>
+        @if (loadingJobs() && jobs().length === 0) {
+          <p class="datasets-empty">
+            <lucide-angular class="spin" [img]="LoaderIcon" size="14"></lucide-angular>
+            Loading inference jobs…
+          </p>
+        } @else if (jobsError()) {
+          <p class="datasets-error">{{ jobsError() }}</p>
+        } @else if (jobs().length === 0) {
+          <p class="datasets-empty">No inference jobs yet.</p>
+        } @else {
+          <div class="table-wrap" role="table">
+            <div class="table-row table-header" role="row">
+              <span role="columnheader">Job ID</span>
+              <span role="columnheader">Dataset</span>
+              <span role="columnheader">Model</span>
+              <span role="columnheader">Status</span>
+              <span role="columnheader">Started At</span>
+              <span role="columnheader">Completed At</span>
             </div>
-          }
-        </div>
+            @for (job of jobs(); track job.id) {
+              <div class="table-row" role="row">
+                <span class="cell-mono job-id" role="cell" [title]="job.jobId">
+                  {{ truncateJobId(job.jobId) }}
+                </span>
+                <span role="cell">{{ job.dataset }}</span>
+                <span role="cell">{{ job.model }}</span>
+                <span role="cell">
+                  @switch (job.status) {
+                    @case ('encrypted') {
+                      <span class="cell-status amber">
+                        <lucide-angular [img]="LockIcon" size="12" [strokeWidth]="2"></lucide-angular>
+                        Encrypted
+                      </span>
+                    }
+                    @case ('inference_running') {
+                      <span class="cell-status blue">
+                        <lucide-angular class="spin" [img]="LoaderIcon" size="12" [strokeWidth]="2"></lucide-angular>
+                        Running
+                      </span>
+                    }
+                    @case ('inference_complete') {
+                      <span class="cell-status green">
+                        <lucide-angular [img]="CircleCheckIcon" size="12" [strokeWidth]="2"></lucide-angular>
+                        Complete
+                      </span>
+                    }
+                  }
+                </span>
+                <span class="cell-muted" role="cell">{{ formatCreated(job.startedAt) }}</span>
+                <span class="cell-muted" role="cell">{{ formatCreated(job.completedAt) }}</span>
+              </div>
+            }
+          </div>
+        }
       </section>
     </main>
 

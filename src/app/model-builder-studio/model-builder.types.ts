@@ -1,4 +1,4 @@
-export type ModelType = 'tree' | 'logistic' | 'linear';
+export type ModelType = 'tree' | 'logistic';
 
 export interface LibraryModel {
   /** Local key used within the studio (matches Supabase row id as string for saved models). */
@@ -8,7 +8,7 @@ export interface LibraryModel {
   name: string;
   version: string;
   updated: string;
-  iconKind: 'tree' | 'scatter' | 'shield' | 'trending';
+  iconKind: 'tree' | 'scatter' | 'shield';
   type: ModelType;
   /** Whether the model matches the last saved Supabase state. */
   isSaved?: boolean;

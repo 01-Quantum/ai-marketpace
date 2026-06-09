@@ -143,7 +143,6 @@ export class DataOwnerWorkspace {
   readonly loadingDatasets = signal(false);
   readonly datasetsError = signal('');
   readonly viewingDataset = signal<FheEncryptedDataset | null>(null);
-
   readonly ownerLabel = computed(() => {
     const slug =
       (this.auth.displayName() || 'user')

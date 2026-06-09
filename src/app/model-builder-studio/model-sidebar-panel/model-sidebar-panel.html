@@ -10,11 +10,7 @@
           [attr.aria-selected]="activeTab() === 'properties'"
           (click)="setTab('properties')"
         >
-          @if (selectedModelType() === 'linear') {
-            Model Properties
-          } @else {
-            Node Properties
-          }
+          Node Properties
         </button>
         <button
           type="button"
@@ -51,40 +47,7 @@
     <div class="sidebar-body">
       @switch (activeTab()) {
         @case ('properties') {
-          @if (selectedModelType() === 'linear') {
-            <div class="properties-head-inline">
-              <span class="node-pill">Linear model</span>
-            </div>
-
-            <label class="form-field">
-              <span class="form-label">Intercept (b)</span>
-              <input
-                class="form-input"
-                type="number"
-                step="0.0001"
-                [value]="linearModel().intercept"
-                (change)="onInterceptChange($any($event.target).value)"
-              />
-            </label>
-
-            <div class="section-block">
-              <span class="form-label">Coefficients</span>
-              <div class="feature-inputs">
-                @for (feature of linearModel().features; track feature.name; let i = $index) {
-                  <label class="form-field">
-                    <span class="form-label">{{ feature.name }}</span>
-                    <input
-                      class="form-input"
-                      type="number"
-                      step="0.0001"
-                      [value]="feature.weight"
-                      (change)="onCoefficientChange(i, $any($event.target).value)"
-                    />
-                  </label>
-                }
-              </div>
-            </div>
-          } @else if (selectedNode(); as node) {
+          @if (selectedNode(); as node) {
             <div class="properties-head-inline">
               <span class="node-pill">Node {{ node.id }}</span>
             </div>
@@ -183,29 +146,7 @@
           </div>
 
           @if (inputMode() === 'single') {
-            @if (selectedModelType() === 'linear') {
-              <div class="section-block">
-                <span class="form-label">Features</span>
-                @if (linearModel().features.length === 0) {
-                  <p class="batch-empty">Add coefficients in the model designer to define features for testing.</p>
-                } @else {
-                  <div class="feature-inputs">
-                    @for (feature of linearModel().features; track feature.name; let i = $index) {
-                      <label class="form-field">
-                        <span class="form-label">{{ feature.name }}</span>
-                        <input
-                          class="form-input"
-                          type="number"
-                          step="0.1"
-                          [value]="featureValues()[i]"
-                          (change)="onFeatureChange(i, $any($event.target).value)"
-                        />
-                      </label>
-                    }
-                  </div>
-                }
-              </div>
-            } @else if (selectedModelType() === 'tree') {
+            @if (selectedModelType() === 'tree') {
               <div class="section-block">
                 <span class="form-label">Features</span>
                 @if (treeFeatures().length === 0) {
@@ -269,40 +210,6 @@
               </div>
             }
 
-            @if (lastRunMode() === 'single' && lastLinearResult(); as result) {
-              <div class="result-card">
-                <span class="result-card-label">Predicted {{ linearTarget() }}</span>
-                <div class="prediction-value">
-                  {{ formatNumber(result.value) }}
-                </div>
-              </div>
-
-              <div class="section-block">
-                <span class="form-label">Contributions</span>
-                <div class="batch-table-wrap">
-                  <table class="batch-table results-table">
-                    <thead>
-                      <tr>
-                        <th>Feature</th>
-                        <th>Coef</th>
-                        <th>x</th>
-                        <th>w &middot; x</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (row of result.contributions; track row.name) {
-                        <tr>
-                          <td>{{ row.name }}</td>
-                          <td>{{ formatSigned(row.weight) }}</td>
-                          <td>{{ formatNumber(row.input, 2) }}</td>
-                          <td>{{ formatSigned(row.contribution) }}</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            }
           } @else if (inputMode() === 'batch') {
             <div class="section-block">
               <div class="batch-head">
@@ -427,36 +334,6 @@
               </div>
             }
 
-            @if (lastRunMode() === 'batch' && lastLinearBatchResult(); as batchResult) {
-              <div class="section-block">
-                <span class="form-label">Batch Regression Results</span>
-                <div class="batch-table-wrap">
-                  <table class="batch-table results-table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Prediction</th>
-                        <th>Expected</th>
-                        <th>Residual</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (row of batchResult.rows; track row.id; let i = $index) {
-                        <tr>
-                          <td>{{ i + 1 }}</td>
-                          <td>{{ formatNumber(row.prediction) }}</td>
-                          <td>{{ row.expected }}</td>
-                          <td [class.status-fail]="isLargeResidual(row.residual)">
-                            {{ formatSigned(row.residual) }}
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-                <p class="accuracy-summary">{{ batchMaeLabel() }}</p>
-              </div>
-            }
           }
         }
 
@@ -496,66 +373,6 @@
                 </table>
               </div>
               <p class="accuracy-summary">{{ batchAccuracyLabel() }}</p>
-            </div>
-          } @else if (lastRunMode() === 'batch' && lastLinearBatchResult(); as batchResult) {
-            <div class="section-block">
-              <span class="form-label">Batch Regression Results</span>
-              <div class="batch-table-wrap">
-                <table class="batch-table results-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Prediction</th>
-                      <th>Expected</th>
-                      <th>Residual</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (row of batchResult.rows; track row.id; let i = $index) {
-                      <tr>
-                        <td>{{ i + 1 }}</td>
-                        <td>{{ formatNumber(row.prediction) }}</td>
-                        <td>{{ row.expected }}</td>
-                        <td>{{ formatSigned(row.residual) }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-              <p class="accuracy-summary">{{ batchMaeLabel() }}</p>
-            </div>
-          } @else if (lastRunMode() === 'single' && lastLinearResult(); as result) {
-            <div class="result-card">
-              <span class="result-card-label">Predicted {{ linearTarget() }}</span>
-              <div class="prediction-value">
-                {{ formatNumber(result.value) }}
-              </div>
-            </div>
-
-            <div class="section-block">
-              <span class="form-label">Contributions</span>
-              <div class="batch-table-wrap">
-                <table class="batch-table results-table">
-                  <thead>
-                    <tr>
-                      <th>Feature</th>
-                      <th>Coef</th>
-                      <th>x</th>
-                      <th>w &middot; x</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (row of result.contributions; track row.name) {
-                      <tr>
-                        <td>{{ row.name }}</td>
-                        <td>{{ formatSigned(row.weight) }}</td>
-                        <td>{{ formatNumber(row.input, 2) }}</td>
-                        <td>{{ formatSigned(row.contribution) }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
             </div>
           } @else if (lastRunMode() === 'single' && lastResult(); as result) {
             <div class="result-card">

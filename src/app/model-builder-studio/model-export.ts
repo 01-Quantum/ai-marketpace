@@ -10,7 +10,7 @@ export interface ModelExportDocument {
   exported_at: string;
 }
 
-const MODEL_TYPES: ModelType[] = ['tree', 'logistic', 'linear'];
+const MODEL_TYPES: ModelType[] = ['tree', 'logistic'];
 
 function isModelType(value: unknown): value is ModelType {
   return typeof value === 'string' && MODEL_TYPES.includes(value as ModelType);

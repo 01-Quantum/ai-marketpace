@@ -73,4 +73,34 @@ export class FheEncryptService {
     }
     return { ok: true, data };
   }
+
+  async runInference(encryptedDatasetId: number): Promise<FheVaultResult> {
+    const token = await this.auth.getAccessToken();
+    if (!token) {
+      return { ok: false, error: 'Not authenticated.' };
+    }
+
+    const res = await fetch(`${environment.fheApiBaseUrl}/fhe-vault/fhe-inference`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ encrypted_dataset_id: encryptedDatasetId }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error('fhe-inference failed', res.status, text);
+      return { ok: false, error: text || `Inference failed (${res.status}).` };
+    }
+
+    let data: unknown = null;
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
+    }
+    return { ok: true, data };
+  }
 }

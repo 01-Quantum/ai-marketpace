@@ -8,36 +8,41 @@
   display: block;
 }
 
-/* ===== Select Model section ===== */
-.select-model-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.select-model-title {
+.datasets-empty {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  padding: 0.5rem 0 0.15rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
-.select-model-section .model-cards {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.85rem;
+.datasets-error {
+  margin: 0;
+  padding: 0.5rem 0 0.15rem;
+  font-size: 0.82rem;
+  color: var(--coral);
 }
 
-.select-model-section .model-card {
-  padding: 0.95rem 1rem;
+.inference-success {
+  margin: 0 0 0.35rem;
+  padding: 0;
+  font-size: 0.82rem;
+  color: var(--teal);
 }
 
-.select-model-section .model-name {
-  font-size: 0.95rem;
-  margin-bottom: 0.2rem;
+.table-head-refresh {
+  margin-left: 0.15rem;
+  color: var(--muted);
 }
 
-.select-model-section .model-desc {
-  font-size: 0.78rem;
+.table-head-refresh:hover:not(:disabled) {
+  color: var(--teal);
+}
+
+.sidebar-cta {
+  margin-top: 1rem;
 }
 
 /* ===== Incoming Encrypted Datasets table ===== */
@@ -53,15 +58,22 @@
 }
 
 /* ===== Inference Jobs table ===== */
+.jobs-table .job-id {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .jobs-table .table-row {
   grid-template-columns:
-    minmax(0, 1.05fr) /* job id (mono) */
+    minmax(0, 0.9fr) /* job id (mono) */
     minmax(0, 1.4fr)  /* dataset */
     minmax(0, 0.85fr) /* model */
     minmax(0, 0.85fr) /* status */
     minmax(0, 1.1fr)  /* started at */
-    minmax(0, 1.1fr)  /* completed at */
-    minmax(0, 1.3fr); /* action */
+    minmax(0, 1.1fr); /* completed at */
 }
 
 /* Spinning loader animation for "Running" status */
@@ -78,8 +90,3 @@
   }
 }
 
-@media (max-width: 860px) {
-  .select-model-section .model-cards {
-    grid-template-columns: 1fr;
-  }
-}

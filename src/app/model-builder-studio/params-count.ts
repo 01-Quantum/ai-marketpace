@@ -15,7 +15,6 @@ function countTreeParams(modelJson: unknown): number {
 
 export function computeParamsCount(modelType: ModelType, modelJson: unknown): number {
   switch (modelType) {
-    case 'linear':
     case 'logistic':
       return countCoefficientParams(modelJson);
     case 'tree':
