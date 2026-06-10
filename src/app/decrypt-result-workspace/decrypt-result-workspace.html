@@ -43,7 +43,12 @@
             <div class="status-label">Selected Model</div>
             @if (dataset()) {
               <div class="status-value coral">{{ dataset()!.model_name }}</div>
-              <div class="status-meta">Job #{{ encryptedDatasetId() }}</div>
+              <div class="status-meta">
+                Job #{{ encryptedDatasetId() }}
+                @if (inferenceResult()?.result_id) {
+                  &middot; Result {{ inferenceResult()!.result_id }}
+                }
+              </div>
             } @else {
               <div class="status-value coral">—</div>
             }
@@ -62,11 +67,24 @@
         </div>
 
         <div class="status-cta">
-          <button type="button" class="btn-decrypt" (click)="decrypt()">
-            <lucide-angular [img]="LockIcon" size="16" [strokeWidth]="2.2"></lucide-angular>
-            Decrypt Result
+          <button
+            type="button"
+            class="btn-decrypt"
+            (click)="decrypt()"
+            [disabled]="!canDecrypt()"
+          >
+            @if (decrypting()) {
+              <lucide-angular class="spin" [img]="LoaderIcon" size="16" [strokeWidth]="2.2"></lucide-angular>
+              Decrypting…
+            } @else {
+              <lucide-angular [img]="LockIcon" size="16" [strokeWidth]="2.2"></lucide-angular>
+              Decrypt Result
+            }
           </button>
           <p class="status-cta-hint">Click to decrypt with your private key.</p>
+          @if (decryptError()) {
+            <p class="decrypt-error">{{ decryptError() }}</p>
+          }
         </div>
       </section>
 
@@ -138,14 +156,41 @@
               <span>The decrypted result will only be visible on your device.</span>
             </div>
           } @else {
-            <div class="prediction-card">
-              <span class="prediction-icon">
-                <lucide-angular [img]="LeafIcon" size="36" [strokeWidth]="1.6"></lucide-angular>
-              </span>
-              <div>
-                <div class="prediction-label">Predicted class:</div>
-                <div class="prediction-value">Iris Virginica</div>
+            <div class="results-summary">
+              <div class="results-meta">
+                <span class="results-count">{{ totalValueCount() | number }} values decrypted</span>
+                @if (totalValueCount() > 10) {
+                  <span class="results-preview-note">Showing first 10</span>
+                }
               </div>
+              <button
+                type="button"
+                class="btn-outline btn-outline-teal btn-download-csv"
+                (click)="downloadResultsCsv()"
+                [disabled]="totalValueCount() === 0"
+              >
+                <lucide-angular [img]="DownloadIcon" size="14" [strokeWidth]="2"></lucide-angular>
+                Download CSV
+              </button>
+            </div>
+
+            <div class="results-table-wrap">
+              <table class="results-table">
+                <thead>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">fhe_inference</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of previewValues(); track row.index) {
+                    <tr>
+                      <td class="cell-index">{{ row.index }}</td>
+                      <td class="cell-value">{{ row.value }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
             </div>
 
             <div class="prediction-foot">
@@ -157,8 +202,8 @@
                 </div>
               </div>
               <div class="foot-time">
-                <div class="meta-label">Time (UTC)</div>
-                <div class="meta-value">May 24, 2025 &middot; 10:42:39</div>
+                <div class="meta-label">Decrypted at</div>
+                <div class="meta-value">{{ formatDecryptedTime() }}</div>
               </div>
             </div>
           }

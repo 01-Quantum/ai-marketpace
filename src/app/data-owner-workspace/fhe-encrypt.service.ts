@@ -8,6 +8,12 @@ export type FheVaultResult =
 
 export type FheEncryptResult = FheVaultResult;
 
+export interface FheDecryptResultsResponse {
+  result_id: string;
+  decrypted_values: number[];
+  status: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class FheEncryptService {
   private readonly auth = inject(AuthService);
@@ -101,6 +107,43 @@ export class FheEncryptService {
     } catch {
       data = null;
     }
+    return { ok: true, data };
+  }
+
+  async decryptResults(
+    resultId: string,
+  ): Promise<{ ok: true; data: FheDecryptResultsResponse } | { ok: false; error: string }> {
+    const token = await this.auth.getAccessToken();
+    if (!token) {
+      return { ok: false, error: 'Not authenticated.' };
+    }
+
+    const res = await fetch(`${environment.fheApiBaseUrl}/fhe-vault/fhe-decrypt-results`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ result_id: resultId }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error('fhe-decrypt-results failed', res.status, text);
+      return { ok: false, error: text || `Decrypt failed (${res.status}).` };
+    }
+
+    let data: FheDecryptResultsResponse | null = null;
+    try {
+      data = (await res.json()) as FheDecryptResultsResponse;
+    } catch {
+      data = null;
+    }
+
+    if (!data) {
+      return { ok: false, error: 'Decrypt response was empty.' };
+    }
+
     return { ok: true, data };
   }
 }

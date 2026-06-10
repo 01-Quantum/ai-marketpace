@@ -5,9 +5,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { filter, take } from 'rxjs';
 import {
   buildAuditTrail,
+  formatAuditTime,
   FheEncryptedDataset,
   FheEncryptedDatasetsService,
+  FheEncryptedResult,
 } from '../data-owner-workspace/fhe-encrypted-datasets.service';
+import { FheEncryptService } from '../data-owner-workspace/fhe-encrypt.service';
 import { AuthService } from '../shared/auth.service';
 import {
   ArrowRight,
@@ -15,8 +18,9 @@ import {
   Check,
   CircleCheck,
   Database,
+  Download,
   Info,
-  Leaf,
+  LoaderCircle,
   Lock,
   LucideAngularModule,
   Monitor,
@@ -45,20 +49,38 @@ export class DecryptResultWorkspace {
   private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
   private readonly fheEncryptedDatasets = inject(FheEncryptedDatasetsService);
+  private readonly fheEncrypt = inject(FheEncryptService);
 
   readonly encryptedDatasetId = signal<number | null>(
     parseEncryptedDatasetId(this.route.snapshot.queryParamMap.get('encryptedDatasetId')),
   );
   readonly dataset = signal<FheEncryptedDataset | null>(null);
+  readonly inferenceResult = signal<FheEncryptedResult | null>(null);
   readonly loadingDataset = signal(false);
   readonly datasetError = signal('');
 
+  readonly canDecrypt = computed(() => {
+    const resultId = this.inferenceResult()?.result_id?.trim();
+    return !!resultId && !this.decrypted() && !this.decrypting();
+  });
+
   readonly decrypted = signal(false);
   readonly decryptedAt = signal<string | null>(null);
+  readonly decryptedValues = signal<number[]>([]);
+  readonly decrypting = signal(false);
+  readonly decryptError = signal('');
 
   readonly auditTrail = computed(() =>
     buildAuditTrail(this.dataset(), this.decrypted(), this.decryptedAt()),
   );
+
+  readonly previewValues = computed(() =>
+    this.decryptedValues()
+      .slice(0, 10)
+      .map((value, index) => ({ index: index + 1, value })),
+  );
+
+  readonly totalValueCount = computed(() => this.decryptedValues().length);
 
   readonly ciphertextLines: string[] = [
     '0x9f3a7b6c2d8e4f11a98b3d7c0e1f2a6b9c...',
@@ -67,7 +89,6 @@ export class DecryptResultWorkspace {
     '0x6e1f2d3c4b5a69788 9a0b1c2d3e4f5a6b...',
   ];
 
-  readonly LeafIcon = Leaf;
   readonly LockIcon = Lock;
   readonly DatabaseIcon = Database;
   readonly CheckIcon = Check;
@@ -79,6 +100,8 @@ export class DecryptResultWorkspace {
   readonly UserIcon = User;
   readonly MonitorIcon = Monitor;
   readonly ArrowRightIcon = ArrowRight;
+  readonly DownloadIcon = Download;
+  readonly LoaderIcon = LoaderCircle;
 
   constructor() {
     toObservable(this.auth.initialized)
@@ -100,6 +123,7 @@ export class DecryptResultWorkspace {
     const id = this.encryptedDatasetId();
     if (id === null) {
       this.dataset.set(null);
+      this.inferenceResult.set(null);
       this.datasetError.set('No inference job selected. Choose a completed job in the data owner workspace.');
       return;
     }
@@ -107,8 +131,15 @@ export class DecryptResultWorkspace {
     this.loadingDataset.set(true);
     this.datasetError.set('');
 
-    const { dataset, error } = await this.fheEncryptedDatasets.loadById(id);
+    const [{ dataset, error }, { result, error: resultError }] = await Promise.all([
+      this.fheEncryptedDatasets.loadById(id),
+      this.fheEncryptedDatasets.loadResultByDatasetId(id),
+    ]);
     this.dataset.set(dataset);
+    this.inferenceResult.set(result);
+
+    this.decryptedValues.set([]);
+    this.decryptError.set('');
 
     if (dataset?.decrypted_at) {
       this.decrypted.set(true);
@@ -119,18 +150,63 @@ export class DecryptResultWorkspace {
     }
 
     if (error) {
-      this.datasetError.set(`Could not load inference result: ${error}`);
+      this.datasetError.set(`Could not load encrypted dataset: ${error}`);
     } else if (!dataset) {
       this.datasetError.set('Inference job not found.');
+    } else if (resultError) {
+      this.datasetError.set(`Could not load inference result: ${resultError}`);
+    } else if (!result?.result_id) {
+      this.datasetError.set('No encrypted result record found for this job yet.');
     }
 
     this.loadingDataset.set(false);
   }
 
-  decrypt(): void {
-    if (this.decrypted()) return;
+  async decrypt(): Promise<void> {
+    if (!this.canDecrypt()) return;
+
+    const resultId = this.inferenceResult()?.result_id?.trim();
+    if (!resultId) {
+      this.decryptError.set('No result id available for this job.');
+      return;
+    }
+
+    this.decrypting.set(true);
+    this.decryptError.set('');
+
+    const result = await this.fheEncrypt.decryptResults(resultId);
+
+    if (!result.ok) {
+      this.decryptError.set(result.error);
+      this.decrypting.set(false);
+      return;
+    }
+
+    this.decryptedValues.set(result.data.decrypted_values ?? []);
     this.decryptedAt.set(new Date().toISOString());
     this.decrypted.set(true);
+    this.decrypting.set(false);
+  }
+
+  formatDecryptedTime(): string {
+    const iso = this.decryptedAt();
+    return iso ? formatAuditTime(iso) : '—';
+  }
+
+  downloadResultsCsv(): void {
+    const values = this.decryptedValues();
+    if (!values.length) return;
+
+    const csv = ['fhe_inference', ...values.map(String)].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const resultId = this.inferenceResult()?.result_id?.trim() ?? 'result';
+
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `fhe-inference-${resultId}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   runAnother(): void {

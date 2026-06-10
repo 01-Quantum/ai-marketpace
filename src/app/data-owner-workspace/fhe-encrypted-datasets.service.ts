@@ -29,6 +29,18 @@ export interface FheEncryptedDataset {
   updated_at: string;
 }
 
+export interface FheEncryptedResult {
+  id: number;
+  user_id: string;
+  result_id: string;
+  result_path: string;
+  encrypted_dataset_id: number;
+  encrypt_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export type AuditEventStatus = 'completed' | 'pending' | 'current';
 
 export interface AuditEvent {
@@ -215,5 +227,30 @@ export class FheEncryptedDatasetsService {
     }
 
     return { dataset: (data as FheEncryptedDataset | null) ?? null, error: null };
+  }
+
+  async loadResultByDatasetId(
+    encryptedDatasetId: number,
+  ): Promise<{ result: FheEncryptedResult | null; error: string | null }> {
+    const userId = this.auth.user()?.id;
+    if (!userId) {
+      return { result: null, error: 'Not signed in.' };
+    }
+
+    const { data, error } = await this.db
+      .from('fhe_encrypted_results')
+      .select('*')
+      .eq('encrypted_dataset_id', encryptedDatasetId)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error('loadEncryptedResultByDatasetId error', error.message);
+      return { result: null, error: error.message };
+    }
+
+    return { result: (data as FheEncryptedResult | null) ?? null, error: null };
   }
 }
