@@ -1,9 +1,10 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { filter, take } from 'rxjs';
 import {
+  buildAuditTrail,
   FheEncryptedDataset,
   FheEncryptedDatasetsService,
 } from '../data-owner-workspace/fhe-encrypted-datasets.service';
@@ -25,12 +26,6 @@ import {
 } from 'lucide-angular';
 import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
 import { WorkflowHeader } from '../shared/workflow-header/workflow-header';
-
-interface AuditEvent {
-  label: string;
-  time: string;
-  status: 'completed' | 'current';
-}
 
 function parseEncryptedDatasetId(value: string | null): number | null {
   if (!value) return null;
@@ -58,20 +53,18 @@ export class DecryptResultWorkspace {
   readonly loadingDataset = signal(false);
   readonly datasetError = signal('');
 
-  readonly decrypted = signal(true);
+  readonly decrypted = signal(false);
+  readonly decryptedAt = signal<string | null>(null);
+
+  readonly auditTrail = computed(() =>
+    buildAuditTrail(this.dataset(), this.decrypted(), this.decryptedAt()),
+  );
 
   readonly ciphertextLines: string[] = [
     '0x9f3a7b6c2d8e4f11a98b3d7c0e1f2a6b9c...',
     '0x7a1b2c3d4e5f67890 1a2b3c4d5e6f7890...',
     '0x2d3c4b5a69788796a b1c2d3e4f5a6b7c8...',
     '0x6e1f2d3c4b5a69788 9a0b1c2d3e4f5a6b...',
-  ];
-
-  readonly auditTrail: AuditEvent[] = [
-    { label: 'Upload & Encrypt', time: '10:41:02', status: 'completed' },
-    { label: 'Submitted to Enclave', time: '10:41:05', status: 'completed' },
-    { label: 'Inference Completed', time: '10:42:28', status: 'completed' },
-    { label: 'Result Decrypted', time: '10:42:39', status: 'current' },
   ];
 
   readonly LeafIcon = Leaf;
@@ -117,6 +110,14 @@ export class DecryptResultWorkspace {
     const { dataset, error } = await this.fheEncryptedDatasets.loadById(id);
     this.dataset.set(dataset);
 
+    if (dataset?.decrypted_at) {
+      this.decrypted.set(true);
+      this.decryptedAt.set(dataset.decrypted_at);
+    } else {
+      this.decrypted.set(false);
+      this.decryptedAt.set(null);
+    }
+
     if (error) {
       this.datasetError.set(`Could not load inference result: ${error}`);
     } else if (!dataset) {
@@ -127,6 +128,8 @@ export class DecryptResultWorkspace {
   }
 
   decrypt(): void {
+    if (this.decrypted()) return;
+    this.decryptedAt.set(new Date().toISOString());
     this.decrypted.set(true);
   }
 

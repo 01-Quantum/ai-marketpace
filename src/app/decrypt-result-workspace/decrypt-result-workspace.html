@@ -115,43 +115,53 @@
             <h2 class="comp-title">Decrypted Prediction</h2>
           </div>
 
-          <div class="prediction-card">
-            <span class="prediction-icon">
-              <lucide-angular [img]="LeafIcon" size="36" [strokeWidth]="1.6"></lucide-angular>
-            </span>
-            <div>
-              <div class="prediction-label">Predicted class:</div>
-              <div class="prediction-value">Iris Virginica</div>
-            </div>
-          </div>
-
-          <div class="prediction-stats">
-            <div>
-              <div class="stat-label">Confidence</div>
-              <div class="stat-value teal">94.3%</div>
-            </div>
-            <div>
-              <div class="stat-label">Explanation</div>
-              <div class="stat-explainer">
-                <span>Leaf node 7</span>
-                <lucide-angular [img]="InfoIcon" size="14" [strokeWidth]="2"></lucide-angular>
+          @if (!decrypted()) {
+            <div class="decrypt-pending">
+              <div class="decrypt-pending-body">
+                <span class="decrypt-pending-icon" aria-hidden="true">
+                  <lucide-angular [img]="LockIcon" size="44" [strokeWidth]="1.6"></lucide-angular>
+                </span>
+                <div class="decrypt-pending-copy">
+                  <h3 class="decrypt-pending-title">Not decrypted yet</h3>
+                  <p class="decrypt-pending-desc">
+                    Click Decrypt Result to reveal the prediction locally with your private key.
+                  </p>
+                </div>
               </div>
+              <p class="decrypt-pending-note">
+                Prediction remains encrypted until you decrypt it locally.
+              </p>
             </div>
-          </div>
 
-          <div class="prediction-foot">
-            <div class="foot-status">
-              <lucide-angular [img]="CircleCheckIcon" size="16" [strokeWidth]="2"></lucide-angular>
+            <div class="decrypt-privacy-note">
+              <lucide-angular [img]="InfoIcon" size="16" [strokeWidth]="2"></lucide-angular>
+              <span>The decrypted result will only be visible on your device.</span>
+            </div>
+          } @else {
+            <div class="prediction-card">
+              <span class="prediction-icon">
+                <lucide-angular [img]="LeafIcon" size="36" [strokeWidth]="1.6"></lucide-angular>
+              </span>
               <div>
-                <div class="foot-title">Decrypted locally</div>
-                <div class="foot-desc">Only you can see this result.</div>
+                <div class="prediction-label">Predicted class:</div>
+                <div class="prediction-value">Iris Virginica</div>
               </div>
             </div>
-            <div class="foot-time">
-              <div class="meta-label">Time (UTC)</div>
-              <div class="meta-value">May 24, 2025 &middot; 10:42:39</div>
+
+            <div class="prediction-foot">
+              <div class="foot-status">
+                <lucide-angular [img]="CircleCheckIcon" size="16" [strokeWidth]="2"></lucide-angular>
+                <div>
+                  <div class="foot-title">Decrypted locally</div>
+                  <div class="foot-desc">Only you can see this result.</div>
+                </div>
+              </div>
+              <div class="foot-time">
+                <div class="meta-label">Time (UTC)</div>
+                <div class="meta-value">May 24, 2025 &middot; 10:42:39</div>
+              </div>
             </div>
-          </div>
+          }
         </div>
       </section>
     </main>
@@ -196,14 +206,18 @@
         Audit Trail
       </h2>
       <ul class="audit-list">
-        @for (event of auditTrail; track event.label; let last = $last) {
+        @for (event of auditTrail(); track event.label; let last = $last) {
           <li
             class="audit-item"
+            [class.completed]="event.status === 'completed'"
             [class.current]="event.status === 'current'"
+            [class.pending]="event.status === 'pending'"
             [class.last]="last"
           >
             <span class="audit-mark">
-              <lucide-angular [img]="CheckIcon" size="12" [strokeWidth]="2.5"></lucide-angular>
+              @if (event.status === 'completed') {
+                <lucide-angular [img]="CheckIcon" size="12" [strokeWidth]="2.5"></lucide-angular>
+              }
             </span>
             <span class="audit-label">{{ event.label }}</span>
             <span class="audit-time">{{ event.time }}</span>

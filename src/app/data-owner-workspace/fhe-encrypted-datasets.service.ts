@@ -24,8 +24,85 @@ export interface FheEncryptedDataset {
   manifest_json: unknown;
   status: InferenceJobStatus | string;
   submitted_at: string | null;
+  decrypted_at?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export type AuditEventStatus = 'completed' | 'pending' | 'current';
+
+export interface AuditEvent {
+  label: string;
+  time: string;
+  status: AuditEventStatus;
+}
+
+export function formatAuditTime(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const date = new Date(iso);
+  const shortDate = date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+  const time = date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  return `${shortDate} · ${time}`;
+}
+
+export function buildAuditTrail(
+  dataset: FheEncryptedDataset | null,
+  decrypted: boolean,
+  localDecryptedAt: string | null,
+): AuditEvent[] {
+  if (!dataset) {
+    return [
+      { label: 'Upload & Encrypt', time: '—', status: 'pending' },
+      { label: 'Submitted to Enclave', time: '—', status: 'pending' },
+      { label: 'Inference Completed', time: '—', status: 'pending' },
+      { label: 'Awaiting decryption', time: '—', status: 'current' },
+    ];
+  }
+
+  const inferenceComplete = dataset.status === 'inference_complete';
+  const decryptedAt = dataset.decrypted_at ?? localDecryptedAt;
+  const isDecrypted = decrypted || !!decryptedAt;
+
+  const events: AuditEvent[] = [
+    {
+      label: 'Upload & Encrypt',
+      time: formatAuditTime(dataset.created_at),
+      status: 'completed',
+    },
+    {
+      label: 'Submitted to Enclave',
+      time: formatAuditTime(dataset.submitted_at),
+      status: dataset.submitted_at ? 'completed' : 'pending',
+    },
+    {
+      label: 'Inference Completed',
+      time: inferenceComplete ? formatAuditTime(dataset.updated_at) : '—',
+      status: inferenceComplete ? 'completed' : 'pending',
+    },
+  ];
+
+  if (isDecrypted) {
+    events.push({
+      label: 'Result Decrypted',
+      time: formatAuditTime(decryptedAt),
+      status: 'completed',
+    });
+  } else {
+    events.push({
+      label: 'Awaiting decryption',
+      time: '—',
+      status: 'current',
+    });
+  }
+
+  return events;
 }
 
 export interface InferenceJob {
