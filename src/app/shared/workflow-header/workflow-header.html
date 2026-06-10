@@ -1,9 +1,12 @@
 <section class="stepper" aria-label="Workflow progress">
   @for (step of steps; track step.num; let last = $last) {
-    <div
+    <button
+      type="button"
       class="step"
       [class.active]="isActive(step.num)"
       [class.current]="isCurrent(step.num)"
+      [attr.aria-current]="isCurrent(step.num) ? 'step' : null"
+      (click)="navigateToStep(step.num)"
     >
       <div class="step-bubble">
         <span class="step-bubble-num">{{ step.num }}</span>
@@ -20,7 +23,7 @@
           {{ stepStatus(step.num) }}
         </div>
       </div>
-    </div>
+    </button>
     @if (!last) {
       <span class="step-connector" aria-hidden="true"></span>
     }
