@@ -15,13 +15,6 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'model-owner-workspace',
-    loadComponent: () =>
-      import('./model-owner-workspace/model-owner-workspace').then(
-        (m) => m.ModelOwnerWorkspace,
-      ),
-  },
-  {
     path: 'decrypt-result-workspace',
     loadComponent: () =>
       import('./decrypt-result-workspace/decrypt-result-workspace').then(

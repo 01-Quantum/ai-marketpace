@@ -34,24 +34,6 @@ export class AppTopBar {
     { initialValue: this.roleFromUrl(this.router.url) },
   );
 
-  readonly isInStudio = toSignal(
-    this.router.events.pipe(
-      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
-      map(() => this.isStudioRoute()),
-      startWith(this.isStudioRoute()),
-    ),
-    { initialValue: this.isStudioRoute() },
-  );
-
-  readonly isModelOwner = toSignal(
-    this.router.events.pipe(
-      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
-      map(() => this.isModelOwnerRoute()),
-      startWith(this.isModelOwnerRoute()),
-    ),
-    { initialValue: this.isModelOwnerRoute() },
-  );
-
   readonly ShieldCheckIcon = ShieldCheck;
   readonly UserIcon = User;
   readonly LandmarkIcon = Landmark;
@@ -78,23 +60,6 @@ export class AppTopBar {
 
   private roleFromUrl(url: string): WorkflowRole {
     const path = url.split('?')[0];
-    if (
-      path.startsWith('/model-builder-studio') ||
-      path.startsWith('/model-owner-workspace')
-    ) {
-      return 'model';
-    }
-    return 'data';
-  }
-
-  private isStudioRoute(): boolean {
-    return this.router.url.startsWith('/model-builder-studio');
-  }
-
-  private isModelOwnerRoute(): boolean {
-    const url = this.router.url.split('?')[0];
-    return (
-      url.startsWith('/model-owner-workspace') || url.startsWith('/model-builder-studio')
-    );
+    return path.startsWith('/model-builder-studio') ? 'model' : 'data';
   }
 }

@@ -15,11 +15,13 @@ import {
   FileText,
   KeyRound,
   List,
+  ListChecks,
   LoaderCircle,
   Lock,
   LucideAngularModule,
   Network,
   Pencil,
+  Play,
   RefreshCw,
   ShieldCheck,
   Trash2,
@@ -34,6 +36,7 @@ import {
   INFERENCE_MODEL_LABELS,
   InferenceModelChoice,
   parseInferenceModelChoice,
+  WorkflowStep,
 } from '../shared/workflow.types';
 import {
   ModelSupabaseService,
@@ -42,15 +45,25 @@ import {
 import {
   FheEncryptedDataset,
   FheEncryptedDatasetsService,
+  InferenceJob,
 } from './fhe-encrypted-datasets.service';
 import { FheKey, FheKeysService } from './fhe-keys.service';
 import { FheEncryptService } from './fhe-encrypt.service';
 import { formatFileSize, validateCsvFile } from './csv-upload';
 
-function parseOptionalModelId(value: string | null): number | null {
+function parsePositiveInt(value: string | null): number | null {
   if (!value) return null;
   const id = Number(value);
   return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+const parseOptionalModelId = parsePositiveInt;
+
+function parseWorkflowStep(value: string | null): WorkflowStep {
+  if (value === '1' || value === '2' || value === '3') {
+    return Number(value) as WorkflowStep;
+  }
+  return 2;
 }
 
 const DEFAULT_KEY_SLOTS = 8192;
@@ -139,10 +152,24 @@ export class DataOwnerWorkspace {
       !!this.publishedModel(),
   );
 
+  readonly workflowStep = signal<WorkflowStep>(
+    parseWorkflowStep(this.route.snapshot.queryParamMap.get('step')),
+  );
+
   readonly datasets = signal<FheEncryptedDataset[]>([]);
   readonly loadingDatasets = signal(false);
   readonly datasetsError = signal('');
   readonly viewingDataset = signal<FheEncryptedDataset | null>(null);
+
+  readonly jobs = signal<InferenceJob[]>([]);
+  readonly loadingJobs = signal(false);
+  readonly jobsError = signal('');
+  readonly selectedJobId = signal<number | null>(
+    parsePositiveInt(this.route.snapshot.queryParamMap.get('encryptedDatasetId')),
+  );
+  readonly inferringDatasetId = signal<number | null>(null);
+  readonly inferenceError = signal('');
+  readonly inferenceSuccess = signal('');
   readonly ownerLabel = computed(() => {
     const slug =
       (this.auth.displayName() || 'user')
@@ -172,6 +199,8 @@ export class DataOwnerWorkspace {
   readonly RefreshCwIcon = RefreshCw;
   readonly CloseIcon = X;
   readonly UserIcon = User;
+  readonly ListChecksIcon = ListChecks;
+  readonly PlayIcon = Play;
 
   constructor() {
     // Wait until AuthService has restored the session before querying, otherwise
@@ -181,7 +210,7 @@ export class DataOwnerWorkspace {
       .subscribe(() => {
         void this.refreshLatestKey();
         void this.refreshPublishedModels();
-        void this.refreshEncryptedDatasets();
+        void this.refreshWorkspace();
       });
 
     toObservable(this.auth.user)
@@ -193,19 +222,26 @@ export class DataOwnerWorkspace {
       )
       .subscribe(() => {
         void this.refreshLatestKey();
-        void this.refreshEncryptedDatasets();
+        void this.refreshWorkspace();
       });
 
     this.route.queryParamMap.subscribe((params) => {
       const modelType = parseInferenceModelChoice(params.get('model'));
       const modelId = parseOptionalModelId(params.get('modelId'));
+      const encryptedDatasetId = parsePositiveInt(params.get('encryptedDatasetId'));
       const typeChanged = modelType !== this.selectedModelType();
       this.selectedModelType.set(modelType);
       this.selectedPublishedModelId.set(modelId);
+      this.workflowStep.set(parseWorkflowStep(params.get('step')));
+      this.syncSelectedJob(encryptedDatasetId);
       if (this.auth.initialized() && typeChanged) {
         void this.refreshPublishedModels();
       }
     });
+  }
+
+  async refreshWorkspace(): Promise<void> {
+    await Promise.all([this.refreshEncryptedDatasets(), this.refreshInferenceJobs()]);
   }
 
   async refreshEncryptedDatasets(): Promise<void> {
@@ -220,6 +256,65 @@ export class DataOwnerWorkspace {
     }
 
     this.loadingDatasets.set(false);
+  }
+
+  async refreshInferenceJobs(): Promise<void> {
+    this.loadingJobs.set(true);
+    this.jobsError.set('');
+
+    const { jobs, error } = await this.fheEncryptedDatasets.loadSubmittedJobs();
+    this.jobs.set(jobs);
+    this.syncSelectedJob(this.selectedJobId());
+
+    if (error) {
+      this.jobsError.set(`Could not load inference jobs: ${error}`);
+    }
+
+    this.loadingJobs.set(false);
+  }
+
+  isJobSelectable(job: InferenceJob): boolean {
+    return job.status === 'inference_complete';
+  }
+
+  selectJob(job: InferenceJob): void {
+    if (!this.isJobSelectable(job)) return;
+
+    this.selectedJobId.set(job.id);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { encryptedDatasetId: String(job.id) },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  canDecrypt(): boolean {
+    const id = this.selectedJobId();
+    if (id === null) return false;
+    return this.jobs().some((job) => job.id === id && this.isJobSelectable(job));
+  }
+
+  private syncSelectedJob(candidateId: number | null): void {
+    const jobs = this.jobs();
+    const validId =
+      candidateId !== null &&
+      jobs.some((job) => job.id === candidateId && this.isJobSelectable(job))
+        ? candidateId
+        : null;
+
+    if (this.selectedJobId() !== validId) {
+      this.selectedJobId.set(validId);
+    }
+
+    if (candidateId !== null && validId === null) {
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { encryptedDatasetId: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    }
   }
 
   private async refreshPublishedModels(): Promise<void> {
@@ -264,11 +359,55 @@ export class DataOwnerWorkspace {
     });
   }
 
-  continueToModelOwner(): void {
+  formatJobDate(iso: string | null): string {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+
+  truncateJobId(id: string, max = 12): string {
+    if (id.length <= max) return id;
+    return `${id.slice(0, max)}…`;
+  }
+
+  async runInference(dataset: FheEncryptedDataset): Promise<void> {
+    if (this.inferringDatasetId() !== null) return;
+
+    this.inferringDatasetId.set(dataset.id);
+    this.inferenceError.set('');
+    this.inferenceSuccess.set('');
+
+    const result = await this.fheEncrypt.runInference(dataset.id);
+
+    if (!result.ok) {
+      this.inferenceError.set(result.error);
+    } else {
+      this.inferenceSuccess.set(
+        `Encrypted inference started for "${dataset.source_file_name}".`,
+      );
+      await this.refreshWorkspace();
+    }
+
+    this.inferringDatasetId.set(null);
+  }
+
+  isInferring(dataset: FheEncryptedDataset): boolean {
+    return this.inferringDatasetId() === dataset.id;
+  }
+
+  continueToDecrypt(): void {
+    const encryptedDatasetId = this.selectedJobId();
     const modelId = this.publishedModel()?.id;
-    this.router.navigate(['/model-owner-workspace'], {
+    if (!this.canDecrypt() || encryptedDatasetId === null) return;
+
+    this.router.navigate(['/decrypt-result-workspace'], {
       queryParams: {
         model: this.selectedModelType(),
+        encryptedDatasetId: String(encryptedDatasetId),
         ...(modelId ? { modelId: String(modelId) } : {}),
       },
     });
@@ -318,7 +457,7 @@ export class DataOwnerWorkspace {
       }
 
       this.encryptSuccess.set(`"${file.name}" encrypted successfully.`);
-      await this.refreshEncryptedDatasets();
+      await this.refreshWorkspace();
       this.selectedCsvFile.set(null);
     } finally {
       this.encrypting.set(false);
@@ -557,7 +696,7 @@ export class DataOwnerWorkspace {
       this.datasetsError.set(result.error);
       return;
     }
-    await this.refreshEncryptedDatasets();
+    await this.refreshWorkspace();
   }
 
   signOut(): void {}

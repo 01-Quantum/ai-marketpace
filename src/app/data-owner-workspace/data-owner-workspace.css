@@ -770,6 +770,13 @@
   color: var(--teal);
 }
 
+.inference-success {
+  margin: 0 0 0.35rem;
+  padding: 0;
+  font-size: 0.82rem;
+  color: var(--teal);
+}
+
 /* ===== Encrypted datasets table grid ===== */
 .datasets-table .table-row {
   grid-template-columns:
@@ -777,7 +784,64 @@
     minmax(0, 0.9fr)
     minmax(0, 1.1fr)
     minmax(0, 1.1fr)
-    minmax(0, 0.9fr);
+    minmax(0, 1.8fr);
+}
+
+.datasets-table .cell-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+/* ===== Inference Jobs table ===== */
+.jobs-table .job-id {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jobs-table .table-row {
+  grid-template-columns:
+    2.5rem
+    minmax(0, 0.9fr)
+    minmax(0, 1.4fr)
+    minmax(0, 0.85fr)
+    minmax(0, 0.85fr)
+    minmax(0, 1.1fr)
+    minmax(0, 1.1fr);
+}
+
+.jobs-table .col-select {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jobs-table .job-radio {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--teal);
+  cursor: pointer;
+}
+
+.jobs-table .job-radio:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.jobs-table .table-row.row-selected {
+  background: rgba(45, 212, 191, 0.04);
+}
+
+.sidebar-cta:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: none;
+  box-shadow: none;
 }
 
 /* ===== Sidebar CTA (overrides smaller :host primary defaults) ===== */

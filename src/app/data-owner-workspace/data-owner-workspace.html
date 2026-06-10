@@ -2,7 +2,7 @@
   <app-top-bar (signOut)="signOut()" />
 
   <div class="layout layout-workspace">
-    <app-workflow-header [activeThrough]="2" />
+    <app-workflow-header [activeThrough]="3" [currentStep]="workflowStep()" />
 
     <main class="main">
       <header class="workspace-header">
@@ -256,6 +256,13 @@
         </section>
       }
 
+      @if (inferenceError()) {
+        <p class="datasets-error">{{ inferenceError() }}</p>
+      }
+      @if (inferenceSuccess()) {
+        <p class="inference-success">{{ inferenceSuccess() }}</p>
+      }
+
       <section class="panel table-panel datasets-table">
         <header class="table-head">
           <lucide-angular class="table-head-icon" [img]="DatabaseIcon" size="20"></lucide-angular>
@@ -264,11 +271,11 @@
             type="button"
             class="icon-btn table-head-refresh"
             aria-label="Refresh encrypted datasets"
-            (click)="refreshEncryptedDatasets()"
-            [disabled]="loadingDatasets()"
+            (click)="refreshWorkspace()"
+            [disabled]="loadingDatasets() || loadingJobs()"
           >
             <lucide-angular
-              [class.spin]="loadingDatasets()"
+              [class.spin]="loadingDatasets() || loadingJobs()"
               [img]="RefreshCwIcon"
               size="15"
               [strokeWidth]="2"
@@ -313,6 +320,20 @@
                 </span>
                 <span class="cell-muted" role="cell">{{ ds.model_name }}</span>
                 <span class="cell-actions col-action" role="cell">
+                  <button
+                    type="button"
+                    class="btn-action coral"
+                    (click)="runInference(ds)"
+                    [disabled]="isInferring(ds)"
+                  >
+                    @if (isInferring(ds)) {
+                      <lucide-angular class="spin" [img]="LoaderIcon" size="12" [strokeWidth]="2"></lucide-angular>
+                      Running…
+                    } @else {
+                      <lucide-angular [img]="PlayIcon" size="12" [strokeWidth]="2.2"></lucide-angular>
+                      Run Inference
+                    }
+                  </button>
                   <button type="button" class="icon-btn" aria-label="View dataset" (click)="viewDataset(ds)">
                     <lucide-angular [img]="EyeIcon" size="16"></lucide-angular>
                   </button>
@@ -320,6 +341,95 @@
                     <lucide-angular [img]="Trash2Icon" size="16"></lucide-angular>
                   </button>
                 </span>
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="panel table-panel jobs-table">
+        <header class="table-head">
+          <lucide-angular class="table-head-icon" [img]="ListChecksIcon" size="20"></lucide-angular>
+          <h2 class="section-title">Inference Jobs</h2>
+          <button
+            type="button"
+            class="icon-btn table-head-refresh"
+            aria-label="Refresh inference jobs"
+            (click)="refreshWorkspace()"
+            [disabled]="loadingDatasets() || loadingJobs()"
+          >
+            <lucide-angular
+              [class.spin]="loadingDatasets() || loadingJobs()"
+              [img]="RefreshCwIcon"
+              size="15"
+              [strokeWidth]="2"
+            ></lucide-angular>
+          </button>
+        </header>
+
+        @if (loadingJobs() && jobs().length === 0) {
+          <p class="datasets-empty">
+            <lucide-angular class="spin" [img]="LoaderIcon" size="14"></lucide-angular>
+            Loading inference jobs…
+          </p>
+        } @else if (jobsError()) {
+          <p class="datasets-error">{{ jobsError() }}</p>
+        } @else if (jobs().length === 0) {
+          <p class="datasets-empty">No inference jobs yet.</p>
+        } @else {
+          <div class="table-wrap" role="table">
+            <div class="table-row table-header" role="row">
+              <span role="columnheader" class="col-select">Select</span>
+              <span role="columnheader">Job ID</span>
+              <span role="columnheader">Dataset</span>
+              <span role="columnheader">Model</span>
+              <span role="columnheader">Status</span>
+              <span role="columnheader">Started At</span>
+              <span role="columnheader">Completed At</span>
+            </div>
+            @for (job of jobs(); track job.id) {
+              <div class="table-row" role="row" [class.row-selected]="selectedJobId() === job.id">
+                <span class="col-select" role="cell">
+                  <input
+                    type="radio"
+                    name="inference-job"
+                    class="job-radio"
+                    [value]="job.id"
+                    [checked]="selectedJobId() === job.id"
+                    [disabled]="!isJobSelectable(job)"
+                    (change)="selectJob(job)"
+                    [attr.aria-label]="'Select inference job for ' + job.dataset"
+                  />
+                </span>
+                <span class="cell-mono job-id" role="cell" [title]="job.jobId">
+                  {{ truncateJobId(job.jobId) }}
+                </span>
+                <span role="cell">{{ job.dataset }}</span>
+                <span role="cell">{{ job.model }}</span>
+                <span role="cell">
+                  @switch (job.status) {
+                    @case ('encrypted') {
+                      <span class="cell-status amber">
+                        <lucide-angular [img]="LockIcon" size="12" [strokeWidth]="2"></lucide-angular>
+                        Encrypted
+                      </span>
+                    }
+                    @case ('inference_running') {
+                      <span class="cell-status blue">
+                        <lucide-angular class="spin" [img]="LoaderIcon" size="12" [strokeWidth]="2"></lucide-angular>
+                        Running
+                      </span>
+                    }
+                    @case ('inference_complete') {
+                      <span class="cell-status green">
+                        <lucide-angular [img]="CircleCheckIcon" size="12" [strokeWidth]="2"></lucide-angular>
+                        Complete
+                      </span>
+                    }
+                  }
+                </span>
+                <span class="cell-muted" role="cell">{{ formatJobDate(job.startedAt) }}</span>
+                <span class="cell-muted" role="cell">{{ formatJobDate(job.completedAt) }}</span>
               </div>
             }
           </div>
@@ -353,13 +463,13 @@
           </div>
         </li>
         <li>
-          <span class="step-icon teal">
-            <lucide-angular [img]="ShieldCheckIcon" size="22" [strokeWidth]="1.8"></lucide-angular>
+          <span class="step-icon coral">
+            <lucide-angular [img]="PlayIcon" size="22" [strokeWidth]="1.8"></lucide-angular>
           </span>
           <div>
-            <p class="sb-step-title">3. Submit ciphertext only</p>
+            <p class="sb-step-title">3. Run encrypted inference</p>
             <p class="sb-step-desc">
-              Send the encrypted dataset to the model owner. Your plaintext data remains private.
+              Submit ciphertext to the enclave for inference. The model never sees your plaintext data.
             </p>
           </div>
         </li>
@@ -370,13 +480,18 @@
         <p>Your data. Your keys.<br />Privacy by design.</p>
       </div>
 
-      <button type="button" class="btn-primary btn-block sidebar-cta" (click)="continueToModelOwner()">
-        Continue to Model Owner Stage
+      <button
+        type="button"
+        class="btn-primary btn-block sidebar-cta"
+        (click)="continueToDecrypt()"
+        [disabled]="!canDecrypt()"
+      >
+        Continue to Decrypt Result
         <lucide-angular [img]="ArrowRightIcon" size="22" [strokeWidth]="2.25"></lucide-angular>
       </button>
       <p class="sidebar-foot">
         <lucide-angular [img]="ShieldCheckIcon" size="14"></lucide-angular>
-        You can review or modify before proceeding.
+        Select a completed inference job to decrypt.
       </p>
     </aside>
   </div>

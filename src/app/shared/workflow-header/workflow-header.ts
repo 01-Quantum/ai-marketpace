@@ -12,7 +12,7 @@ interface StepDefinition {
 const STEP_ROUTES: Record<WorkflowStep, string> = {
   1: '/data-owner-workspace',
   2: '/data-owner-workspace',
-  3: '/model-owner-workspace',
+  3: '/data-owner-workspace',
   4: '/decrypt-result-workspace',
 };
 
@@ -58,6 +58,7 @@ export class WorkflowHeader {
         ...(model ? { model } : {}),
         ...(modelId ? { modelId } : {}),
         ...(encryptedDatasetId ? { encryptedDatasetId } : {}),
+        ...(step <= 3 ? { step: String(step) } : { step: null }),
       },
     });
   }
