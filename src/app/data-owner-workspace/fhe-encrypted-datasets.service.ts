@@ -116,4 +116,27 @@ export class FheEncryptedDatasetsService {
     );
     return { jobs, error: null };
   }
+
+  async loadById(
+    id: number,
+  ): Promise<{ dataset: FheEncryptedDataset | null; error: string | null }> {
+    const userId = this.auth.user()?.id;
+    if (!userId) {
+      return { dataset: null, error: 'Not signed in.' };
+    }
+
+    const { data, error } = await this.db
+      .from('fhe_encrypted_datasets')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('loadEncryptedDatasetById error', error.message);
+      return { dataset: null, error: error.message };
+    }
+
+    return { dataset: (data as FheEncryptedDataset | null) ?? null, error: null };
+  }
 }

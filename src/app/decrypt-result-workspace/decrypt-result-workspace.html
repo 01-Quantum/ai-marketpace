@@ -19,8 +19,19 @@
           </span>
           <div class="status-body">
             <div class="status-label">Selected Dataset</div>
-            <div class="status-value teal">Iris Dataset</div>
-            <div class="status-meta">150 rows &middot; 4 features</div>
+            @if (loadingDataset()) {
+              <div class="status-value teal">Loading…</div>
+            } @else if (dataset()) {
+              <div class="status-value teal">{{ dataset()!.source_file_name }}</div>
+              <div class="status-meta">
+                {{ dataset()!.total_rows | number }} rows &middot; {{ dataset()!.columns.length }} features
+              </div>
+            } @else {
+              <div class="status-value teal">—</div>
+              @if (datasetError()) {
+                <div class="status-meta">{{ datasetError() }}</div>
+              }
+            }
           </div>
         </div>
 
@@ -30,8 +41,12 @@
           </span>
           <div class="status-body">
             <div class="status-label">Selected Model</div>
-            <div class="status-value coral">Decision Tree</div>
-            <div class="status-meta">Tree depth: 4 &middot; Gini</div>
+            @if (dataset()) {
+              <div class="status-value coral">{{ dataset()!.model_name }}</div>
+              <div class="status-meta">Job #{{ encryptedDatasetId() }}</div>
+            } @else {
+              <div class="status-value coral">—</div>
+            }
           </div>
         </div>
 

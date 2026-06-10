@@ -132,6 +132,7 @@
         } @else {
           <div class="table-wrap" role="table">
             <div class="table-row table-header" role="row">
+              <span role="columnheader" class="col-select">Select</span>
               <span role="columnheader">Job ID</span>
               <span role="columnheader">Dataset</span>
               <span role="columnheader">Model</span>
@@ -140,7 +141,19 @@
               <span role="columnheader">Completed At</span>
             </div>
             @for (job of jobs(); track job.id) {
-              <div class="table-row" role="row">
+              <div class="table-row" role="row" [class.row-selected]="selectedJobId() === job.id">
+                <span class="col-select" role="cell">
+                  <input
+                    type="radio"
+                    name="inference-job"
+                    class="job-radio"
+                    [value]="job.id"
+                    [checked]="selectedJobId() === job.id"
+                    [disabled]="!isJobSelectable(job)"
+                    (change)="selectJob(job)"
+                    [attr.aria-label]="'Select inference job for ' + job.dataset"
+                  />
+                </span>
                 <span class="cell-mono job-id" role="cell" [title]="job.jobId">
                   {{ truncateJobId(job.jobId) }}
                 </span>
@@ -211,7 +224,12 @@
         <p>Privacy by design.<br />Security by default.</p>
       </div>
 
-      <button type="button" class="btn-primary btn-block sidebar-cta" (click)="continueToDecrypt()">
+      <button
+        type="button"
+        class="btn-primary btn-block sidebar-cta"
+        (click)="continueToDecrypt()"
+        [disabled]="!canDecrypt()"
+      >
         Continue to Decrypt Result
         <lucide-angular [img]="ArrowRightIcon" size="22" [strokeWidth]="2.25"></lucide-angular>
       </button>

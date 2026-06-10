@@ -31,11 +31,13 @@ import { AuthService } from '../shared/auth.service';
 import { WorkflowHeader } from '../shared/workflow-header/workflow-header';
 import { InferenceModelChoice, parseInferenceModelChoice } from '../shared/workflow.types';
 
-function parseOptionalModelId(value: string | null): number | null {
+function parsePositiveInt(value: string | null): number | null {
   if (!value) return null;
   const id = Number(value);
   return Number.isInteger(id) && id > 0 ? id : null;
 }
+
+const parseOptionalModelId = parsePositiveInt;
 
 @Component({
   selector: 'app-model-owner-workspace',
@@ -65,6 +67,9 @@ export class ModelOwnerWorkspace {
   readonly jobs = signal<InferenceJob[]>([]);
   readonly loadingJobs = signal(false);
   readonly jobsError = signal('');
+  readonly selectedJobId = signal<number | null>(
+    parsePositiveInt(this.route.snapshot.queryParamMap.get('encryptedDatasetId')),
+  );
 
   readonly inferringDatasetId = signal<number | null>(null);
   readonly inferenceError = signal('');
@@ -93,10 +98,12 @@ export class ModelOwnerWorkspace {
     this.route.queryParamMap.subscribe((params) => {
       const modelType = parseInferenceModelChoice(params.get('model'));
       const modelId = parseOptionalModelId(params.get('modelId'));
+      const encryptedDatasetId = parsePositiveInt(params.get('encryptedDatasetId'));
       const changed =
         modelType !== this.selectedModel() || modelId !== this.selectedModelId();
       this.selectedModel.set(modelType);
       this.selectedModelId.set(modelId);
+      this.syncSelectedJob(encryptedDatasetId);
       if (this.auth.initialized() && changed) {
         void this.refreshWorkspace();
       }
@@ -127,12 +134,57 @@ export class ModelOwnerWorkspace {
 
     const { jobs, error } = await this.fheEncryptedDatasets.loadSubmittedJobs();
     this.jobs.set(jobs);
+    this.syncSelectedJob(this.selectedJobId());
 
     if (error) {
       this.jobsError.set(`Could not load inference jobs: ${error}`);
     }
 
     this.loadingJobs.set(false);
+  }
+
+  isJobSelectable(job: InferenceJob): boolean {
+    return job.status === 'inference_complete';
+  }
+
+  selectJob(job: InferenceJob): void {
+    if (!this.isJobSelectable(job)) return;
+
+    this.selectedJobId.set(job.id);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { encryptedDatasetId: String(job.id) },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  canDecrypt(): boolean {
+    const id = this.selectedJobId();
+    if (id === null) return false;
+    return this.jobs().some((job) => job.id === id && this.isJobSelectable(job));
+  }
+
+  private syncSelectedJob(candidateId: number | null): void {
+    const jobs = this.jobs();
+    const validId =
+      candidateId !== null &&
+      jobs.some((job) => job.id === candidateId && this.isJobSelectable(job))
+        ? candidateId
+        : null;
+
+    if (this.selectedJobId() !== validId) {
+      this.selectedJobId.set(validId);
+    }
+
+    if (candidateId !== null && validId === null) {
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { encryptedDatasetId: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    }
   }
 
   formatCreated(iso: string | null): string {
@@ -180,9 +232,13 @@ export class ModelOwnerWorkspace {
   }
 
   continueToDecrypt(): void {
+    const encryptedDatasetId = this.selectedJobId();
+    if (!this.canDecrypt() || encryptedDatasetId === null) return;
+
     this.router.navigate(['/decrypt-result-workspace'], {
       queryParams: {
         model: this.selectedModel(),
+        encryptedDatasetId: String(encryptedDatasetId),
         ...(this.selectedModelId() ? { modelId: String(this.selectedModelId()) } : {}),
       },
     });

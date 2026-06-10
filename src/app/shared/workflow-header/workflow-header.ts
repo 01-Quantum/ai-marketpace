@@ -51,11 +51,13 @@ export class WorkflowHeader {
   navigateToStep(step: WorkflowStep): void {
     const model = this.route.snapshot.queryParamMap.get('model');
     const modelId = this.route.snapshot.queryParamMap.get('modelId');
+    const encryptedDatasetId = this.route.snapshot.queryParamMap.get('encryptedDatasetId');
 
     void this.router.navigate([STEP_ROUTES[step]], {
       queryParams: {
         ...(model ? { model } : {}),
         ...(modelId ? { modelId } : {}),
+        ...(encryptedDatasetId ? { encryptedDatasetId } : {}),
       },
     });
   }
