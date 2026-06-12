@@ -1,0 +1,265 @@
+{
+  "name": "Iris Decision Tree",
+  "type": "tree",
+  "version": "v1.0.0",
+  "model_json": {
+    "nodes": [
+      {
+        "id": 4,
+        "type": "leaf",
+        "label": "species = other",
+        "layout": {
+          "top": 498,
+          "left": 0,
+          "width": 220
+        }
+      },
+      {
+        "id": 5,
+        "type": "leaf",
+        "label": "species = virginica",
+        "layout": {
+          "top": 498,
+          "left": 260,
+          "width": 220
+        }
+      },
+      {
+        "id": 3,
+        "type": "decision",
+        "feature": "petal_width",
+        "threshold": 0.2916666716337204,
+        "leftBranchId": 4,
+        "rightBranchId": 5,
+        "layout": {
+          "top": 352,
+          "left": 130,
+          "width": 220
+        }
+      },
+      {
+        "id": 7,
+        "type": "leaf",
+        "label": "species = virginica",
+        "layout": {
+          "top": 498,
+          "left": 520,
+          "width": 220
+        }
+      },
+      {
+        "id": 9,
+        "type": "leaf",
+        "label": "species = other",
+        "layout": {
+          "top": 644,
+          "left": 780,
+          "width": 220
+        }
+      },
+      {
+        "id": 10,
+        "type": "leaf",
+        "label": "species = virginica",
+        "layout": {
+          "top": 644,
+          "left": 1040,
+          "width": 220
+        }
+      },
+      {
+        "id": 8,
+        "type": "decision",
+        "feature": "petal_length",
+        "threshold": 0.5084745734930038,
+        "leftBranchId": 9,
+        "rightBranchId": 10,
+        "layout": {
+          "top": 498,
+          "left": 910,
+          "width": 220
+        }
+      },
+      {
+        "id": 6,
+        "type": "decision",
+        "feature": "petal_width",
+        "threshold": 0.2083333358168602,
+        "leftBranchId": 7,
+        "rightBranchId": 8,
+        "layout": {
+          "top": 352,
+          "left": 715,
+          "width": 220
+        }
+      },
+      {
+        "id": 2,
+        "type": "decision",
+        "feature": "petal_length",
+        "threshold": 0.33898305892944336,
+        "leftBranchId": 3,
+        "rightBranchId": 6,
+        "layout": {
+          "top": 206,
+          "left": 422,
+          "width": 220
+        }
+      },
+      {
+        "id": 13,
+        "type": "leaf",
+        "label": "species = virginica",
+        "layout": {
+          "top": 498,
+          "left": 1300,
+          "width": 220
+        }
+      },
+      {
+        "id": 14,
+        "type": "leaf",
+        "label": "species = other",
+        "layout": {
+          "top": 498,
+          "left": 1560,
+          "width": 220
+        }
+      },
+      {
+        "id": 12,
+        "type": "decision",
+        "feature": "sepal_width",
+        "threshold": -0.0833333358168602,
+        "leftBranchId": 13,
+        "rightBranchId": 14,
+        "layout": {
+          "top": 352,
+          "left": 1430,
+          "width": 220
+        }
+      },
+      {
+        "id": 15,
+        "type": "leaf",
+        "label": "species = virginica",
+        "layout": {
+          "top": 352,
+          "left": 1820,
+          "width": 220
+        }
+      },
+      {
+        "id": 11,
+        "type": "decision",
+        "feature": "petal_length",
+        "threshold": 0.3050847500562668,
+        "leftBranchId": 12,
+        "rightBranchId": 15,
+        "layout": {
+          "top": 206,
+          "left": 1625,
+          "width": 220
+        }
+      },
+      {
+        "id": 1,
+        "type": "decision",
+        "feature": "petal_width",
+        "threshold": 0.375,
+        "leftBranchId": 2,
+        "rightBranchId": 11,
+        "layout": {
+          "top": 60,
+          "left": 1023,
+          "width": 220
+        }
+      }
+    ]
+  },
+  "sample_data": {
+    "rows": [
+      {
+        "id": 1,
+        "expected": "other",
+        "sepal_length": -1.0,
+        "sepal_width": -0.16666666666666652,
+        "petal_length": -0.9661016949152542,
+        "petal_width": -0.9999999999999999
+      },
+      {
+        "id": 2,
+        "expected": "other",
+        "sepal_length": -0.5555555555555558,
+        "sepal_width": 0.25,
+        "petal_length": -0.864406779661017,
+        "petal_width": -0.8333333333333333
+      },
+      {
+        "id": 3,
+        "expected": "other",
+        "sepal_length": -0.5,
+        "sepal_width": 0.16666666666666652,
+        "petal_length": -0.864406779661017,
+        "petal_width": -0.9166666666666665
+      },
+      {
+        "id": 4,
+        "expected": "other",
+        "sepal_length": -0.38888888888888884,
+        "sepal_width": 0.16666666666666652,
+        "petal_length": -0.8305084745762712,
+        "petal_width": -0.7499999999999999
+      },
+      {
+        "id": 5,
+        "expected": "other",
+        "sepal_length": -0.2777777777777781,
+        "sepal_width": -0.4166666666666665,
+        "petal_length": 0.0847457627118644,
+        "petal_width": 2.220446049250313e-16
+      },
+      {
+        "id": 6,
+        "expected": "virginica",
+        "sepal_length": -0.16666666666666696,
+        "sepal_width": -0.4166666666666665,
+        "petal_length": 0.3898305084745761,
+        "petal_width": 0.5
+      },
+      {
+        "id": 7,
+        "expected": "virginica",
+        "sepal_length": 0.6666666666666661,
+        "sepal_width": -0.25,
+        "petal_length": 0.7966101694915251,
+        "petal_width": 0.41666666666666674
+      },
+      {
+        "id": 8,
+        "expected": "virginica",
+        "sepal_length": 0.8888888888888884,
+        "sepal_width": 0.49999999999999956,
+        "petal_length": 0.9322033898305087,
+        "petal_width": 0.7500000000000002
+      },
+      {
+        "id": 9,
+        "expected": "virginica",
+        "sepal_length": 0.3333333333333335,
+        "sepal_width": -0.08333333333333348,
+        "petal_length": 0.5593220338983049,
+        "petal_width": 0.9166666666666667
+      },
+      {
+        "id": 10,
+        "expected": "virginica",
+        "sepal_length": 0.22222222222222232,
+        "sepal_width": -0.16666666666666652,
+        "petal_length": 0.423728813559322,
+        "petal_width": 0.5833333333333335
+      }
+    ]
+  },
+  "exported_at": "2026-06-12T21:51:00Z"
+}

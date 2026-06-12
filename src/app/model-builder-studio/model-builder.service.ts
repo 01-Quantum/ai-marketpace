@@ -323,9 +323,11 @@ export class ModelBuilderService {
 
     this.sampleDataByModelSubject.next({
       ...this.sampleDataByModelSubject.value,
-      [newId]: [],
+      [newId]: parseSampleDataDocument(doc.sample_data),
     });
-    this.originalSampleDataByModel[newId] = [];
+    this.originalSampleDataByModel[newId] = structuredClone(
+      parseSampleDataDocument(doc.sample_data),
+    );
 
     this.libraryModelsSubject.next([entry, ...this.libraryModelsSubject.value]);
     this.selectModel(newId);
