@@ -14,6 +14,11 @@ import {
 } from 'lucide-angular';
 import { InferenceResult, predictDecisionTree, runBatchTest } from '../decision-tree-inference';
 import {
+  predictLogisticRegression,
+  runLogisticBatchTest,
+} from '../logistic-regression-inference';
+import { LogisticRegressionModelService } from '../logistic-regression-model.service';
+import {
   collectFeatureOptions,
   collectTreeFeatures,
   randomFeatureInputs,
@@ -41,6 +46,7 @@ export class ModelSidebarPanel {
   private readonly modelBuilder = inject(ModelBuilderService);
   private readonly sampleData = inject(SampleDataService);
   private readonly sampleDataDownload = inject(SampleDataDownloadService);
+  private readonly logisticModelService = inject(LogisticRegressionModelService);
 
   readonly csvFileInput = viewChild<ElementRef<HTMLInputElement>>('csvFileInput');
 
@@ -50,7 +56,9 @@ export class ModelSidebarPanel {
   readonly activeTab = signal<SidebarTab>('properties');
   readonly inputMode = signal<InputMode>('single');
   readonly treeFeatureInputs = signal<Record<string, number>>({});
+  readonly logisticFeatureInputs = signal<Record<string, number>>({});
   readonly lastResult = signal<InferenceResult | null>(null);
+  readonly lastLogisticResult = signal<ReturnType<typeof predictLogisticRegression> | null>(null);
   readonly lastBatchResult = signal<BatchTestResult | null>(null);
   readonly lastRunMode = signal<TestRunMode | null>(null);
   readonly selectedBatchRowId = signal<number | null>(null);
@@ -63,10 +71,14 @@ export class ModelSidebarPanel {
   readonly selectedModelId = toSignal(this.modelBuilder.selectedModelId$, { initialValue: '' });
   readonly selectedNode = toSignal(this.modelBuilder.selectedNode$, { initialValue: null });
   readonly treeNodes = toSignal(this.modelBuilder.nodes$, { initialValue: [] });
+  readonly logisticModel = toSignal(this.logisticModelService.model$, {
+    initialValue: this.logisticModelService.getModel(),
+  });
 
   readonly batchFields = computed(() => sampleRowFields(this.batchRows()[0]));
 
   readonly treeFeatures = computed(() => collectTreeFeatures(this.treeNodes()));
+  readonly logisticFeatures = computed(() => this.logisticModel().features);
 
   constructor() {
     effect(() => {
@@ -82,6 +94,17 @@ export class ModelSidebarPanel {
           this.treeFeatureInputs.set(sampleRowToFeatureInputs(rows[0]));
         } else {
           this.treeFeatureInputs.set(randomFeatureInputs(features));
+        }
+      }
+
+      if (model?.type === 'logistic') {
+        const features = this.logisticModelService.getModel().features;
+        if (rows.length > 0) {
+          this.logisticFeatureInputs.set(sampleRowToFeatureInputs(rows[0]));
+        } else {
+          this.logisticFeatureInputs.set(
+            Object.fromEntries(features.map((feature) => [feature.name, feature.inputValue])),
+          );
         }
       }
 
@@ -140,11 +163,26 @@ export class ModelSidebarPanel {
     this.treeFeatureInputs.update((current) => ({ ...current, [feature]: parsed }));
   }
 
+  onLogisticFeatureChange(feature: string, value: string): void {
+    const parsed = Number.parseFloat(value);
+    if (Number.isNaN(parsed)) return;
+    this.logisticFeatureInputs.update((current) => ({ ...current, [feature]: parsed }));
+  }
+
+  private logisticInputsArray(): number[] {
+    const model = this.logisticModel();
+    const inputs = this.logisticFeatureInputs();
+    return model.features.map((feature) => inputs[feature.name] ?? feature.inputValue);
+  }
+
   runTest(): void {
     this.clearResults();
     if (this.selectedModelType() === 'tree') {
       const result = predictDecisionTree(this.treeNodes(), this.treeFeatureInputs());
       this.lastResult.set(result);
+    } else if (this.selectedModelType() === 'logistic') {
+      const result = predictLogisticRegression(this.logisticModel(), this.logisticInputsArray());
+      this.lastLogisticResult.set(result);
     }
     this.lastRunMode.set('single');
   }
@@ -156,12 +194,16 @@ export class ModelSidebarPanel {
     if (this.selectedModelType() === 'tree') {
       const result = runBatchTest(this.treeNodes(), rows);
       this.lastBatchResult.set(result);
+    } else if (this.selectedModelType() === 'logistic') {
+      const result = runLogisticBatchTest(this.logisticModel(), rows);
+      this.lastBatchResult.set(result);
     }
     this.lastRunMode.set('batch');
   }
 
   private clearResults(): void {
     this.lastResult.set(null);
+    this.lastLogisticResult.set(null);
     this.lastBatchResult.set(null);
   }
 

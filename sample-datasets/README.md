@@ -60,7 +60,9 @@ Outputs:
 2. Import the `.json` file from the library panel.
 3. Run the batch test in the sidebar to verify predictions.
 
-The bundled `sample_data` is loaded automatically. You can also import the matching CSV separately if needed.
+The bundled `sample_data` is loaded automatically. Run **Run Batch Test** on the Test Data tab to verify predictions.
+
+Logistic regression batch testing is supported in the sidebar. Sample rows are chosen so each model classifies them correctly against the `expected` label.
 
 ## Options
 

@@ -83,7 +83,7 @@ def main() -> None:
     logistic_model = LogisticRegression(max_iter=1000).fit(normalized_features, labels)
     tree_model = DecisionTreeClassifier(max_depth=4, random_state=42).fit(normalized_features, labels)
 
-    sample_rows = build_normalized_sample_rows(
+    logistic_rows = build_normalized_sample_rows(
         normalized_features,
         feature_names,
         label_list,
@@ -91,6 +91,17 @@ def main() -> None:
         NEGATIVE_CLASS,
         args.max_rows,
         args.seed,
+        logistic_model.predict(normalized_features),
+    )
+    tree_rows = build_normalized_sample_rows(
+        normalized_features,
+        feature_names,
+        label_list,
+        POSITIVE_CLASS,
+        NEGATIVE_CLASS,
+        args.max_rows,
+        args.seed,
+        tree_model.predict(normalized_features),
     )
 
     logistic_model_json = build_logistic_model(
@@ -118,7 +129,7 @@ def main() -> None:
             "Credit Card Logistic Regression",
             "logistic",
             logistic_model_json,
-            sample_rows,
+            logistic_rows,
             feature_names,
         ),
     )
@@ -128,18 +139,18 @@ def main() -> None:
             "Credit Card Decision Tree",
             "tree",
             tree_model_json,
-            sample_rows,
+            tree_rows,
             feature_names,
         ),
     )
-    write_csv(logistic_csv_path, fieldnames, sample_rows)
-    write_csv(tree_csv_path, fieldnames, sample_rows)
+    write_csv(logistic_csv_path, fieldnames, logistic_rows)
+    write_csv(tree_csv_path, fieldnames, tree_rows)
 
     print(f"Using dataset: {data_path}")
     print(f"Wrote {logistic_json_path}")
-    print(f"Wrote {logistic_csv_path} ({len(sample_rows)} rows, features in [-1, 1])")
+    print(f"Wrote {logistic_csv_path} ({len(logistic_rows)} rows, features in [-1, 1])")
     print(f"Wrote {tree_json_path}")
-    print(f"Wrote {tree_csv_path} ({len(sample_rows)} rows, features in [-1, 1])")
+    print(f"Wrote {tree_csv_path} ({len(tree_rows)} rows, features in [-1, 1])")
 
 
 if __name__ == "__main__":

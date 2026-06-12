@@ -170,6 +170,30 @@
                   </div>
                 }
               </div>
+            } @else if (selectedModelType() === 'logistic') {
+              <div class="section-block">
+                <span class="form-label">Features</span>
+                @if (logisticFeatures().length === 0) {
+                  <p class="batch-empty">Import a logistic model to define features for testing.</p>
+                } @else {
+                  <div class="feature-inputs">
+                    @for (feature of logisticFeatures(); track feature.name) {
+                      <label class="form-field">
+                        <span class="form-label">{{ feature.name }}</span>
+                        <input
+                          class="form-input"
+                          type="number"
+                          step="0.01"
+                          min="-1"
+                          max="1"
+                          [value]="logisticFeatureInputs()[feature.name]"
+                          (change)="onLogisticFeatureChange(feature.name, $any($event.target).value)"
+                        />
+                      </label>
+                    }
+                  </div>
+                }
+              </div>
             }
 
             <button type="button" class="btn-run-test" (click)="runTest()">
@@ -207,6 +231,20 @@
                     </li>
                   }
                 </ol>
+              </div>
+            }
+
+            @if (lastRunMode() === 'single' && lastLogisticResult(); as result) {
+              <div class="result-card">
+                <span class="result-card-label">Prediction Result</span>
+                <div class="prediction-value">
+                  <lucide-angular [img]="LeafIcon" size="18" [strokeWidth]="2"></lucide-angular>
+                  {{ result.className }}
+                </div>
+                <p class="accuracy-summary">
+                  Score {{ formatNumber(result.linearScore) }} ·
+                  Probability {{ formatNumber(result.probability) }}
+                </p>
               </div>
             }
 
@@ -404,6 +442,18 @@
                   </li>
                 }
               </ol>
+            </div>
+          } @else if (lastRunMode() === 'single' && lastLogisticResult(); as result) {
+            <div class="result-card">
+              <span class="result-card-label">Latest Prediction</span>
+              <div class="prediction-value">
+                <lucide-angular [img]="LeafIcon" size="18" [strokeWidth]="2"></lucide-angular>
+                {{ result.className }}
+              </div>
+              <p class="accuracy-summary">
+                Score {{ formatNumber(result.linearScore) }} ·
+                Probability {{ formatNumber(result.probability) }}
+              </p>
             </div>
           } @else {
             <p class="empty-state">Run a test from the Test Data tab to see results here.</p>

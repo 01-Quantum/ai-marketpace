@@ -37,6 +37,32 @@ def select_balanced_indices(labels: list[int], max_rows: int, seed: int) -> list
     return sorted(selected)
 
 
+def select_balanced_correct_indices(
+    labels: list[int],
+    predictions,
+    max_rows: int,
+    seed: int,
+) -> list[int]:
+    import random
+
+    positive = [
+        index
+        for index, (label, prediction) in enumerate(zip(labels, predictions, strict=True))
+        if label == 1 and prediction == 1
+    ]
+    negative = [
+        index
+        for index, (label, prediction) in enumerate(zip(labels, predictions, strict=True))
+        if label == 0 and prediction == 0
+    ]
+    positive_count = min(len(positive), max_rows // 2)
+    negative_count = min(len(negative), max_rows - positive_count)
+
+    rng = random.Random(seed)
+    selected = rng.sample(positive, positive_count) + rng.sample(negative, negative_count)
+    return sorted(selected)
+
+
 def normalize_features(values):
     from sklearn.preprocessing import MinMaxScaler
 
@@ -52,8 +78,13 @@ def build_normalized_sample_rows(
     negative_class: str,
     max_rows: int,
     seed: int,
+    predictions=None,
 ) -> list[dict[str, float | str]]:
-    indices = select_balanced_indices(labels, max_rows, seed)
+    if predictions is None:
+        indices = select_balanced_indices(labels, max_rows, seed)
+    else:
+        indices = select_balanced_correct_indices(labels, predictions, max_rows, seed)
+
     rows: list[dict[str, float | str]] = []
 
     for index in indices:

@@ -61,16 +61,16 @@
       {
         "id": 4,
         "expected": "other",
-        "sepal_length": -0.38888888888888884,
-        "sepal_width": 0.16666666666666652,
-        "petal_length": -0.8305084745762712,
-        "petal_width": -0.7499999999999999
+        "sepal_length": -0.2777777777777781,
+        "sepal_width": -0.16666666666666652,
+        "petal_length": 0.05084745762711851,
+        "petal_width": 2.220446049250313e-16
       },
       {
         "id": 5,
         "expected": "other",
-        "sepal_length": -0.2777777777777781,
-        "sepal_width": -0.4166666666666665,
+        "sepal_length": -0.22222222222222232,
+        "sepal_width": -0.25,
         "petal_length": 0.0847457627118644,
         "petal_width": 2.220446049250313e-16
       },
@@ -85,36 +85,36 @@
       {
         "id": 7,
         "expected": "virginica",
-        "sepal_length": 0.6666666666666661,
-        "sepal_width": -0.25,
-        "petal_length": 0.7966101694915251,
+        "sepal_length": 0.3333333333333335,
+        "sepal_width": -0.5833333333333335,
+        "petal_length": 0.6271186440677965,
         "petal_width": 0.41666666666666674
       },
       {
         "id": 8,
         "expected": "virginica",
-        "sepal_length": 0.8888888888888884,
-        "sepal_width": 0.49999999999999956,
-        "petal_length": 0.9322033898305087,
-        "petal_width": 0.7500000000000002
+        "sepal_length": 0.22222222222222232,
+        "sepal_width": -0.16666666666666652,
+        "petal_length": 0.5254237288135593,
+        "petal_width": 0.41666666666666674
       },
       {
         "id": 9,
         "expected": "virginica",
-        "sepal_length": 0.3333333333333335,
-        "sepal_width": -0.08333333333333348,
-        "petal_length": 0.5593220338983049,
-        "petal_width": 0.9166666666666667
+        "sepal_length": 0.8888888888888884,
+        "sepal_width": -0.5,
+        "petal_length": 1.0,
+        "petal_width": 0.8333333333333333
       },
       {
         "id": 10,
         "expected": "virginica",
-        "sepal_length": 0.22222222222222232,
-        "sepal_width": -0.16666666666666652,
-        "petal_length": 0.423728813559322,
-        "petal_width": 0.5833333333333335
+        "sepal_length": 0.3333333333333335,
+        "sepal_width": 0.08333333333333304,
+        "petal_length": 0.5932203389830508,
+        "petal_width": 1.0000000000000002
       }
     ]
   },
-  "exported_at": "2026-06-12T21:51:00Z"
+  "exported_at": "2026-06-12T21:57:05Z"
 }
