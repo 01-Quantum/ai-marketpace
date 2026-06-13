@@ -356,6 +356,24 @@
   flex-wrap: wrap;
 }
 
+.results-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.labels-file-input {
+  display: none;
+}
+
+.labels-upload-error {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--coral);
+  line-height: 1.35;
+}
+
 .results-meta {
   display: flex;
   flex-direction: column;
@@ -438,6 +456,15 @@
   font-family: 'JetBrains Mono', 'Menlo', 'Monaco', monospace;
   color: var(--teal);
   font-variant-numeric: tabular-nums;
+}
+
+.results-table .cell-expected {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.results-table .cell-missing {
+  color: var(--muted-soft);
 }
 
 .prediction-foot {

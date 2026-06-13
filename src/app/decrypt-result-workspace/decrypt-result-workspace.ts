@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { filter, take } from 'rxjs';
@@ -11,6 +11,7 @@ import {
   FheEncryptedResult,
 } from '../data-owner-workspace/fhe-encrypted-datasets.service';
 import { FheEncryptService } from '../data-owner-workspace/fhe-encrypt.service';
+import { parseSampleDataCsv } from '../model-builder-studio/sample-data.types';
 import { AuthService } from '../shared/auth.service';
 import {
   ArrowRight,
@@ -26,10 +27,31 @@ import {
   Monitor,
   RefreshCw,
   ShieldCheck,
+  Upload,
   User,
 } from 'lucide-angular';
 import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
 import { WorkflowHeader } from '../shared/workflow-header/workflow-header';
+
+function parseExpectedLabelsCsv(text: string): { labels: string[]; error?: string } {
+  const rows = parseSampleDataCsv(text);
+  if (!rows.length) {
+    return {
+      labels: [],
+      error: 'CSV must include a header row, data rows, and an expected column.',
+    };
+  }
+
+  const labels = rows.map((row) => row.expected);
+  if (labels.every((label) => !label)) {
+    return {
+      labels: [],
+      error: 'No expected column found. Include a column named "expected".',
+    };
+  }
+
+  return { labels };
+}
 
 function parseEncryptedDatasetId(value: string | null): number | null {
   if (!value) return null;
@@ -70,15 +92,31 @@ export class DecryptResultWorkspace {
   readonly decrypting = signal(false);
   readonly decryptError = signal('');
 
+  readonly uploadedExpectedLabels = signal<string[]>([]);
+  readonly labelsFileName = signal('');
+  readonly labelsUploadError = signal('');
+
+  private readonly labelsFileInput = viewChild<ElementRef<HTMLInputElement>>('labelsFileInput');
+
   readonly auditTrail = computed(() =>
     buildAuditTrail(this.dataset(), this.decrypted(), this.decryptedAt()),
   );
 
-  readonly previewValues = computed(() =>
-    this.decryptedValues()
-      .slice(0, 10)
-      .map((value, index) => ({ index: index + 1, value })),
-  );
+  readonly hasUploadedLabels = computed(() => this.uploadedExpectedLabels().length > 0);
+
+  readonly comparisonRows = computed(() => {
+    const decrypted = this.decryptedValues();
+    const expected = this.uploadedExpectedLabels();
+    const rowCount = expected.length
+      ? Math.max(decrypted.length, expected.length)
+      : Math.min(decrypted.length, 10);
+
+    return Array.from({ length: rowCount }, (_, index) => ({
+      index: index + 1,
+      decrypted: decrypted[index] ?? null,
+      expected: expected[index] ?? '',
+    }));
+  });
 
   readonly totalValueCount = computed(() => this.decryptedValues().length);
 
@@ -101,6 +139,7 @@ export class DecryptResultWorkspace {
   readonly MonitorIcon = Monitor;
   readonly ArrowRightIcon = ArrowRight;
   readonly DownloadIcon = Download;
+  readonly UploadIcon = Upload;
   readonly LoaderIcon = LoaderCircle;
 
   constructor() {
@@ -140,6 +179,9 @@ export class DecryptResultWorkspace {
 
     this.decryptedValues.set([]);
     this.decryptError.set('');
+    this.uploadedExpectedLabels.set([]);
+    this.labelsFileName.set('');
+    this.labelsUploadError.set('');
 
     if (dataset?.decrypted_at) {
       this.decrypted.set(true);
@@ -191,6 +233,33 @@ export class DecryptResultWorkspace {
   formatDecryptedTime(): string {
     const iso = this.decryptedAt();
     return iso ? formatAuditTime(iso) : '—';
+  }
+
+  triggerLabelsUpload(): void {
+    this.labelsFileInput()?.nativeElement.click();
+  }
+
+  onLabelsFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = typeof reader.result === 'string' ? reader.result : '';
+      const { labels, error } = parseExpectedLabelsCsv(text);
+      if (error) {
+        this.labelsUploadError.set(error);
+        this.uploadedExpectedLabels.set([]);
+        this.labelsFileName.set('');
+      } else {
+        this.uploadedExpectedLabels.set(labels);
+        this.labelsFileName.set(file.name);
+        this.labelsUploadError.set('');
+      }
+      input.value = '';
+    };
+    reader.readAsText(file);
   }
 
   downloadResultsCsv(): void {

@@ -159,20 +159,45 @@
             <div class="results-summary">
               <div class="results-meta">
                 <span class="results-count">{{ totalValueCount() | number }} values decrypted</span>
-                @if (totalValueCount() > 10) {
+                @if (!hasUploadedLabels() && totalValueCount() > 10) {
                   <span class="results-preview-note">Showing first 10</span>
                 }
+                @if (hasUploadedLabels()) {
+                  <span class="results-preview-note">
+                    {{ uploadedExpectedLabels().length | number }} expected labels from {{ labelsFileName() }}
+                  </span>
+                }
               </div>
-              <button
-                type="button"
-                class="btn-outline btn-outline-teal btn-download-csv"
-                (click)="downloadResultsCsv()"
-                [disabled]="totalValueCount() === 0"
-              >
-                <lucide-angular [img]="DownloadIcon" size="14" [strokeWidth]="2"></lucide-angular>
-                Download CSV
-              </button>
+              <div class="results-actions">
+                <button
+                  type="button"
+                  class="btn-outline btn-outline-teal btn-download-csv"
+                  (click)="triggerLabelsUpload()"
+                >
+                  <lucide-angular [img]="UploadIcon" size="14" [strokeWidth]="2"></lucide-angular>
+                  Upload Labels
+                </button>
+                <input
+                  #labelsFileInput
+                  type="file"
+                  accept=".csv,text/csv"
+                  class="labels-file-input"
+                  (change)="onLabelsFileSelected($event)"
+                />
+                <button
+                  type="button"
+                  class="btn-outline btn-outline-teal btn-download-csv"
+                  (click)="downloadResultsCsv()"
+                  [disabled]="totalValueCount() === 0"
+                >
+                  <lucide-angular [img]="DownloadIcon" size="14" [strokeWidth]="2"></lucide-angular>
+                  Download CSV
+                </button>
+              </div>
             </div>
+            @if (labelsUploadError()) {
+              <p class="labels-upload-error">{{ labelsUploadError() }}</p>
+            }
 
             <div class="results-table-wrap">
               <table class="results-table">
@@ -180,13 +205,31 @@
                   <tr>
                     <th scope="col">#</th>
                     <th scope="col">fhe_inference</th>
+                    @if (hasUploadedLabels()) {
+                      <th scope="col">expected</th>
+                    }
                   </tr>
                 </thead>
                 <tbody>
-                  @for (row of previewValues(); track row.index) {
+                  @for (row of comparisonRows(); track row.index) {
                     <tr>
                       <td class="cell-index">{{ row.index }}</td>
-                      <td class="cell-value">{{ row.value }}</td>
+                      <td class="cell-value">
+                        @if (row.decrypted !== null) {
+                          {{ row.decrypted }}
+                        } @else {
+                          <span class="cell-missing">—</span>
+                        }
+                      </td>
+                      @if (hasUploadedLabels()) {
+                        <td class="cell-expected">
+                          @if (row.expected) {
+                            {{ row.expected }}
+                          } @else {
+                            <span class="cell-missing">—</span>
+                          }
+                        </td>
+                      }
                     </tr>
                   }
                 </tbody>
