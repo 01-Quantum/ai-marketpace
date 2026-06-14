@@ -42,17 +42,52 @@ export interface ModelShareEntry {
   created_at: string;
 }
 
+/** Row from shared_models_summary (models shared with the current user). */
+export interface SharedPublishedModel {
+  id: number;
+  owner_id: string;
+  model_type: ModelType;
+  model_name: string;
+  sample_data: unknown;
+  params_count: number;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+  share_id: number;
+  shared_at: string;
+}
+
+function sharedPublishedModelToCatalog(row: SharedPublishedModel): SupabaseModel {
+  return {
+    id: row.id,
+    user_id: row.owner_id,
+    model_type: row.model_type,
+    model_name: row.model_name,
+    model_json: null,
+    sample_data: row.sample_data,
+    params_count: row.params_count,
+    published: row.published,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class ModelSupabaseService {
   private readonly auth = inject(AuthService);
   private get db() { return this.auth.client; }
 
-  /** Published models of the given type (marketplace catalog for data owners). */
+  /** Published models shared with the current user (data owner catalog). */
   async loadPublishedModelsByType(
     modelType: ModelType,
   ): Promise<{ models: SupabaseModel[]; error: string | null }> {
+    const userId = this.auth.user()?.id;
+    if (!userId) {
+      return { models: [], error: 'Not signed in.' };
+    }
+
     const { data, error } = await this.db
-      .from('models')
+      .from('shared_models_summary')
       .select('*')
       .eq('published', true)
       .eq('model_type', modelType)
@@ -63,9 +98,9 @@ export class ModelSupabaseService {
       return { models: [], error: error.message };
     }
 
-    const models = (data ?? []) as SupabaseModel[];
+    const models = ((data ?? []) as SharedPublishedModel[]).map(sharedPublishedModelToCatalog);
     console.info(
-      `loadPublishedModelsByType: ${models.length} published ${modelType} model(s)`,
+      `loadPublishedModelsByType: ${models.length} shared published ${modelType} model(s)`,
       models.map((m) => ({ id: m.id, name: m.model_name })),
     );
     return { models, error: null };

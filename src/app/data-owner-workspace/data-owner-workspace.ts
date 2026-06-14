@@ -353,7 +353,7 @@ export class DataOwnerWorkspace {
     } else if (models.length === 0) {
       this.selectedPublishedModelId.set(null);
       this.modelError.set(
-        `No published ${this.modelTypeLabel()} model is available yet. Ask a model owner to publish one in Model Builder Studio.`,
+        `No published ${this.modelTypeLabel()} model has been shared with you yet. Ask a model owner to publish and share one in Model Builder Studio.`,
       );
     } else {
       const preferredId = this.selectedPublishedModelId();
