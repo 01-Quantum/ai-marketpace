@@ -830,7 +830,14 @@
     minmax(0, 0.85fr)
     minmax(0, 0.85fr)
     minmax(0, 1.1fr)
-    minmax(0, 1.1fr);
+    minmax(0, 1.1fr)
+    minmax(0, 3rem);
+}
+
+.jobs-table .cell-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .jobs-table .col-select {

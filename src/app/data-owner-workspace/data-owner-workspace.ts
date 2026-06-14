@@ -188,6 +188,7 @@ export class DataOwnerWorkspace {
     parsePositiveInt(this.route.snapshot.queryParamMap.get('encryptedDatasetId')),
   );
   readonly inferringDatasetId = signal<number | null>(null);
+  readonly deletingResultJobId = signal<number | null>(null);
   readonly inferenceError = signal('');
   readonly inferenceSuccess = signal('');
   readonly ownerLabel = computed(() => {
@@ -719,6 +720,35 @@ export class DataOwnerWorkspace {
     if (!result.ok) {
       this.datasetsError.set(result.error);
       return;
+    }
+    await this.refreshWorkspace();
+  }
+
+  isDeletingResult(job: InferenceJob): boolean {
+    return this.deletingResultJobId() === job.id;
+  }
+
+  async deleteJobResult(job: InferenceJob): Promise<void> {
+    if (job.status !== 'inference_complete') return;
+    if (
+      !confirm(`Delete encrypted result for "${job.dataset}"? This cannot be undone.`)
+    ) {
+      return;
+    }
+
+    this.deletingResultJobId.set(job.id);
+    this.jobsError.set('');
+
+    const deleteResult = await this.fheEncrypt.deleteResult(job.id);
+    this.deletingResultJobId.set(null);
+
+    if (!deleteResult.ok) {
+      this.jobsError.set(deleteResult.error);
+      return;
+    }
+
+    if (this.selectedJobId() === job.id) {
+      this.selectedJobId.set(null);
     }
     await this.refreshWorkspace();
   }

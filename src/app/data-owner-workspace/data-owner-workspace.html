@@ -398,6 +398,7 @@
               <span role="columnheader">Status</span>
               <span role="columnheader">Started At</span>
               <span role="columnheader">Completed At</span>
+              <span role="columnheader" class="col-action">Action</span>
             </div>
             @for (job of jobs(); track job.id) {
               <div class="table-row" role="row" [class.row-selected]="selectedJobId() === job.id">
@@ -442,6 +443,21 @@
                 </span>
                 <span class="cell-muted" role="cell">{{ formatJobDate(job.startedAt) }}</span>
                 <span class="cell-muted" role="cell">{{ formatJobDate(job.completedAt) }}</span>
+                <span class="cell-actions col-action" role="cell">
+                  <button
+                    type="button"
+                    class="icon-btn danger"
+                    aria-label="Delete encrypted result"
+                    (click)="deleteJobResult(job)"
+                    [disabled]="job.status !== 'inference_complete' || isDeletingResult(job)"
+                  >
+                    @if (isDeletingResult(job)) {
+                      <lucide-angular class="spin" [img]="LoaderIcon" size="16"></lucide-angular>
+                    } @else {
+                      <lucide-angular [img]="Trash2Icon" size="16"></lucide-angular>
+                    }
+                  </button>
+                </span>
               </div>
             }
           </div>

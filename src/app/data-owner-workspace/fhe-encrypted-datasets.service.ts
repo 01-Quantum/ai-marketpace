@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { AuthService } from '../shared/auth.service';
-export type InferenceJobStatus = 'encrypted' | 'inference_running' | 'inference_complete';
+export type InferenceJobStatus = 'encrypted' | 'submitted' | 'inference_running' | 'inference_complete';
 
 export interface FheEncryptedDataset {
   id: number;
@@ -128,8 +128,11 @@ export interface InferenceJob {
 }
 
 function normalizeJobStatus(value: string | null | undefined): InferenceJobStatus {
-  if (value === 'inference_complete' || value === 'inference_running') {
+  if (value === 'inference_complete') {
     return value;
+  }
+  if (value === 'submitted' || value === 'inference_running') {
+    return 'inference_running';
   }
   return 'encrypted';
 }
