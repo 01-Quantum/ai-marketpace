@@ -125,6 +125,34 @@ export class DecryptResultWorkspace {
 
   readonly totalValueCount = computed(() => this.decryptedValues().length);
 
+  readonly labelAccuracy = computed(() => {
+    if (!this.hasUploadedLabels()) return null;
+
+    const predicted = this.predictedLabels();
+    const expected = this.uploadedExpectedLabels();
+    const total = Math.min(predicted.length, expected.length);
+    if (total === 0) return null;
+
+    let passed = 0;
+    for (let index = 0; index < total; index++) {
+      if (predicted[index] === expected[index]) passed++;
+    }
+
+    return { passed, total };
+  });
+
+  readonly labelAccuracyLabel = computed(() => {
+    const accuracy = this.labelAccuracy();
+    if (!accuracy) {
+      return this.hasUploadedLabels() && !this.hasPredictedLabels()
+        ? 'Accuracy unavailable — no predicted labels in decrypt response.'
+        : '';
+    }
+
+    const pct = Math.round((accuracy.passed / accuracy.total) * 100);
+    return `Accuracy: ${accuracy.passed} / ${accuracy.total} (${pct}%)`;
+  });
+
   readonly ciphertextLines: string[] = [
     '0x9f3a7b6c2d8e4f11a98b3d7c0e1f2a6b9c...',
     '0x7a1b2c3d4e5f67890 1a2b3c4d5e6f7890...',

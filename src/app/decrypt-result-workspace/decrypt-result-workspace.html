@@ -167,6 +167,9 @@
                     {{ uploadedExpectedLabels().length | number }} expected labels from {{ labelsFileName() }}
                   </span>
                 }
+                @if (labelAccuracyLabel()) {
+                  <span class="accuracy-summary">{{ labelAccuracyLabel() }}</span>
+                }
               </div>
               <div class="results-actions">
                 <button
