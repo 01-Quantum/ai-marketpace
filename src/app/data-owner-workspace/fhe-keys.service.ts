@@ -159,19 +159,23 @@ export class FheKeysService {
   }
 
   async deleteKey(id: number): Promise<boolean> {
-    const userId = this.auth.user()?.id;
-    if (!userId) return false;
+    const token = await this.auth.getAccessToken();
+    if (!token) return false;
 
-    const { error } = await this.db
-      .from('fhe_keys')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', userId);
+    const res = await fetch(`${environment.fheApiBaseUrl}/fhe-vault/fhe-key-delete`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id }),
+    });
 
-    if (error) {
-      console.error('deleteKey error', error.message);
+    if (!res.ok) {
+      console.error('fhe-key-delete failed', res.status, await res.text());
       return false;
     }
+
     return true;
   }
 }
