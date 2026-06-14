@@ -9,20 +9,29 @@ Creates:
 | Object | Purpose |
 |--------|---------|
 | `model_shares` | Grants another user access to a model |
-| `get_shared_published_models(model_type)` | RPC catalog for data owners (no public view) |
 | `share_model_by_email(model_id, email)` | Owner shares a saved model |
 | `list_model_shares(model_id)` | Owner lists current shares |
 | `revoke_model_share(share_id)` | Owner removes a share |
 
-### RLS
+### RLS on `models`
 
-- **`models`**: owner-only, `FORCE ROW LEVEL SECURITY`
-- **`model_shares`**: owners manage shares; recipients can read their rows; `anon` revoked
-- **No public views** — avoids Supabase “RLS unrestricted” warnings on `shared_models_summary`
+| Policy | Who | What |
+|--------|-----|------|
+| Owners select own models | `user_id = auth.uid()` | All own rows |
+| Shared recipients select published models | `model_shares.shared_with_user_id = auth.uid()` and `published = true` | Read shared catalog |
+| Owners insert/update/delete | `user_id = auth.uid()` | Owner CRUD only |
 
-### Patch (`20250614200000_secure_shared_models_rpc.sql`)
+Shared users cannot insert, update, or delete models — only select rows they were granted via `model_shares`.
 
-Run this if you already applied an older version that created `shared_models_summary` / `models_summary` views.
+### RLS on `model_shares`
+
+- Owners manage shares for their models
+- Recipients can read their own share rows
+
+### App usage
+
+- **Model builder (owner)** → `models` table
+- **Data owner catalog** → `model_shares` join `models` (RLS on both tables)
 
 ### Apply
 
@@ -30,16 +39,27 @@ Run this if you already applied an older version that created `shared_models_sum
 supabase db push
 ```
 
-Or paste each migration file into **Dashboard → SQL → Run**.
+Or paste the migration file into **Dashboard → SQL → Run**.
 
-### Data owner catalog
-
-The app calls `get_shared_published_models` — data owners only see models that were **published and shared** with them.
-
-### Remove old public policy (if applied separately)
+### If you already ran an older migration
 
 ```sql
-drop policy if exists "Authenticated users read published models" on public.models;
+drop function if exists public.get_shared_published_models(text);
 drop view if exists public.shared_models_summary;
 drop view if exists public.models_summary;
+
+drop policy if exists "Shared recipients select published models" on public.models;
+create policy "Shared recipients select published models"
+  on public.models
+  for select
+  to authenticated
+  using (
+    published is true
+    and exists (
+      select 1
+      from public.model_shares ms
+      where ms.model_id = models.id
+        and ms.shared_with_user_id = (select auth.uid())
+    )
+  );
 ```

@@ -30,33 +30,47 @@ export interface ModelShareEntry {
   created_at: string;
 }
 
-/** Row from get_shared_published_models RPC. */
-export interface SharedPublishedModel {
+/** Row from model_shares join (data-owner catalog). */
+interface SharedModelRow {
   id: number;
-  owner_id: string;
-  model_type: ModelType;
-  model_name: string;
-  sample_data: unknown;
-  params_count: number;
-  published: boolean;
   created_at: string;
-  updated_at: string;
-  share_id: number;
-  shared_at: string;
+  models: {
+    id: number;
+    user_id: string;
+    model_type: ModelType;
+    model_name: string;
+    sample_data: unknown;
+    params_count: number;
+    published: boolean;
+    created_at: string;
+    updated_at: string;
+  } | {
+    id: number;
+    user_id: string;
+    model_type: ModelType;
+    model_name: string;
+    sample_data: unknown;
+    params_count: number;
+    published: boolean;
+    created_at: string;
+    updated_at: string;
+  }[];
 }
 
-function sharedPublishedModelToCatalog(row: SharedPublishedModel): SupabaseModel {
+function sharedModelRowToCatalog(row: SharedModelRow): SupabaseModel | null {
+  const m = Array.isArray(row.models) ? row.models[0] : row.models;
+  if (!m) return null;
   return {
-    id: row.id,
-    user_id: row.owner_id,
-    model_type: row.model_type,
-    model_name: row.model_name,
+    id: m.id,
+    user_id: m.user_id,
+    model_type: m.model_type,
+    model_name: m.model_name,
     model_json: null,
-    sample_data: row.sample_data,
-    params_count: row.params_count,
-    published: row.published,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
+    sample_data: m.sample_data,
+    params_count: m.params_count,
+    published: m.published,
+    created_at: m.created_at,
+    updated_at: m.updated_at,
   };
 }
 
@@ -74,16 +88,38 @@ export class ModelSupabaseService {
       return { models: [], error: 'Not signed in.' };
     }
 
-    const { data, error } = await this.db.rpc('get_shared_published_models', {
-      p_model_type: modelType,
-    });
+    const { data, error } = await this.db
+      .from('model_shares')
+      .select(
+        `
+        id,
+        created_at,
+        models!inner (
+          id,
+          user_id,
+          model_type,
+          model_name,
+          sample_data,
+          params_count,
+          published,
+          created_at,
+          updated_at
+        )
+      `,
+      )
+      .eq('shared_with_user_id', userId)
+      .eq('models.published', true)
+      .eq('models.model_type', modelType)
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('loadPublishedModelsByType error', error.message, { modelType });
       return { models: [], error: error.message };
     }
 
-    const models = ((data ?? []) as SharedPublishedModel[]).map(sharedPublishedModelToCatalog);
+    const models = ((data ?? []) as unknown as SharedModelRow[])
+      .map(sharedModelRowToCatalog)
+      .filter((m): m is SupabaseModel => m !== null);
     console.info(
       `loadPublishedModelsByType: ${models.length} shared published ${modelType} model(s)`,
       models.map((m) => ({ id: m.id, name: m.model_name })),
@@ -99,7 +135,6 @@ export class ModelSupabaseService {
       .from('models')
       .select('*')
       .eq('id', remoteId)
-      .eq('user_id', userId)
       .single();
 
     if (error) {
