@@ -89,6 +89,7 @@ export class DecryptResultWorkspace {
   readonly decrypted = signal(false);
   readonly decryptedAt = signal<string | null>(null);
   readonly decryptedValues = signal<number[]>([]);
+  readonly predictedLabels = signal<string[]>([]);
   readonly decrypting = signal(false);
   readonly decryptError = signal('');
 
@@ -103,17 +104,21 @@ export class DecryptResultWorkspace {
   );
 
   readonly hasUploadedLabels = computed(() => this.uploadedExpectedLabels().length > 0);
+  readonly hasPredictedLabels = computed(() => this.predictedLabels().length > 0);
 
   readonly comparisonRows = computed(() => {
     const decrypted = this.decryptedValues();
+    const predicted = this.predictedLabels();
     const expected = this.uploadedExpectedLabels();
-    const rowCount = expected.length
-      ? Math.max(decrypted.length, expected.length)
+    const showAllRows = this.hasUploadedLabels() || this.hasPredictedLabels();
+    const rowCount = showAllRows
+      ? Math.max(decrypted.length, predicted.length, expected.length)
       : Math.min(decrypted.length, 10);
 
     return Array.from({ length: rowCount }, (_, index) => ({
       index: index + 1,
       decrypted: decrypted[index] ?? null,
+      predicted: predicted[index] ?? '',
       expected: expected[index] ?? '',
     }));
   });
@@ -178,6 +183,7 @@ export class DecryptResultWorkspace {
     this.inferenceResult.set(result);
 
     this.decryptedValues.set([]);
+    this.predictedLabels.set([]);
     this.decryptError.set('');
     this.uploadedExpectedLabels.set([]);
     this.labelsFileName.set('');
@@ -225,6 +231,7 @@ export class DecryptResultWorkspace {
     }
 
     this.decryptedValues.set(result.data.decrypted_values ?? []);
+    this.predictedLabels.set(result.data.predicted_labels ?? []);
     this.decryptedAt.set(new Date().toISOString());
     this.decrypted.set(true);
     this.decrypting.set(false);
@@ -266,7 +273,22 @@ export class DecryptResultWorkspace {
     const values = this.decryptedValues();
     if (!values.length) return;
 
-    const csv = ['fhe_inference', ...values.map(String)].join('\n');
+    const predicted = this.predictedLabels();
+    const expected = this.uploadedExpectedLabels();
+    const headers = ['fhe_inference'];
+    if (predicted.length) headers.push('predicted');
+    if (expected.length) headers.push('expected');
+
+    const rowCount = Math.max(values.length, predicted.length, expected.length);
+    const lines = [headers.join(',')];
+    for (let index = 0; index < rowCount; index++) {
+      const cells: string[] = [values[index] != null ? String(values[index]) : ''];
+      if (predicted.length) cells.push(predicted[index] ?? '');
+      if (expected.length) cells.push(expected[index] ?? '');
+      lines.push(cells.join(','));
+    }
+
+    const csv = lines.join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const resultId = this.inferenceResult()?.result_id?.trim() ?? 'result';

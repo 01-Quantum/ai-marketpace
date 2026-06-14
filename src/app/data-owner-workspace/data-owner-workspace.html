@@ -64,6 +64,18 @@
             }
           </div>
 
+          @if (keyNeedsTreeUpgrade()) {
+            <div class="key-upgrade-warning" role="alert">
+              <lucide-angular [img]="TriangleAlertIcon" size="16" [strokeWidth]="2"></lucide-angular>
+              <span>
+                This key was created before decision-tree support (depth
+                {{ currentKey()?.multiplicative_depth }}). It still works for logistic
+                models, but you must generate a new key to encrypt or run decision-tree
+                models.
+              </span>
+            </div>
+          }
+
           @if (currentKey(); as key) {
             <div class="key-actions">
               <button type="button" class="btn-secondary" (click)="openSelectModal()" [disabled]="busy()">
@@ -556,7 +568,7 @@
             <input
               class="field-input"
               type="number"
-              min="1"
+              [min]="minKeyDepth"
               [ngModel]="formDepth()"
               (ngModelChange)="formDepth.set($event)"
               [disabled]="isEditing()"
@@ -565,6 +577,11 @@
 
           @if (isEditing()) {
             <p class="field-hint">Scheme and depth are fixed when the key is generated.</p>
+          } @else {
+            <p class="field-hint">
+              Minimum {{ minKeyDepth }} — required for decision-tree support. Generating a
+              key builds the evaluation and rotation keys, so it can take a little while.
+            </p>
           }
 
           @if (keyError()) {

@@ -458,6 +458,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+.results-table .cell-predicted {
+  font-weight: 600;
+  color: var(--teal);
+}
+
 .results-table .cell-expected {
   font-weight: 500;
   color: var(--text);

@@ -159,7 +159,7 @@
             <div class="results-summary">
               <div class="results-meta">
                 <span class="results-count">{{ totalValueCount() | number }} values decrypted</span>
-                @if (!hasUploadedLabels() && totalValueCount() > 10) {
+                @if (!hasUploadedLabels() && !hasPredictedLabels() && totalValueCount() > 10) {
                   <span class="results-preview-note">Showing first 10</span>
                 }
                 @if (hasUploadedLabels()) {
@@ -205,6 +205,9 @@
                   <tr>
                     <th scope="col">#</th>
                     <th scope="col">fhe_inference</th>
+                    @if (hasPredictedLabels()) {
+                      <th scope="col">predicted</th>
+                    }
                     @if (hasUploadedLabels()) {
                       <th scope="col">expected</th>
                     }
@@ -221,6 +224,15 @@
                           <span class="cell-missing">—</span>
                         }
                       </td>
+                      @if (hasPredictedLabels()) {
+                        <td class="cell-predicted">
+                          @if (row.predicted) {
+                            {{ row.predicted }}
+                          } @else {
+                            <span class="cell-missing">—</span>
+                          }
+                        </td>
+                      }
                       @if (hasUploadedLabels()) {
                         <td class="cell-expected">
                           @if (row.expected) {

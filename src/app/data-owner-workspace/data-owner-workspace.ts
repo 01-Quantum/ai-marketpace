@@ -25,6 +25,7 @@ import {
   RefreshCw,
   ShieldCheck,
   Trash2,
+  TriangleAlert,
   User,
   X,
 } from 'lucide-angular';
@@ -67,6 +68,13 @@ function parseWorkflowStep(value: string | null): WorkflowStep {
 }
 
 const DEFAULT_KEY_SLOTS = 8192;
+/**
+ * Minimum multiplicative depth supported by the FHE vault. The vault bumps any
+ * lower value to this so a single key works for both logistic and decision-tree
+ * models (trees need depth >= 9 for ApproxComp + the tree evaluator). Keys
+ * created below this lack the depth/precision/rotation keys trees require.
+ */
+const MIN_KEY_DEPTH = 9;
 
 @Component({
   selector: 'app-data-owner-workspace',
@@ -118,6 +126,18 @@ export class DataOwnerWorkspace {
   readonly loadingKey = signal(true);
   readonly busy = signal(false);
   readonly keyError = signal('');
+
+  readonly minKeyDepth = MIN_KEY_DEPTH;
+
+  /**
+   * True when the active key predates tree support (depth < MIN_KEY_DEPTH) and
+   * therefore lacks the depth/precision/rotation keys decision-tree models need.
+   * Such a key still works for logistic models but must be regenerated for trees.
+   */
+  readonly keyNeedsTreeUpgrade = computed(() => {
+    const key = this.currentKey();
+    return !!key && key.multiplicative_depth < MIN_KEY_DEPTH;
+  });
 
   readonly showKeyModal = signal(false);
   readonly editingKeyId = signal<number | null>(null);
@@ -192,6 +212,7 @@ export class DataOwnerWorkspace {
   readonly DatabaseIcon = Database;
   readonly EyeIcon = Eye;
   readonly Trash2Icon = Trash2;
+  readonly TriangleAlertIcon = TriangleAlert;
   readonly PencilIcon = Pencil;
   readonly ListIcon = List;
   readonly DownloadIcon = Download;
@@ -545,8 +566,11 @@ export class DataOwnerWorkspace {
       }
 
       const depth = Number(this.formDepth());
-      if (!Number.isInteger(depth) || depth <= 0) {
-        this.keyError.set('Multiplicative depth must be a positive integer.');
+      if (!Number.isInteger(depth) || depth < MIN_KEY_DEPTH) {
+        this.keyError.set(
+          `Multiplicative depth must be an integer of at least ${MIN_KEY_DEPTH} ` +
+            `(required for decision-tree support).`,
+        );
         return;
       }
 

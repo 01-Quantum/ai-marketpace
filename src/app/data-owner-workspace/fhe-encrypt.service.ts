@@ -11,6 +11,7 @@ export type FheEncryptResult = FheVaultResult;
 export interface FheDecryptResultsResponse {
   result_id: string;
   decrypted_values: number[];
+  predicted_labels?: string[];
   status: string;
 }
 
