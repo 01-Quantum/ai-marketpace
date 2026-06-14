@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './shared/auth.guard';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'landing-page' },
@@ -9,6 +10,7 @@ export const routes: Routes = [
   },
   {
     path: 'data-owner-workspace',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./data-owner-workspace/data-owner-workspace').then(
         (m) => m.DataOwnerWorkspace,
@@ -16,6 +18,7 @@ export const routes: Routes = [
   },
   {
     path: 'decrypt-result-workspace',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./decrypt-result-workspace/decrypt-result-workspace').then(
         (m) => m.DecryptResultWorkspace,
@@ -23,6 +26,7 @@ export const routes: Routes = [
   },
   {
     path: 'model-builder-studio',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./model-builder-studio/model-builder-studio').then(
         (m) => m.ModelBuilderStudio,
