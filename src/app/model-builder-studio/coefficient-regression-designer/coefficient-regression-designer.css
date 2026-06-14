@@ -364,6 +364,32 @@
   gap: 1rem;
 }
 
+.coef-apply-panel {
+  padding: 1rem;
+}
+
+.coef-apply-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.coef-apply-toggle input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--teal);
+  cursor: not-allowed;
+}
+
+.coef-apply-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
 .coef-chart-panel {
   padding: 1rem;
 }
