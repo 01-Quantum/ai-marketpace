@@ -23,18 +23,6 @@ export interface SaveModelPayload {
   sample_data?: unknown;
 }
 
-/** Model metadata without model_json or sample_data (from models_summary view). */
-export interface SupabaseModelSummary {
-  id: number;
-  user_id: string;
-  model_type: ModelType;
-  model_name: string;
-  params_count: number;
-  published: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface ModelShareEntry {
   share_id: number;
   shared_with_user_id: string;
@@ -42,7 +30,7 @@ export interface ModelShareEntry {
   created_at: string;
 }
 
-/** Row from shared_models_summary (models shared with the current user). */
+/** Row from get_shared_published_models RPC. */
 export interface SharedPublishedModel {
   id: number;
   owner_id: string;
@@ -86,12 +74,9 @@ export class ModelSupabaseService {
       return { models: [], error: 'Not signed in.' };
     }
 
-    const { data, error } = await this.db
-      .from('shared_models_summary')
-      .select('*')
-      .eq('published', true)
-      .eq('model_type', modelType)
-      .order('updated_at', { ascending: false });
+    const { data, error } = await this.db.rpc('get_shared_published_models', {
+      p_model_type: modelType,
+    });
 
     if (error) {
       console.error('loadPublishedModelsByType error', error.message, { modelType });
@@ -242,26 +227,6 @@ export class ModelSupabaseService {
       return false;
     }
     return true;
-  }
-
-  async loadModelSummaries(): Promise<{ models: SupabaseModelSummary[]; error: string | null }> {
-    const userId = this.auth.user()?.id;
-    if (!userId) {
-      return { models: [], error: 'Not signed in.' };
-    }
-
-    const { data, error } = await this.db
-      .from('models_summary')
-      .select('*')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false });
-
-    if (error) {
-      console.error('loadModelSummaries error', error.message);
-      return { models: [], error: error.message };
-    }
-
-    return { models: (data ?? []) as SupabaseModelSummary[], error: null };
   }
 
   async listModelShares(

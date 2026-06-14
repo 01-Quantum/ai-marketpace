@@ -1,6 +1,6 @@
 # Supabase migrations
 
-Apply migrations in the Supabase SQL editor or via the CLI.
+Apply migrations in order in the Supabase SQL editor or via the CLI.
 
 ## Model sharing (`20250614180000_model_sharing.sql`)
 
@@ -9,38 +9,37 @@ Creates:
 | Object | Purpose |
 |--------|---------|
 | `model_shares` | Grants another user access to a model |
-| `models_summary` | Owner list view **without** `model_json` or `sample_data` |
-| `shared_models_summary` | Models shared with the signed-in user (`sample_data` yes, `model_json` no) |
+| `get_shared_published_models(model_type)` | RPC catalog for data owners (no public view) |
 | `share_model_by_email(model_id, email)` | Owner shares a saved model |
 | `list_model_shares(model_id)` | Owner lists current shares |
 | `revoke_model_share(share_id)` | Owner removes a share |
 
 ### RLS
 
-- **`models`**: owner-only (`auth.uid() = user_id`). No public `published = true` read policy.
-- **`model_shares`**: owners manage their shares; recipients can read rows shared with them.
-- **`shared_models_summary`**: security-definer view filtered to `shared_with_user_id = auth.uid()`.
+- **`models`**: owner-only, `FORCE ROW LEVEL SECURITY`
+- **`model_shares`**: owners manage shares; recipients can read their rows; `anon` revoked
+- **No public views** — avoids Supabase “RLS unrestricted” warnings on `shared_models_summary`
 
-### Data owner catalog
+### Patch (`20250614200000_secure_shared_models_rpc.sql`)
 
-The app loads published models from `shared_models_summary`, not `models`. A data owner only sees models that a model owner has **published and shared** with them.
+Run this if you already applied an older version that created `shared_models_summary` / `models_summary` views.
 
 ### Apply
 
 ```bash
-# Supabase CLI (if linked)
 supabase db push
-
-# Or paste supabase/migrations/20250614180000_model_sharing.sql into Dashboard → SQL → Run
 ```
+
+Or paste each migration file into **Dashboard → SQL → Run**.
+
+### Data owner catalog
+
+The app calls `get_shared_published_models` — data owners only see models that were **published and shared** with them.
 
 ### Remove old public policy (if applied separately)
 
 ```sql
 drop policy if exists "Authenticated users read published models" on public.models;
+drop view if exists public.shared_models_summary;
+drop view if exists public.models_summary;
 ```
-
-### Notes
-
-- Sharing is by **account email** (must match a Supabase Auth user).
-- Recipients cannot read `model_json` from `models`; they get metadata and `sample_data` via `shared_models_summary`.
