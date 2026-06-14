@@ -52,6 +52,24 @@ export class ModelSupabaseService {
     return { models, error: null };
   }
 
+  async loadModelById(remoteId: number): Promise<SupabaseModel | null> {
+    const userId = this.auth.user()?.id;
+    if (!userId) return null;
+
+    const { data, error } = await this.db
+      .from('models')
+      .select('*')
+      .eq('id', remoteId)
+      .eq('user_id', userId)
+      .single();
+
+    if (error) {
+      console.error('loadModelById error', error.message);
+      return null;
+    }
+    return data as SupabaseModel;
+  }
+
   async loadModels(): Promise<SupabaseModel[]> {
     const userId = this.auth.user()?.id;
     if (!userId) return [];

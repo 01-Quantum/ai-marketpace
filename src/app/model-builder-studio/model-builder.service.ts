@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { BehaviorSubject, combineLatest, filter, map, shareReplay, take } from 'rxjs';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { AuthService } from '../shared/auth.service';
+import { FheTreePublishService } from './fhe-tree-publish.service';
 import { ModelSupabaseService, SupabaseModel } from './model-supabase.service';
 import {
   DEFAULT_DECISION_TREE_NODES,
@@ -124,6 +125,7 @@ function placeholderLeaf(
 export class ModelBuilderService {
   private readonly auth = inject(AuthService);
   private readonly modelSupabase = inject(ModelSupabaseService);
+  private readonly fheTreePublish = inject(FheTreePublishService);
 
   readonly saving = signal(false);
   readonly deleting = signal(false);
@@ -498,12 +500,33 @@ export class ModelBuilderService {
 
     this.publishing.set(true);
     try {
-      const saved = await this.modelSupabase.setPublished(model.remoteId, true, {
+      const payload = {
         model_type: model.type,
         model_name: model.name,
         model_json: modelJson,
         sample_data: toSampleDataDocument(this.getSampleData()),
-      });
+      };
+
+      if (model.type === 'tree') {
+        const saved = await this.modelSupabase.saveModel(String(model.remoteId), payload);
+        if (!saved) return false;
+
+        const published = await this.fheTreePublish.publishTree(model.remoteId);
+        if (!published.ok) {
+          console.error('fhe-tree-publish error', published.error);
+          return false;
+        }
+
+        const refreshed = await this.modelSupabase.loadModelById(model.remoteId);
+        if (refreshed) {
+          this.originalSampleDataByModel[model.id] = structuredClone(this.getSampleData());
+          this.applyRemoteModelToLibrary(model.id, refreshed, 'Published');
+          return true;
+        }
+        return false;
+      }
+
+      const saved = await this.modelSupabase.setPublished(model.remoteId, true, payload);
       if (saved) {
         this.originalSampleDataByModel[model.id] = structuredClone(this.getSampleData());
         this.applyRemoteModelToLibrary(model.id, saved, 'Published');
