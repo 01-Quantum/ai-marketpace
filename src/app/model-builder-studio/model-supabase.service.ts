@@ -30,48 +30,11 @@ export interface ModelShareEntry {
   created_at: string;
 }
 
-/** Row from model_shares join (data-owner catalog). */
-interface SharedModelRow {
-  id: number;
-  created_at: string;
-  models: {
-    id: number;
-    user_id: string;
-    model_type: ModelType;
-    model_name: string;
-    sample_data: unknown;
-    params_count: number;
-    published: boolean;
-    created_at: string;
-    updated_at: string;
-  } | {
-    id: number;
-    user_id: string;
-    model_type: ModelType;
-    model_name: string;
-    sample_data: unknown;
-    params_count: number;
-    published: boolean;
-    created_at: string;
-    updated_at: string;
-  }[];
-}
+/** Row from models table (data-owner catalog — no model_json in select). */
+type PublishedCatalogRow = Omit<SupabaseModel, 'model_json'>;
 
-function sharedModelRowToCatalog(row: SharedModelRow): SupabaseModel | null {
-  const m = Array.isArray(row.models) ? row.models[0] : row.models;
-  if (!m) return null;
-  return {
-    id: m.id,
-    user_id: m.user_id,
-    model_type: m.model_type,
-    model_name: m.model_name,
-    model_json: null,
-    sample_data: m.sample_data,
-    params_count: m.params_count,
-    published: m.published,
-    created_at: m.created_at,
-    updated_at: m.updated_at,
-  };
+function catalogRowToModel(row: PublishedCatalogRow): SupabaseModel {
+  return { ...row, model_json: null };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -79,7 +42,7 @@ export class ModelSupabaseService {
   private readonly auth = inject(AuthService);
   private get db() { return this.auth.client; }
 
-  /** Published models shared with the current user (data owner catalog). */
+  /** Published models available to the current user (own published + shared with you). */
   async loadPublishedModelsByType(
     modelType: ModelType,
   ): Promise<{ models: SupabaseModel[]; error: string | null }> {
@@ -89,39 +52,32 @@ export class ModelSupabaseService {
     }
 
     const { data, error } = await this.db
-      .from('model_shares')
+      .from('models')
       .select(
         `
         id,
+        user_id,
+        model_type,
+        model_name,
+        sample_data,
+        params_count,
+        published,
         created_at,
-        models!inner (
-          id,
-          user_id,
-          model_type,
-          model_name,
-          sample_data,
-          params_count,
-          published,
-          created_at,
-          updated_at
-        )
+        updated_at
       `,
       )
-      .eq('shared_with_user_id', userId)
-      .eq('models.published', true)
-      .eq('models.model_type', modelType)
-      .order('created_at', { ascending: false });
+      .eq('published', true)
+      .eq('model_type', modelType)
+      .order('updated_at', { ascending: false });
 
     if (error) {
       console.error('loadPublishedModelsByType error', error.message, { modelType });
       return { models: [], error: error.message };
     }
 
-    const models = ((data ?? []) as unknown as SharedModelRow[])
-      .map(sharedModelRowToCatalog)
-      .filter((m): m is SupabaseModel => m !== null);
+    const models = ((data ?? []) as PublishedCatalogRow[]).map(catalogRowToModel);
     console.info(
-      `loadPublishedModelsByType: ${models.length} shared published ${modelType} model(s)`,
+      `loadPublishedModelsByType: ${models.length} published ${modelType} model(s)`,
       models.map((m) => ({ id: m.id, name: m.model_name })),
     );
     return { models, error: null };

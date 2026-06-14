@@ -17,8 +17,8 @@ Creates:
 
 | Policy | Who | What |
 |--------|-----|------|
-| Owners select own models | `user_id = auth.uid()` | All own rows |
-| Shared recipients select published models | `model_shares.shared_with_user_id = auth.uid()` and `published = true` | Read shared catalog |
+| Select own or shared published models | Owner (`user_id = auth.uid()`) | All own rows (app filters `published = true` for catalog) |
+| | Shared recipient | Published rows granted via `model_shares` |
 | Owners insert/update/delete | `user_id = auth.uid()` | Owner CRUD only |
 
 Shared users cannot insert, update, or delete models — only select rows they were granted via `model_shares`.
@@ -31,7 +31,7 @@ Shared users cannot insert, update, or delete models — only select rows they w
 ### App usage
 
 - **Model builder (owner)** → `models` table
-- **Data owner catalog** → `model_shares` join `models` (RLS on both tables)
+- **Data owner catalog** → `models` where `published = true` (own + shared via RLS)
 
 ### Apply
 
@@ -48,18 +48,23 @@ drop function if exists public.get_shared_published_models(text);
 drop view if exists public.shared_models_summary;
 drop view if exists public.models_summary;
 
+drop policy if exists "Owners select own models" on public.models;
 drop policy if exists "Shared recipients select published models" on public.models;
-create policy "Shared recipients select published models"
+drop policy if exists "Select own or shared published models" on public.models;
+create policy "Select own or shared published models"
   on public.models
   for select
   to authenticated
   using (
-    published is true
-    and exists (
-      select 1
-      from public.model_shares ms
-      where ms.model_id = models.id
-        and ms.shared_with_user_id = (select auth.uid())
+    user_id = (select auth.uid())
+    or (
+      published is true
+      and exists (
+        select 1
+        from public.model_shares ms
+        where ms.model_id = models.id
+          and ms.shared_with_user_id = (select auth.uid())
+      )
     )
   );
 ```
