@@ -45,6 +45,16 @@
         </button>
         <button
           type="button"
+          class="btn-toolbar-action"
+          title="Share model with another user"
+          [disabled]="!canShareModel()"
+          (click)="openShareModal()"
+        >
+          <lucide-angular [img]="Share2Icon" size="15" [strokeWidth]="2"></lucide-angular>
+          Share
+        </button>
+        <button
+          type="button"
           class="btn-toolbar-action btn-toolbar-publish"
           [class.btn-toolbar-unpublish]="selectedModel()?.published"
           [title]="selectedModel()?.published ? 'Remove from enclave' : 'Publish to enclave'"
@@ -217,5 +227,82 @@
       (collapseToggle)="toggleProperties()"
     />
   </div>
+
+  @if (shareModalOpen()) {
+    <div class="share-modal-backdrop" (click)="onShareModalBackdropClick($event)">
+      <div class="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
+        <header class="share-modal-head">
+          <h3 id="share-modal-title" class="share-modal-title">
+            <lucide-angular [img]="Share2Icon" size="18" [strokeWidth]="2"></lucide-angular>
+            Share Model
+          </h3>
+          <button type="button" class="icon-btn" aria-label="Close share dialog" (click)="closeShareModal()">
+            <lucide-angular [img]="XIcon" size="16"></lucide-angular>
+          </button>
+        </header>
+
+        @if (selectedModel(); as model) {
+          <p class="share-modal-sub">
+            Share <strong>{{ model.name }}</strong> metadata with another user. They can see model details but not
+            <code>model_json</code>.
+          </p>
+        }
+
+        <div class="share-modal-body">
+          <label class="share-field">
+            <span class="share-field-label">Recipient email</span>
+            <input
+              class="share-field-input"
+              type="email"
+              [value]="shareEmail()"
+              placeholder="user@example.com"
+              (input)="onShareEmailInput($event)"
+              (keydown.enter)="submitShare()"
+            />
+          </label>
+
+          <button
+            type="button"
+            class="btn-primary share-submit"
+            [disabled]="sharing() || !shareEmail().trim()"
+            (click)="submitShare()"
+          >
+            <lucide-angular [img]="UserPlusIcon" size="15" [strokeWidth]="2"></lucide-angular>
+            {{ sharing() ? 'Sharing…' : 'Share' }}
+          </button>
+
+          @if (shareError()) {
+            <p class="share-modal-error">{{ shareError() }}</p>
+          }
+
+          <div class="share-list-head">
+            <span class="share-field-label">Shared with</span>
+          </div>
+
+          @if (loadingShares()) {
+            <p class="share-list-empty">Loading shares…</p>
+          } @else if (modelShares().length === 0) {
+            <p class="share-list-empty">Not shared with anyone yet.</p>
+          } @else {
+            <ul class="share-list">
+              @for (share of modelShares(); track share.share_id) {
+                <li class="share-list-item">
+                  <span class="share-list-email">{{ share.shared_with_email }}</span>
+                  <button
+                    type="button"
+                    class="btn-outline btn-outline-coral share-revoke"
+                    [disabled]="revokingShareId() === share.share_id"
+                    (click)="revokeShare(share.share_id)"
+                  >
+                    {{ revokingShareId() === share.share_id ? 'Removing…' : 'Remove' }}
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+    </div>
+  }
 
 </div>

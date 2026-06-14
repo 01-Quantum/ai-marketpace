@@ -17,9 +17,12 @@ import {
   PanelRightOpen,
   Pencil,
   Save,
+  Share2,
   Upload,
   ShieldCheck,
   Trash2,
+  UserPlus,
+  X,
 } from 'lucide-angular';
 import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
 import { DecisionTreeDesigner } from './decision-tree-designer/decision-tree-designer';
@@ -29,6 +32,10 @@ import { LogisticRegressionModelService } from './logistic-regression-model.serv
 import { downloadModelExport } from './model-export';
 import { ModelBuilderService } from './model-builder.service';
 import { LibraryModel } from './model-builder.types';
+import {
+  ModelShareEntry,
+  ModelSupabaseService,
+} from './model-supabase.service';
 import { ModelSidebarPanel } from './model-sidebar-panel/model-sidebar-panel';
 
 const LIBRARY_ICONS: Record<LibraryModel['iconKind'], typeof Network> = {
@@ -55,6 +62,7 @@ export class ModelBuilderStudio {
 
   private readonly modelBuilder = inject(ModelBuilderService);
   private readonly logisticRegressionModel = inject(LogisticRegressionModelService);
+  private readonly modelSupabase = inject(ModelSupabaseService);
 
   readonly libraryItems = toSignal(this.modelBuilder.libraryModels$, {
     initialValue: [] as LibraryModel[],
@@ -67,6 +75,14 @@ export class ModelBuilderStudio {
   readonly libraryCollapsed = signal(false);
   readonly propertiesCollapsed = signal(false);
   readonly openLibraryMenuId = signal<string | null>(null);
+
+  readonly shareModalOpen = signal(false);
+  readonly shareEmail = signal('');
+  readonly shareError = signal('');
+  readonly sharing = signal(false);
+  readonly modelShares = signal<ModelShareEntry[]>([]);
+  readonly loadingShares = signal(false);
+  readonly revokingShareId = signal<number | null>(null);
 
   readonly loading = this.modelBuilder.loading;
   readonly saving = this.modelBuilder.saving;
@@ -90,6 +106,9 @@ export class ModelBuilderStudio {
   readonly CloudUploadIcon = CloudUpload;
   readonly CopyIcon = Copy;
   readonly DownloadIcon = Download;
+  readonly Share2Icon = Share2;
+  readonly UserPlusIcon = UserPlus;
+  readonly XIcon = X;
 
   @HostListener('document:click')
   closeLibraryMenu(): void {
@@ -231,6 +250,91 @@ export class ModelBuilderStudio {
   canTogglePublish(): boolean {
     const model = this.selectedModel();
     return !!model?.remoteId && !this.publishing() && !this.saving();
+  }
+
+  canShareModel(): boolean {
+    const model = this.selectedModel();
+    return !!model?.remoteId && !this.sharing();
+  }
+
+  async openShareModal(): Promise<void> {
+    const model = this.selectedModel();
+    if (!model?.remoteId) {
+      window.alert('Save the model to Supabase before sharing.');
+      return;
+    }
+
+    this.shareEmail.set('');
+    this.shareError.set('');
+    this.shareModalOpen.set(true);
+    await this.refreshModelShares(model.remoteId);
+  }
+
+  closeShareModal(): void {
+    this.shareModalOpen.set(false);
+    this.shareError.set('');
+  }
+
+  onShareModalBackdropClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeShareModal();
+    }
+  }
+
+  onShareEmailInput(event: Event): void {
+    this.shareEmail.set((event.target as HTMLInputElement).value);
+  }
+
+  async refreshModelShares(modelId: number): Promise<void> {
+    this.loadingShares.set(true);
+    this.shareError.set('');
+
+    const { shares, error } = await this.modelSupabase.listModelShares(modelId);
+    this.modelShares.set(shares);
+    if (error) {
+      this.shareError.set(error);
+    }
+
+    this.loadingShares.set(false);
+  }
+
+  async submitShare(): Promise<void> {
+    const model = this.selectedModel();
+    if (!model?.remoteId || this.sharing()) return;
+
+    this.sharing.set(true);
+    this.shareError.set('');
+
+    const result = await this.modelSupabase.shareModelByEmail(model.remoteId, this.shareEmail());
+    this.sharing.set(false);
+
+    if (!result.ok) {
+      this.shareError.set(result.error);
+      return;
+    }
+
+    this.shareEmail.set('');
+    await this.refreshModelShares(model.remoteId);
+  }
+
+  async revokeShare(shareId: number): Promise<void> {
+    if (this.revokingShareId() !== null) return;
+
+    this.revokingShareId.set(shareId);
+    this.shareError.set('');
+
+    const result = await this.modelSupabase.revokeModelShare(shareId);
+    this.revokingShareId.set(null);
+
+    if (!result.ok) {
+      this.shareError.set(result.error);
+      return;
+    }
+
+    const model = this.selectedModel();
+    if (model?.remoteId) {
+      await this.refreshModelShares(model.remoteId);
+    }
   }
 
   async togglePublish(): Promise<void> {

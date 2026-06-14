@@ -23,6 +23,25 @@ export interface SaveModelPayload {
   sample_data?: unknown;
 }
 
+/** Model metadata without model_json or sample_data (from models_summary view). */
+export interface SupabaseModelSummary {
+  id: number;
+  user_id: string;
+  model_type: ModelType;
+  model_name: string;
+  params_count: number;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ModelShareEntry {
+  share_id: number;
+  shared_with_user_id: string;
+  shared_with_email: string;
+  created_at: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ModelSupabaseService {
   private readonly auth = inject(AuthService);
@@ -188,5 +207,82 @@ export class ModelSupabaseService {
       return false;
     }
     return true;
+  }
+
+  async loadModelSummaries(): Promise<{ models: SupabaseModelSummary[]; error: string | null }> {
+    const userId = this.auth.user()?.id;
+    if (!userId) {
+      return { models: [], error: 'Not signed in.' };
+    }
+
+    const { data, error } = await this.db
+      .from('models_summary')
+      .select('*')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('loadModelSummaries error', error.message);
+      return { models: [], error: error.message };
+    }
+
+    return { models: (data ?? []) as SupabaseModelSummary[], error: null };
+  }
+
+  async listModelShares(
+    modelId: number,
+  ): Promise<{ shares: ModelShareEntry[]; error: string | null }> {
+    const { data, error } = await this.db.rpc('list_model_shares', {
+      p_model_id: modelId,
+    });
+
+    if (error) {
+      console.error('listModelShares error', error.message);
+      return { shares: [], error: error.message };
+    }
+
+    const shares = ((data ?? []) as ModelShareEntry[]).map((row) => ({
+      share_id: Number(row.share_id),
+      shared_with_user_id: row.shared_with_user_id,
+      shared_with_email: row.shared_with_email,
+      created_at: row.created_at,
+    }));
+
+    return { shares, error: null };
+  }
+
+  async shareModelByEmail(
+    modelId: number,
+    email: string,
+  ): Promise<{ ok: true } | { ok: false; error: string }> {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      return { ok: false, error: 'Enter an email address.' };
+    }
+
+    const { error } = await this.db.rpc('share_model_by_email', {
+      p_model_id: modelId,
+      p_email: trimmed,
+    });
+
+    if (error) {
+      console.error('shareModelByEmail error', error.message);
+      return { ok: false, error: error.message };
+    }
+
+    return { ok: true };
+  }
+
+  async revokeModelShare(shareId: number): Promise<{ ok: true } | { ok: false; error: string }> {
+    const { error } = await this.db.rpc('revoke_model_share', {
+      p_share_id: shareId,
+    });
+
+    if (error) {
+      console.error('revokeModelShare error', error.message);
+      return { ok: false, error: error.message };
+    }
+
+    return { ok: true };
   }
 }
