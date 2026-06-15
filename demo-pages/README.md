@@ -63,7 +63,7 @@
 **Say:**
 - Now we're Alice. Step 1: she generates an **FHE key pair** locally — OpenFHE CKKS, depth 16. The private key stays in her workspace and never leaves.
 - Step 2: she picks Bob's published model, drops in a CSV, and it's **encrypted in the browser** before upload.
-- Notice: she chose Bob's decision tree, 16 params, but Bob still can't see her rows.
+- Notice: she chose Bob's decision tree, 16 params, but Bob still can't see her confidential data.
 
 **Do (live):** show key card, select dataset, click encrypt.
 
@@ -74,7 +74,7 @@
 ![Inference Jobs](3.1-alice.png)
 
 **Say:**
-- The encrypted dataset is submitted to the enclave. Bob's model runs **on ciphertext** — these inference jobs complete without anyone decrypting Alice's data.
+- The encrypted dataset is submitted to the platform. Bob's model runs **on ciphertext** — these inference jobs complete without anyone decrypting Alice's confidential data.
 - Each job is tracked end to end: dataset, model, status, timestamps.
 
 **Do (live):** point at completed jobs, then select one and "Continue to Decrypt Result."
@@ -97,8 +97,8 @@
 ## Slide 7 — Why it matters & where it goes (0:30)
 
 **Say:**
-- Model owner never saw plaintext. Data owner never shipped raw data. Result is verifiable.
-- The same enclave pattern extends beyond fraud scoring to **LLM policy decisions** — deciding whether a request is allowed, classifying risk, or gating an action — **without exposing the prompt, the features, or the policy itself**.
+- Model owner never saw the confidential plaintext user data. Data owner never shipped raw data. Result is verifiable.
+- The same pattern extends beyond fraud scoring to **LLM policy decisions** — deciding whether a request is allowed, classifying risk, or gating an action — **without exposing the prompt, the features, or the policy itself**.
 - Architecture scales to **multiple enclaves per organization**: encryption and decryption stay local to each org; only ciphertext crosses the boundary.
 
 **Close:** "Private by design, verifiable by default. Thank you — happy to take questions."
