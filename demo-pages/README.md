@@ -28,7 +28,7 @@
 - For regulated data — payments, health, or **prompts sent to an LLM** — neither is acceptable.
 - This is the 01 Quantum AI Marketplace. Two roles: **Data Owner** and **Model Owner**. Everything in between stays encrypted.
 
-**Point at:** the four-step flow (top) and "Your data stays encrypted. The model never sees plaintext."
+**Point at:** the four-step flow (top) and "Your data stays encrypted. The model never sees confidential user data in plaintext."
 
 ---
 
@@ -37,7 +37,7 @@
 **Say:**
 - FHE lets you run computation directly on encrypted data. The math happens on ciphertext; the result, once decrypted, is identical to running on plaintext.
 - Four steps: (1) Alice generates a key pair, (2) encrypts locally, (3) Bob runs inference on ciphertext, (4) Alice decrypts.
-- The private key never leaves Alice's machine. Bob never sees a single plaintext value.
+- The private key never leaves Alice's machine. Bob never sees a single confidential user data in plaintext value.
 
 **Transition:** "Let's start as Bob, the model owner."
 
@@ -97,6 +97,7 @@
 ## Slide 7 — Why it matters & where it goes (0:30)
 
 **Say:**
+- This is a round-trip end-to-end encrypted AI operation from the confidential user data to AI inference to the encrypted answer, final the answer decrypted by the user.
 - Model owner never saw the confidential plaintext user data. Data owner never shipped raw data. Result is verifiable.
 - The same pattern extends beyond fraud scoring to **LLM policy decisions** — deciding whether a request is allowed, classifying risk, or gating an action — **without exposing the prompt, the features, or the policy itself**.
 - Architecture scales to **multiple enclaves per organization**: encryption and decryption stay local to each org; only ciphertext crosses the boundary.
