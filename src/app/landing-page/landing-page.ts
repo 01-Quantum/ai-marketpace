@@ -8,6 +8,7 @@ import {
   Circle,
   CloudCog,
   FileLock,
+  Image,
   KeyRound,
   Lock,
   LucideAngularModule,
@@ -44,6 +45,7 @@ export class LandingPage {
   readonly ArrowRightIcon = ArrowRight;
   readonly NetworkIcon = Network;
   readonly ChartScatterIcon = ChartScatter;
+  readonly ImageIcon = Image;
   readonly CircleCheckIcon = CircleCheck;
   readonly CircleIcon = Circle;
 

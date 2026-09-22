@@ -37,7 +37,7 @@
           type="button"
           class="btn-toolbar-action"
           title="Save model to Supabase"
-          [disabled]="saving()"
+          [disabled]="saving() || selectedModel()?.type === 'image'"
           (click)="saveModel()"
         >
           <lucide-angular [img]="SaveIcon" size="15" [strokeWidth]="2"></lucide-angular>
@@ -68,7 +68,7 @@
           type="button"
           class="btn-toolbar-action btn-toolbar-delete"
           title="Delete model"
-          [disabled]="deleting()"
+          [disabled]="deleting() || selectedModel()?.type === 'image'"
           (click)="deleteModel()"
         >
           <lucide-angular [img]="Trash2Icon" size="15" [strokeWidth]="2"></lucide-angular>
@@ -85,6 +85,7 @@
     class="builder-layout"
     [class.library-collapsed]="libraryCollapsed()"
     [class.properties-collapsed]="propertiesCollapsed()"
+    [class.image-mode]="selectedModel()?.type === 'image'"
   >
     <aside class="panel library-panel" [class.collapsed]="libraryCollapsed()">
       <header class="library-head">
@@ -216,16 +217,20 @@
       }
     </aside>
 
-    @if (selectedModel()?.type === 'logistic') {
+    @if (selectedModel()?.type === 'image') {
+      <app-image-detection-designer />
+    } @else if (selectedModel()?.type === 'logistic') {
       <app-logistic-regression-designer />
     } @else {
       <app-decision-tree-designer />
     }
 
+    @if (selectedModel()?.type !== 'image') {
     <app-model-sidebar-panel
       [collapsed]="propertiesCollapsed()"
       (collapseToggle)="toggleProperties()"
     />
+    }
   </div>
 
   @if (shareModalOpen()) {

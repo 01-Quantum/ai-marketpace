@@ -11,6 +11,11 @@ import {
   FheEncryptedResult,
 } from '../data-owner-workspace/fhe-encrypted-datasets.service';
 import { FheEncryptService } from '../data-owner-workspace/fhe-encrypt.service';
+import {
+  ImageDetectionMockService,
+  MockImageJob,
+} from '../image-detection/image-detection.mock.service';
+import { ImageDetectionPrediction } from '../image-detection/image-detection.mock';
 import { parseSampleDataCsv } from '../model-builder-studio/sample-data.types';
 import { AuthService } from '../shared/auth.service';
 import {
@@ -19,6 +24,7 @@ import {
   Check,
   CircleCheck,
   Database,
+  Image,
   Download,
   Info,
   LoaderCircle,
@@ -72,6 +78,7 @@ export class DecryptResultWorkspace {
   private readonly auth = inject(AuthService);
   private readonly fheEncryptedDatasets = inject(FheEncryptedDatasetsService);
   private readonly fheEncrypt = inject(FheEncryptService);
+  private readonly imageDetection = inject(ImageDetectionMockService);
 
   readonly encryptedDatasetId = signal<number | null>(
     parseEncryptedDatasetId(this.route.snapshot.queryParamMap.get('encryptedDatasetId')),
@@ -80,6 +87,8 @@ export class DecryptResultWorkspace {
   readonly inferenceResult = signal<FheEncryptedResult | null>(null);
   readonly loadingDataset = signal(false);
   readonly datasetError = signal('');
+  readonly imageJob = signal<MockImageJob | null>(null);
+  readonly imagePrediction = signal<ImageDetectionPrediction | null>(null);
 
   readonly canDecrypt = computed(() => {
     const resultId = this.inferenceResult()?.result_id?.trim();
@@ -174,6 +183,7 @@ export class DecryptResultWorkspace {
   readonly DownloadIcon = Download;
   readonly UploadIcon = Upload;
   readonly LoaderIcon = LoaderCircle;
+  readonly ImageIcon = Image;
 
   constructor() {
     toObservable(this.auth.initialized)
@@ -202,6 +212,31 @@ export class DecryptResultWorkspace {
 
     this.loadingDataset.set(true);
     this.datasetError.set('');
+    this.imagePrediction.set(null);
+
+    const mockJob = this.imageDetection.getJob(id);
+    if (mockJob) {
+      this.imageJob.set(mockJob);
+      this.dataset.set(this.imageDetection.toDataset(mockJob));
+      this.inferenceResult.set({
+        id: mockJob.id,
+        user_id: 'mock',
+        result_id: `mock-${mockJob.id}`,
+        result_path: '',
+        encrypted_dataset_id: mockJob.id,
+        encrypt_id: `e4e${mockJob.id.toString(16)}`,
+        status: 'completed',
+        created_at: mockJob.createdAt,
+        updated_at: mockJob.createdAt,
+      });
+      this.decrypted.set(!!mockJob.decryptedAt);
+      this.decryptedAt.set(mockJob.decryptedAt);
+      this.imagePrediction.set(mockJob.decryptedAt ? mockJob.prediction : null);
+      this.loadingDataset.set(false);
+      return;
+    }
+
+    this.imageJob.set(null);
 
     const [{ dataset, error }, { result, error: resultError }] = await Promise.all([
       this.fheEncryptedDatasets.loadById(id),
@@ -240,6 +275,22 @@ export class DecryptResultWorkspace {
 
   async decrypt(): Promise<void> {
     if (!this.canDecrypt()) return;
+
+    const imageJob = this.imageJob();
+    if (imageJob) {
+      this.decrypting.set(true);
+      this.decryptError.set('');
+      const prediction = await this.imageDetection.decrypt(imageJob.id);
+      this.decrypting.set(false);
+      if (!prediction) {
+        this.decryptError.set('Could not decrypt this image result.');
+        return;
+      }
+      this.imagePrediction.set(prediction);
+      this.decryptedAt.set(new Date().toISOString());
+      this.decrypted.set(true);
+      return;
+    }
 
     const resultId = this.inferenceResult()?.result_id?.trim();
     if (!resultId) {

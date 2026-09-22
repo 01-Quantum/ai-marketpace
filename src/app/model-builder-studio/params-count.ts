@@ -19,5 +19,7 @@ export function computeParamsCount(modelType: ModelType, modelJson: unknown): nu
       return countCoefficientParams(modelJson);
     case 'tree':
       return countTreeParams(modelJson);
+    case 'image':
+      return 16;
   }
 }

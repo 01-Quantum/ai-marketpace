@@ -24,7 +24,11 @@
             } @else if (dataset()) {
               <div class="status-value teal">{{ dataset()!.source_file_name }}</div>
               <div class="status-meta">
-                {{ dataset()!.total_rows | number }} rows &middot; {{ dataset()!.columns.length }} features
+                @if (imageJob()) {
+                  Image file
+                } @else {
+                  {{ dataset()!.total_rows | number }} rows &middot; {{ dataset()!.columns.length }} features
+                }
               </div>
             } @else {
               <div class="status-value teal">—</div>
@@ -133,7 +137,27 @@
             <h2 class="comp-title">Decrypted Prediction</h2>
           </div>
 
-          @if (!decrypted()) {
+          @if (imageJob() && decrypted() && imagePrediction(); as prediction) {
+            <div class="image-result">
+              <img class="image-result-preview" [src]="imageJob()!.previewUrl" alt="Decrypted preview" />
+              <div class="image-result-copy">
+                <div class="image-result-kicker">Predicted class</div>
+                <div class="image-result-class">{{ prediction.className }}</div>
+                <div class="image-result-id">Class ID: {{ prediction.classId }}</div>
+                <div class="image-result-ok">Decrypted successfully</div>
+              </div>
+            </div>
+            <ul class="logit-list">
+              @for (row of prediction.logits; track row.id) {
+                <li>
+                  <span class="logit-id">{{ row.id }}</span>
+                  <span class="logit-name">{{ row.name }}</span>
+                  <span class="logit-bar"><span [style.width.%]="row.score * 100"></span></span>
+                  <span class="logit-score">{{ row.score | number:'1.3-3' }}</span>
+                </li>
+              }
+            </ul>
+          } @else if (!decrypted()) {
             <div class="decrypt-pending">
               <div class="decrypt-pending-body">
                 <span class="decrypt-pending-icon" aria-hidden="true">

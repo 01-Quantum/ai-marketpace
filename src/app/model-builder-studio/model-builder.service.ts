@@ -3,6 +3,7 @@ import { BehaviorSubject, combineLatest, filter, map, shareReplay, take } from '
 import { toObservable } from '@angular/core/rxjs-interop';
 import { AuthService } from '../shared/auth.service';
 import { FheTreePublishService } from './fhe-tree-publish.service';
+import { ImageDetectionMockService } from '../image-detection/image-detection.mock.service';
 import { ModelSupabaseService, SupabaseModel } from './model-supabase.service';
 import {
   DEFAULT_DECISION_TREE_NODES,
@@ -35,6 +36,7 @@ import {
 
 function iconKindForType(type: import('./model-builder.types').ModelType): LibraryModel['iconKind'] {
   if (type === 'logistic') return 'scatter';
+  if (type === 'image') return 'image';
   return 'tree';
 }
 
@@ -126,6 +128,7 @@ export class ModelBuilderService {
   private readonly auth = inject(AuthService);
   private readonly modelSupabase = inject(ModelSupabaseService);
   private readonly fheTreePublish = inject(FheTreePublishService);
+  private readonly imageDetection = inject(ImageDetectionMockService);
 
   readonly saving = signal(false);
   readonly deleting = signal(false);
@@ -633,6 +636,7 @@ export class ModelBuilderService {
       });
     }
     this.sampleDataByModelSubject.next(sampleMap);
+    entries.push(this.imageDetection.libraryModel());
     this.libraryModelsSubject.next(entries);
   }
 

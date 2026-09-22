@@ -103,13 +103,15 @@
         <section class="panel step-panel">
           <header class="step-panel-head">
             <lucide-angular class="step-panel-icon" [img]="FileLockIcon" size="18"></lucide-angular>
-            <h2 class="step-panel-title">Step 2: Upload &amp; Encrypt Data</h2>
+            <h2 class="step-panel-title">
+              Step 2: Upload &amp; Encrypt {{ isImageModel() ? 'Image' : 'Data' }}
+            </h2>
           </header>
 
           <input
             #csvFileInput
             type="file"
-            accept=".csv,text/csv"
+            [accept]="isImageModel() ? '.jpg,.jpeg,.png,image/jpeg,image/png' : '.csv,text/csv'"
             hidden
             (change)="onCsvFileInputChange($event)"
           />
@@ -128,17 +130,19 @@
             @if (selectedCsvFile(); as file) {
               <lucide-angular class="upload-icon" [img]="FileTextIcon" size="32" [strokeWidth]="1.6"></lucide-angular>
               <p class="upload-title">{{ file.name }}</p>
-              <p class="upload-meta">{{ selectedCsvFileSize() }} · CSV ready for encryption</p>
+              <p class="upload-meta">{{ selectedCsvFileSize() }} · {{ isImageModel() ? 'Image' : 'CSV' }} ready for encryption</p>
               <div class="upload-file-actions">
                 <button type="button" class="btn-secondary" (click)="browseFiles()">Replace file</button>
                 <button type="button" class="btn-secondary danger" (click)="clearSelectedCsv()">Remove</button>
               </div>
             } @else {
               <lucide-angular class="upload-icon" [img]="CloudUploadIcon" size="32" [strokeWidth]="1.6"></lucide-angular>
-              <p class="upload-title">Drag &amp; drop your file here</p>
+              <p class="upload-title">Drag &amp; drop your {{ isImageModel() ? 'image' : 'file' }} here</p>
               <p class="upload-or">or</p>
               <button type="button" class="btn-secondary" (click)="browseFiles()">Browse Files</button>
-              <p class="upload-meta">CSV only · One file · Max size: 50 MB</p>
+              <p class="upload-meta">
+                {{ isImageModel() ? 'JPG or PNG only · One file · Max size: 10 MB' : 'CSV only · One file · Max size: 50 MB' }}
+              </p>
             }
           </div>
 
@@ -152,7 +156,7 @@
                 <lucide-angular [img]="FileTextIcon" size="22" [strokeWidth]="1.6"></lucide-angular>
                 <span class="mini-badge">1</span>
               </div>
-              <span class="mini-label">Select dataset</span>
+              <span class="mini-label">{{ isImageModel() ? 'Select image' : 'Select dataset' }}</span>
             </div>
             <lucide-angular class="mini-arrow" [img]="ArrowRightIcon" size="18" [strokeWidth]="2"></lucide-angular>
             <div class="mini-step">
@@ -168,7 +172,7 @@
                 <lucide-angular [img]="ShieldCheckIcon" size="22" [strokeWidth]="1.6"></lucide-angular>
                 <span class="mini-badge">3</span>
               </div>
-              <span class="mini-label">Submit encrypted dataset</span>
+              <span class="mini-label">{{ isImageModel() ? 'Submit encrypted image' : 'Submit encrypted dataset' }}</span>
             </div>
           </div>
         </section>
@@ -187,7 +191,7 @@
                 [class.alt]="selectedModelType() === 'logistic'"
               >
                 <lucide-angular
-                  [img]="selectedModelType() === 'tree' ? NetworkIcon : ChartScatterIcon"
+                  [img]="modelSummaryIcon()"
                   size="14"
                   [strokeWidth]="1.8"
                 ></lucide-angular>
@@ -214,14 +218,14 @@
                     (click)="downloadSampleData()"
                   >
                     <lucide-angular [img]="DownloadIcon" size="15" [strokeWidth]="2"></lucide-angular>
-                    Sample CSV
+                    {{ isImageModel() ? 'Sample image' : 'Sample CSV' }}
                   </button>
                 }
               </div>
             } @else {
               <div class="model-summary empty">
                 <lucide-angular
-                  [img]="selectedModelType() === 'tree' ? NetworkIcon : ChartScatterIcon"
+                  [img]="modelSummaryIcon()"
                   size="14"
                   [strokeWidth]="1.8"
                 ></lucide-angular>
@@ -240,7 +244,8 @@
               <div>
                 <p class="encrypt-action-title">Ready to encrypt</p>
                 <p class="encrypt-action-desc">
-                  Key, model, and CSV are set. Run FHE encryption via the enclave.
+                  Key, model, and {{ isImageModel() ? 'image' : 'CSV' }} are set.
+                  {{ isImageModel() ? 'Encryption and inference are mocked locally.' : 'Run FHE encryption via the enclave.' }}
                 </p>
               </div>
             </div>
@@ -307,13 +312,17 @@
             @if (!auth.isAuthenticated()) {
               Sign in to view your encrypted datasets.
             } @else {
-              No pending encrypted datasets. Encrypt a CSV above or submitted datasets have moved to inference.
+              {{
+                isImageModel()
+                  ? 'No pending encrypted images. Encrypt an image above or submitted images have moved to inference.'
+                  : 'No pending encrypted datasets. Encrypt a CSV above or submitted datasets have moved to inference.'
+              }}
             }
           </p>
         } @else {
           <div class="table-wrap" role="table">
             <div class="table-row table-header" role="row">
-              <span role="columnheader">Dataset Name</span>
+              <span role="columnheader">{{ isImageModel() ? 'Image' : 'Dataset Name' }}</span>
               <span role="columnheader">Owner</span>
               <span role="columnheader">Encryption Status</span>
               <span role="columnheader">Submitted To</span>
@@ -322,7 +331,7 @@
             @for (ds of datasets(); track ds.id) {
               <div class="table-row" role="row">
                 <span class="cell-name" role="cell">
-                  <lucide-angular [img]="FileTextIcon" size="18" [strokeWidth]="1.6"></lucide-angular>
+                  <lucide-angular [img]="isImageModel() ? ImageIcon : FileTextIcon" size="18" [strokeWidth]="1.6"></lucide-angular>
                   {{ ds.source_file_name }}
                 </span>
                 <span role="cell">{{ ownerLabel() }}</span>
@@ -393,7 +402,7 @@
             <div class="table-row table-header" role="row">
               <span role="columnheader" class="col-select">Select</span>
               <span role="columnheader">Job ID</span>
-              <span role="columnheader">Dataset</span>
+              <span role="columnheader">{{ isImageModel() ? 'Image' : 'Dataset' }}</span>
               <span role="columnheader">Model</span>
               <span role="columnheader">Status</span>
               <span role="columnheader">Started At</span>
@@ -417,7 +426,16 @@
                 <span class="cell-mono job-id" role="cell" [title]="job.jobId">
                   {{ truncateJobId(job.jobId) }}
                 </span>
-                <span role="cell">{{ job.dataset }}</span>
+                @if (isImageModel()) {
+                  <span class="image-name-hover" role="cell" tabindex="0">
+                    <span class="image-name">{{ job.dataset }}</span>
+                    <span class="image-name-preview">
+                      <img [src]="encryptedPreviewUrl" [alt]="'Encrypted view of ' + job.dataset" />
+                    </span>
+                  </span>
+                } @else {
+                  <span role="cell">{{ job.dataset }}</span>
+                }
                 <span role="cell">{{ job.model }}</span>
                 <span role="cell">
                   @switch (job.status) {
@@ -785,7 +803,9 @@
     <div class="key-modal-backdrop" (click)="onModelSelectBackdropClick($event)">
       <div class="key-modal key-select-modal" role="dialog" aria-modal="true">
         <header class="key-modal-head">
-          <h3 class="key-modal-title">Select a {{ modelTypeLabel() }} Model</h3>
+          <h3 class="key-modal-title">
+            {{ isImageModel() ? 'Select an Image Detection Model' : 'Select a ' + modelTypeLabel() + ' Model' }}
+          </h3>
           <button type="button" class="icon-btn" aria-label="Close" (click)="closeModelSelectModal()">
             <lucide-angular [img]="CloseIcon" size="16"></lucide-angular>
           </button>
@@ -803,7 +823,7 @@
                 >
                   <lucide-angular
                     class="key-list-icon"
-                    [img]="selectedModelType() === 'tree' ? NetworkIcon : ChartScatterIcon"
+                    [img]="modelSummaryIcon()"
                     size="18"
                     [strokeWidth]="1.8"
                   ></lucide-angular>

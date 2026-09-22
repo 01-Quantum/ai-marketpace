@@ -14,6 +14,7 @@ import {
   FileLock,
   FileText,
   KeyRound,
+  Image,
   List,
   ListChecks,
   LoaderCircle,
@@ -51,6 +52,7 @@ import {
 import { FheKey, FheKeysService } from './fhe-keys.service';
 import { FheEncryptService } from './fhe-encrypt.service';
 import { formatFileSize, validateCsvFile } from './csv-upload';
+import { ImageDetectionMockService } from '../image-detection/image-detection.mock.service';
 
 function parsePositiveInt(value: string | null): number | null {
   if (!value) return null;
@@ -59,6 +61,14 @@ function parsePositiveInt(value: string | null): number | null {
 }
 
 const parseOptionalModelId = parsePositiveInt;
+
+function validateImageFile(file: File): string | null {
+  const named = /\.(png|jpe?g)$/i.test(file.name);
+  const typed = file.type === 'image/png' || file.type === 'image/jpeg';
+  if (!named && !typed) return 'JPG or PNG only.';
+  if (file.size > 10 * 1024 * 1024) return 'Max size is 10 MB.';
+  return null;
+}
 
 function parseWorkflowStep(value: string | null): WorkflowStep {
   if (value === '1' || value === '2' || value === '3') {
@@ -92,6 +102,7 @@ export class DataOwnerWorkspace {
   readonly auth = inject(AuthService);
   private readonly modelSupabase = inject(ModelSupabaseService);
   private readonly sampleDataDownload = inject(SampleDataDownloadService);
+  private readonly imageDetection = inject(ImageDetectionMockService);
 
   readonly selectedModelType = signal<InferenceModelChoice>(
     parseInferenceModelChoice(this.route.snapshot.queryParamMap.get('model')),
@@ -116,11 +127,22 @@ export class DataOwnerWorkspace {
   readonly publishedModelCount = computed(() => this.publishedModels().length);
 
   readonly canDownloadSampleData = computed(() => {
+    if (this.isImageModel()) return true;
     const model = this.publishedModel();
     return model ? this.sampleDataDownload.hasSampleRows(model.sample_data) : false;
   });
 
   readonly modelTypeLabel = computed(() => INFERENCE_MODEL_LABELS[this.selectedModelType()]);
+  readonly isImageModel = computed(() => this.selectedModelType() === 'image');
+  readonly encryptedPreviewUrl = new URL('encrypted-sample.png', document.baseURI).href;
+  readonly ImageIcon = Image;
+
+  modelSummaryIcon(): typeof Network {
+    const type = this.selectedModelType();
+    if (type === 'image') return this.ImageIcon;
+    if (type === 'logistic') return this.ChartScatterIcon;
+    return this.NetworkIcon;
+  }
 
   readonly currentKey = signal<FheKey | null>(null);
   readonly loadingKey = signal(true);
@@ -267,6 +289,13 @@ export class DataOwnerWorkspace {
   }
 
   async refreshEncryptedDatasets(): Promise<void> {
+    if (this.isImageModel()) {
+      this.datasets.set(this.imageDetection.pendingDatasets());
+      this.datasetsError.set('');
+      this.loadingDatasets.set(false);
+      return;
+    }
+
     this.loadingDatasets.set(true);
     this.datasetsError.set('');
 
@@ -281,6 +310,17 @@ export class DataOwnerWorkspace {
   }
 
   async refreshInferenceJobs(): Promise<void> {
+    if (this.isImageModel()) {
+      const jobs = this.imageDetection.inferenceJobs();
+      this.jobs.set(jobs);
+      const current = this.selectedJobId();
+      const keep = current !== null && jobs.some((job) => job.id === current) ? current : jobs[0]?.id ?? null;
+      this.syncSelectedJob(keep);
+      this.jobsError.set('');
+      this.loadingJobs.set(false);
+      return;
+    }
+
     this.loadingJobs.set(true);
     this.jobsError.set('');
 
@@ -340,6 +380,15 @@ export class DataOwnerWorkspace {
   }
 
   private async refreshPublishedModels(): Promise<void> {
+    if (this.isImageModel()) {
+      const model = this.imageDetection.publishedModel();
+      this.publishedModels.set([model]);
+      this.selectedPublishedModelId.set(model.id);
+      this.modelError.set('');
+      this.loadingModel.set(false);
+      return;
+    }
+
     this.loadingModel.set(true);
     this.modelError.set('');
     const { models, error } = await this.modelSupabase.loadPublishedModelsByType(
@@ -403,6 +452,21 @@ export class DataOwnerWorkspace {
     this.inferenceError.set('');
     this.inferenceSuccess.set('');
 
+    if (this.isImageModel()) {
+      const started = await this.imageDetection.runInference(dataset.id);
+      if (!started) {
+        this.inferenceError.set(`Could not run inference for "${dataset.source_file_name}".`);
+      } else {
+        this.inferenceSuccess.set(
+          `Encrypted inference completed for "${dataset.source_file_name}".`,
+        );
+        this.selectedJobId.set(dataset.id);
+        await this.refreshWorkspace();
+      }
+      this.inferringDatasetId.set(null);
+      return;
+    }
+
     const result = await this.fheEncrypt.runInference(dataset.id);
 
     if (!result.ok) {
@@ -454,6 +518,10 @@ export class DataOwnerWorkspace {
   }
 
   downloadSampleData(): void {
+    if (this.isImageModel()) {
+      this.imageDetection.downloadSampleImage();
+      return;
+    }
     const model = this.publishedModel();
     if (!model) return;
     this.sampleDataDownload.downloadFromDocument(model.sample_data, model.model_name);
@@ -466,6 +534,23 @@ export class DataOwnerWorkspace {
     const file = this.selectedCsvFile();
     const key = this.currentKey();
     if (!model || !file || !key) return;
+
+    if (this.isImageModel()) {
+      this.encrypting.set(true);
+      this.encryptError.set('');
+      this.encryptSuccess.set('');
+      try {
+        await this.imageDetection.encryptImage(file);
+        this.encryptSuccess.set(`"${file.name}" encrypted successfully.`);
+        this.selectedCsvFile.set(null);
+        await this.refreshWorkspace();
+      } catch (error) {
+        this.encryptError.set(error instanceof Error ? error.message : 'Could not encrypt the image.');
+      } finally {
+        this.encrypting.set(false);
+      }
+      return;
+    }
 
     this.encrypting.set(true);
     this.encryptError.set('');
@@ -677,12 +762,12 @@ export class DataOwnerWorkspace {
     if (!files?.length) return;
 
     if (files.length > 1) {
-      this.uploadError.set('Please upload one CSV file at a time.');
+      this.uploadError.set(this.isImageModel() ? 'Please upload one image at a time.' : 'Please upload one CSV file at a time.');
       return;
     }
 
     const file = files[0];
-    const error = validateCsvFile(file);
+    const error = this.isImageModel() ? validateImageFile(file) : validateCsvFile(file);
     if (error) {
       this.uploadError.set(error);
       return;
@@ -716,6 +801,12 @@ export class DataOwnerWorkspace {
       return;
     }
 
+    if (this.isImageModel()) {
+      this.imageDetection.delete(target.id);
+      await this.refreshWorkspace();
+      return;
+    }
+
     const result = await this.fheEncrypt.deleteDataset(target.id);
     if (!result.ok) {
       this.datasetsError.set(result.error);
@@ -738,6 +829,16 @@ export class DataOwnerWorkspace {
 
     this.deletingResultJobId.set(job.id);
     this.jobsError.set('');
+
+    if (this.isImageModel()) {
+      this.imageDetection.delete(job.id);
+      this.deletingResultJobId.set(null);
+      if (this.selectedJobId() === job.id) {
+        this.selectedJobId.set(null);
+      }
+      await this.refreshWorkspace();
+      return;
+    }
 
     const deleteResult = await this.fheEncrypt.deleteResult(job.id);
     this.deletingResultJobId.set(null);

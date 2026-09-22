@@ -226,6 +226,10 @@
   grid-template-columns: var(--library-width) minmax(0, 1fr) var(--panel-collapsed-width);
 }
 
+.builder-layout.image-mode {
+  grid-template-columns: var(--library-width) minmax(0, 1fr);
+}
+
 .builder-layout.library-collapsed.properties-collapsed {
   grid-template-columns: var(--panel-collapsed-width) minmax(0, 1fr) var(--panel-collapsed-width);
 }
