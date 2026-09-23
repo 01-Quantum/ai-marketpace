@@ -14,6 +14,8 @@ export interface LibraryModel {
   isSaved?: boolean;
   /** Whether the model is published to the enclave (from Supabase `published`). */
   published?: boolean;
+  /** Published model shared with the current user. They can open it, not change it. */
+  shared?: boolean;
 }
 
 export interface NodeLayout {

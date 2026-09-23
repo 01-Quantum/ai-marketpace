@@ -569,7 +569,7 @@ export class ModelBuilderService {
   /** Delete a model from Supabase (if saved) and remove it from the library. */
   async deleteModelById(modelId: string): Promise<void> {
     const model = this.libraryModelsSubject.value.find((entry) => entry.id === modelId);
-    if (!model) return;
+    if (!model || model.shared) return;
 
     this.deleting.set(true);
     try {
@@ -598,6 +598,7 @@ export class ModelBuilderService {
     const logisticMap: Record<string, LogisticRegressionModel> = {};
     const sampleMap: Record<string, SampleDataRow[]> = {};
 
+    const userId = this.auth.user()?.id;
     const entries: LibraryModel[] = remoteModels
       .filter((rm) => rm.model_type === 'tree' || rm.model_type === 'logistic')
       .map((rm) => {
@@ -623,6 +624,7 @@ export class ModelBuilderService {
           type: rm.model_type,
           isSaved: true,
           published: !!rm.published,
+          shared: !!userId && rm.user_id !== userId,
         };
       });
 

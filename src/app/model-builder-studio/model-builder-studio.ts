@@ -159,7 +159,7 @@ export class ModelBuilderStudio {
 
   startEditingName(): void {
     const model = this.selectedModel();
-    if (!model) return;
+    if (!model || model.shared) return;
     this.nameDraft.set(model.name);
     this.editingName.set(true);
   }
@@ -195,7 +195,8 @@ export class ModelBuilderStudio {
   signOut(): void {}
 
   async saveModel(): Promise<void> {
-    if (this.selectedModel()?.type === 'image') return;
+    const selected = this.selectedModel();
+    if (!selected || selected.type === 'image' || selected.shared) return;
     const type = this.selectedModel()?.type;
     let modelJson: unknown = null;
     if (type === 'logistic') {
@@ -208,7 +209,7 @@ export class ModelBuilderStudio {
 
   async deleteModel(): Promise<void> {
     const model = this.selectedModel();
-    if (!model || model.type === 'image') return;
+    if (!model || model.type === 'image' || model.shared) return;
     if (!confirm(`Delete "${model.name}"? This cannot be undone.`)) return;
     await this.modelBuilder.deleteCurrentModel();
   }
@@ -255,12 +256,12 @@ export class ModelBuilderStudio {
 
   canTogglePublish(): boolean {
     const model = this.selectedModel();
-    return !!model?.remoteId && !this.publishing() && !this.saving();
+    return !!model?.remoteId && !model.shared && !this.publishing() && !this.saving();
   }
 
   canShareModel(): boolean {
     const model = this.selectedModel();
-    return !!model?.remoteId && !this.sharing();
+    return !!model?.remoteId && !model.shared && !this.sharing();
   }
 
   async openShareModal(): Promise<void> {
