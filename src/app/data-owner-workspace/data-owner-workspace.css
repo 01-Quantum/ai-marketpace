@@ -852,6 +852,13 @@
   border-radius: 6px;
 }
 
+/* Name cells also ellipsis their spans; keep the noise popup fully visible. */
+.cell-name .image-name-preview {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .jobs-table .job-id {
   display: block;
   min-width: 0;

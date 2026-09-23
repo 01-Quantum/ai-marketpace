@@ -57,6 +57,12 @@ export class LandingPage {
     this.goWithAuth('/data-owner-workspace', { model: this.selectedModel() });
   }
 
+  openSignIn(): void {
+    this.pendingDestination = null;
+    this.pendingQueryParams = null;
+    this.authDialogOpen.set(true);
+  }
+
   goWithAuth(destination: string, queryParams?: Record<string, string>): void {
     if (this.auth.isAuthenticated()) {
       void this.router.navigate([destination], { queryParams });

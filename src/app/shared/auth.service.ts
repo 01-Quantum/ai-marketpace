@@ -34,6 +34,8 @@ export class AuthService {
     return user.email?.split('@')[0] ?? 'user';
   });
 
+  readonly email = computed(() => this.userSignal()?.email ?? '');
+
   constructor() {
     void this.restoreSession();
     this.client.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {

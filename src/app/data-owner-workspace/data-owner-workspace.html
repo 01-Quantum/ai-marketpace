@@ -330,10 +330,20 @@
             </div>
             @for (ds of datasets(); track ds.id) {
               <div class="table-row" role="row">
-                <span class="cell-name" role="cell">
-                  <lucide-angular [img]="isImageModel() ? ImageIcon : FileTextIcon" size="18" [strokeWidth]="1.6"></lucide-angular>
-                  {{ ds.source_file_name }}
-                </span>
+                @if (isImageModel()) {
+                  <span class="cell-name image-name-hover" role="cell" tabindex="0">
+                    <lucide-angular [img]="ImageIcon" size="18" [strokeWidth]="1.6"></lucide-angular>
+                    <span class="image-name">{{ ds.source_file_name }}</span>
+                    <span class="image-name-preview">
+                      <img [src]="encryptedPreviewUrl" [alt]="'Encrypted view of ' + ds.source_file_name" />
+                    </span>
+                  </span>
+                } @else {
+                  <span class="cell-name" role="cell">
+                    <lucide-angular [img]="FileTextIcon" size="18" [strokeWidth]="1.6"></lucide-angular>
+                    <span>{{ ds.source_file_name }}</span>
+                  </span>
+                }
                 <span role="cell">{{ ownerLabel() }}</span>
                 <span class="cell-status" role="cell">
                   <lucide-angular [img]="LockIcon" size="14" [strokeWidth]="2"></lucide-angular>
