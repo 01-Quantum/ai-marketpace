@@ -185,14 +185,12 @@ export class DataOwnerWorkspace {
   readonly encryptError = signal('');
   readonly encryptSuccess = signal('');
 
-  readonly canEncrypt = computed(
-    () =>
-      !this.loadingKey() &&
-      !this.loadingModel() &&
-      !!this.currentKey() &&
-      !!this.selectedCsvFile() &&
-      !!this.publishedModel(),
-  );
+  readonly canEncrypt = computed(() => {
+    const fileAndModelReady =
+      !this.loadingModel() && !!this.selectedCsvFile() && !!this.publishedModel();
+    if (this.isImageModel()) return fileAndModelReady;
+    return fileAndModelReady && !this.loadingKey() && !!this.currentKey();
+  });
 
   readonly workflowStep = signal<WorkflowStep>(
     parseWorkflowStep(this.route.snapshot.queryParamMap.get('step')),
@@ -532,8 +530,7 @@ export class DataOwnerWorkspace {
 
     const model = this.publishedModel();
     const file = this.selectedCsvFile();
-    const key = this.currentKey();
-    if (!model || !file || !key) return;
+    if (!model || !file) return;
 
     if (this.isImageModel()) {
       this.encrypting.set(true);
@@ -551,6 +548,9 @@ export class DataOwnerWorkspace {
       }
       return;
     }
+
+    const key = this.currentKey();
+    if (!key) return;
 
     this.encrypting.set(true);
     this.encryptError.set('');

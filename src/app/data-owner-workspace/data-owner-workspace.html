@@ -132,6 +132,20 @@
               <p class="upload-title">{{ file.name }}</p>
               <p class="upload-meta">{{ selectedCsvFileSize() }} · {{ isImageModel() ? 'Image' : 'CSV' }} ready for encryption</p>
               <div class="upload-file-actions">
+                <button
+                  type="button"
+                  class="btn-primary"
+                  (click)="encryptDataset()"
+                  [disabled]="!canEncrypt() || encrypting()"
+                >
+                  @if (encrypting()) {
+                    <lucide-angular class="spin" [img]="LoaderIcon" size="16"></lucide-angular>
+                    Encrypting…
+                  } @else {
+                    <lucide-angular [img]="LockIcon" size="16" [strokeWidth]="2"></lucide-angular>
+                    Encrypt
+                  }
+                </button>
                 <button type="button" class="btn-secondary" (click)="browseFiles()">Replace file</button>
                 <button type="button" class="btn-secondary danger" (click)="clearSelectedCsv()">Remove</button>
               </div>
