@@ -3,6 +3,7 @@ import { BehaviorSubject, combineLatest, filter, map, shareReplay, take } from '
 import { toObservable } from '@angular/core/rxjs-interop';
 import { AuthService } from '../shared/auth.service';
 import { FheTreePublishService } from './fhe-tree-publish.service';
+import { ImageDetectionGpuService } from '../image-detection/image-detection.gpu.service';
 import { ImageDetectionMockService } from '../image-detection/image-detection.mock.service';
 import { ModelSupabaseService, SupabaseModel } from './model-supabase.service';
 import {
@@ -129,6 +130,7 @@ export class ModelBuilderService {
   private readonly modelSupabase = inject(ModelSupabaseService);
   private readonly fheTreePublish = inject(FheTreePublishService);
   private readonly imageDetection = inject(ImageDetectionMockService);
+  private readonly imageGpu = inject(ImageDetectionGpuService);
 
   readonly saving = signal(false);
   readonly deleting = signal(false);
@@ -638,7 +640,7 @@ export class ModelBuilderService {
       });
     }
     this.sampleDataByModelSubject.next(sampleMap);
-    entries.push(this.imageDetection.libraryModel());
+    entries.push(this.imageGpu.libraryModel(), this.imageDetection.libraryModel());
     this.libraryModelsSubject.next(entries);
   }
 

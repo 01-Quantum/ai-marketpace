@@ -4,5 +4,16 @@
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"
+  },
+  "/fhe-image": {
+    "target": "https://3yy98qaafkcgf1-8080.proxy.runpod.net",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/fhe-image": ""
+    },
+    "timeout": 600000,
+    "proxyTimeout": 600000,
+    "logLevel": "debug"
   }
 }

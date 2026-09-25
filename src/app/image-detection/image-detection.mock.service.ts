@@ -6,6 +6,7 @@ import {
   InferenceJob,
 } from '../data-owner-workspace/fhe-encrypted-datasets.service';
 import {
+  IMAGE_DETECTION_MOCK_LIBRARY_ID,
   IMAGE_DETECTION_MODEL_ID,
   IMAGE_DETECTION_MODEL_NAME,
   ImageDetectionPrediction,
@@ -23,7 +24,7 @@ export interface MockImageJob {
   decryptedAt: string | null;
 }
 
-const LIBRARY_ID = 'mock-image-resnet20';
+const LIBRARY_ID = IMAGE_DETECTION_MOCK_LIBRARY_ID;
 
 function catSampleUrl(): string {
   return new URL('cat-sample.png', document.baseURI).href;

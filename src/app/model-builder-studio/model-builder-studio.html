@@ -221,7 +221,10 @@
     </aside>
 
     @if (selectedModel()?.type === 'image') {
-      <app-image-detection-designer />
+      <app-image-detection-designer
+        [modelName]="selectedModel()?.name ?? ''"
+        [mocked]="selectedModel()?.id === 'mock-image-resnet20'"
+      />
     } @else if (selectedModel()?.type === 'logistic') {
       <app-logistic-regression-designer />
     } @else {

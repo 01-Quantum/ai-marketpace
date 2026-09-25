@@ -5,11 +5,15 @@
     </span>
     <div>
       <h2 class="image-model-title">
-        {{ modelName }}
+        {{ modelName() }}
         <span class="published-pill">Published</span>
       </h2>
       <p class="image-model-sub">
-        Image classification model for CIFAR-10, optimized for FHE inference in a secure enclave.
+        @if (mocked()) {
+          Local mock of the CIFAR-10 cat sample. No GPU required.
+        } @else {
+          CIFAR-10 ResNet-20 on the GPU enclave. Encrypt, infer, and decrypt go through the FHE image API.
+        }
       </p>
     </div>
   </header>
@@ -34,7 +38,11 @@
     <div>
       <dt><lucide-angular [img]="ShieldIcon" size="14"></lucide-angular> Enclave note</dt>
       <dd>
-        Fixed enclave model. Weights stay in the enclave. Callers only send ciphertext.
+        @if (mocked()) {
+          Mocked locally. The sample image is always classified as cat.
+        } @else {
+          Weights stay on the GPU enclave. Callers send an image; the enclave returns encrypted logits.
+        }
       </dd>
     </div>
   </dl>
@@ -54,7 +62,7 @@
   <p class="image-spec-sub">Model specification and configuration details.</p>
   <h4>Model information</h4>
   <dl>
-    <div><dt>Name</dt><dd>{{ modelName }}</dd></div>
+    <div><dt>Name</dt><dd>{{ modelName() }}</dd></div>
     <div><dt>Type</dt><dd>Image Detection</dd></div>
     <div><dt>Status</dt><dd><span class="published-pill">Published</span></dd></div>
   </dl>

@@ -259,7 +259,13 @@
                 <p class="encrypt-action-title">Ready to encrypt</p>
                 <p class="encrypt-action-desc">
                   Key, model, and {{ isImageModel() ? 'image' : 'CSV' }} are set.
-                  {{ isImageModel() ? 'Encryption and inference are mocked locally.' : 'Run FHE encryption via the enclave.' }}
+                  {{
+                    isMockedImageModel()
+                      ? 'Encryption and inference are mocked locally.'
+                      : isImageModel()
+                        ? 'Encrypt and inference run on the GPU enclave.'
+                        : 'Run FHE encryption via the enclave.'
+                  }}
                 </p>
               </div>
             </div>

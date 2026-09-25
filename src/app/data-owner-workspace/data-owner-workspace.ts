@@ -52,6 +52,8 @@ import {
 import { FheKey, FheKeysService } from './fhe-keys.service';
 import { FheEncryptService } from './fhe-encrypt.service';
 import { formatFileSize, validateCsvFile } from './csv-upload';
+import { ImageDetectionGpuService } from '../image-detection/image-detection.gpu.service';
+import { IMAGE_DETECTION_MODEL_ID } from '../image-detection/image-detection.mock';
 import { ImageDetectionMockService } from '../image-detection/image-detection.mock.service';
 
 function parsePositiveInt(value: string | null): number | null {
@@ -103,6 +105,7 @@ export class DataOwnerWorkspace {
   private readonly modelSupabase = inject(ModelSupabaseService);
   private readonly sampleDataDownload = inject(SampleDataDownloadService);
   private readonly imageDetection = inject(ImageDetectionMockService);
+  private readonly imageGpu = inject(ImageDetectionGpuService);
 
   readonly selectedModelType = signal<InferenceModelChoice>(
     parseInferenceModelChoice(this.route.snapshot.queryParamMap.get('model')),
@@ -134,6 +137,9 @@ export class DataOwnerWorkspace {
 
   readonly modelTypeLabel = computed(() => INFERENCE_MODEL_LABELS[this.selectedModelType()]);
   readonly isImageModel = computed(() => this.selectedModelType() === 'image');
+  readonly isMockedImageModel = computed(
+    () => this.isImageModel() && this.publishedModel()?.id === IMAGE_DETECTION_MODEL_ID,
+  );
   readonly encryptedPreviewUrl = new URL('encrypted-sample.png', document.baseURI).href;
   readonly ImageIcon = Image;
 
@@ -272,12 +278,15 @@ export class DataOwnerWorkspace {
       const modelId = parseOptionalModelId(params.get('modelId'));
       const encryptedDatasetId = parsePositiveInt(params.get('encryptedDatasetId'));
       const typeChanged = modelType !== this.selectedModelType();
+      const modelChanged = modelId !== this.selectedPublishedModelId();
       this.selectedModelType.set(modelType);
       this.selectedPublishedModelId.set(modelId);
       this.workflowStep.set(parseWorkflowStep(params.get('step')));
       this.syncSelectedJob(encryptedDatasetId);
       if (this.auth.initialized() && typeChanged) {
         void this.refreshPublishedModels();
+      } else if (this.auth.initialized() && modelType === 'image' && modelChanged) {
+        void this.refreshWorkspace();
       }
     });
   }
@@ -288,7 +297,7 @@ export class DataOwnerWorkspace {
 
   async refreshEncryptedDatasets(): Promise<void> {
     if (this.isImageModel()) {
-      this.datasets.set(this.imageDetection.pendingDatasets());
+      this.datasets.set(this.activeImageJobs().pendingDatasets());
       this.datasetsError.set('');
       this.loadingDatasets.set(false);
       return;
@@ -309,7 +318,7 @@ export class DataOwnerWorkspace {
 
   async refreshInferenceJobs(): Promise<void> {
     if (this.isImageModel()) {
-      const jobs = this.imageDetection.inferenceJobs();
+      const jobs = this.activeImageJobs().inferenceJobs();
       this.jobs.set(jobs);
       const current = this.selectedJobId();
       const keep = current !== null && jobs.some((job) => job.id === current) ? current : jobs[0]?.id ?? null;
@@ -379,9 +388,11 @@ export class DataOwnerWorkspace {
 
   private async refreshPublishedModels(): Promise<void> {
     if (this.isImageModel()) {
-      const model = this.imageDetection.publishedModel();
-      this.publishedModels.set([model]);
-      this.selectedPublishedModelId.set(model.id);
+      const models = [this.imageGpu.publishedModel(), this.imageDetection.publishedModel()];
+      this.publishedModels.set(models);
+      const preferredId = this.selectedPublishedModelId();
+      const match = preferredId !== null ? models.find((model) => model.id === preferredId) : null;
+      this.selectedPublishedModelId.set(match?.id ?? models[0].id);
       this.modelError.set('');
       this.loadingModel.set(false);
       return;
@@ -451,7 +462,16 @@ export class DataOwnerWorkspace {
     this.inferenceSuccess.set('');
 
     if (this.isImageModel()) {
-      const started = await this.imageDetection.runInference(dataset.id);
+      let started = false;
+      try {
+        started = await this.imageJobsFor(dataset.model_id).runInference(dataset.id);
+      } catch (error) {
+        this.inferenceError.set(
+          error instanceof Error ? error.message : `Could not run inference for "${dataset.source_file_name}".`,
+        );
+        this.inferringDatasetId.set(null);
+        return;
+      }
       if (!started) {
         this.inferenceError.set(`Could not run inference for "${dataset.source_file_name}".`);
       } else {
@@ -513,6 +533,13 @@ export class DataOwnerWorkspace {
     this.selectedPublishedModelId.set(model.id);
     this.showModelSelectModal.set(false);
     this.encryptSuccess.set('');
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { modelId: String(model.id) },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+    if (this.isImageModel()) void this.refreshWorkspace();
   }
 
   downloadSampleData(): void {
@@ -537,7 +564,7 @@ export class DataOwnerWorkspace {
       this.encryptError.set('');
       this.encryptSuccess.set('');
       try {
-        await this.imageDetection.encryptImage(file);
+        await this.activeImageJobs().encryptImage(file);
         this.encryptSuccess.set(`"${file.name}" encrypted successfully.`);
         this.selectedCsvFile.set(null);
         await this.refreshWorkspace();
@@ -802,7 +829,7 @@ export class DataOwnerWorkspace {
     }
 
     if (this.isImageModel()) {
-      this.imageDetection.delete(target.id);
+      this.imageJobsFor(target.model_id).delete(target.id);
       await this.refreshWorkspace();
       return;
     }
@@ -831,7 +858,7 @@ export class DataOwnerWorkspace {
     this.jobsError.set('');
 
     if (this.isImageModel()) {
-      this.imageDetection.delete(job.id);
+      this.imageJobsOwning(job.id).delete(job.id);
       this.deletingResultJobId.set(null);
       if (this.selectedJobId() === job.id) {
         this.selectedJobId.set(null);
@@ -855,4 +882,16 @@ export class DataOwnerWorkspace {
   }
 
   signOut(): void {}
+
+  private activeImageJobs(): ImageDetectionMockService | ImageDetectionGpuService {
+    return this.imageJobsFor(this.publishedModel()?.id);
+  }
+
+  private imageJobsFor(modelId: number | null | undefined): ImageDetectionMockService | ImageDetectionGpuService {
+    return modelId === IMAGE_DETECTION_MODEL_ID ? this.imageDetection : this.imageGpu;
+  }
+
+  private imageJobsOwning(id: number): ImageDetectionMockService | ImageDetectionGpuService {
+    return this.imageDetection.isMockJob(id) ? this.imageDetection : this.imageGpu;
+  }
 }

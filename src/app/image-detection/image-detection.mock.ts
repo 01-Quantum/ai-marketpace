@@ -12,7 +12,13 @@ export const CIFAR10_CLASSES = [
 ] as const;
 
 export const IMAGE_DETECTION_MODEL_ID = 91000;
-export const IMAGE_DETECTION_MODEL_NAME = 'CIFAR-10 Image Detection (ResNet-20)';
+export const IMAGE_DETECTION_MODEL_NAME = 'CIFAR-10 Image Detection (ResNet-20) -mocked';
+export const IMAGE_DETECTION_MOCK_LIBRARY_ID = 'mock-image-resnet20';
+
+/** Live ResNet-20 served by the GPU FHE image API. */
+export const IMAGE_DETECTION_GPU_MODEL_ID = 92000;
+export const IMAGE_DETECTION_GPU_MODEL_NAME = 'CIFAR-10 Image Detection (ResNet-20)';
+export const IMAGE_DETECTION_GPU_LIBRARY_ID = 'gpu-image-resnet20';
 
 export interface ImageClassScore {
   id: number;

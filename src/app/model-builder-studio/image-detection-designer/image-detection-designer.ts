@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { Box, Database, Image, Lock, LucideAngularModule, ShieldCheck } from 'lucide-angular';
-import { CIFAR10_CLASSES, IMAGE_DETECTION_MODEL_NAME } from '../../image-detection/image-detection.mock';
+import { CIFAR10_CLASSES, IMAGE_DETECTION_GPU_MODEL_NAME } from '../../image-detection/image-detection.mock';
 
 @Component({
   selector: 'app-image-detection-designer',
@@ -10,7 +10,8 @@ import { CIFAR10_CLASSES, IMAGE_DETECTION_MODEL_NAME } from '../../image-detecti
   styleUrl: './image-detection-designer.css',
 })
 export class ImageDetectionDesigner {
-  readonly modelName = IMAGE_DETECTION_MODEL_NAME;
+  readonly modelName = input(IMAGE_DETECTION_GPU_MODEL_NAME);
+  readonly mocked = input(false);
   readonly classes = CIFAR10_CLASSES;
   readonly ImageIcon = Image;
   readonly BoxIcon = Box;

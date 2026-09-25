@@ -11,6 +11,7 @@ import {
   FheEncryptedResult,
 } from '../data-owner-workspace/fhe-encrypted-datasets.service';
 import { FheEncryptService } from '../data-owner-workspace/fhe-encrypt.service';
+import { ImageDetectionGpuService, GpuImageJob } from '../image-detection/image-detection.gpu.service';
 import {
   ImageDetectionMockService,
   MockImageJob,
@@ -79,6 +80,7 @@ export class DecryptResultWorkspace {
   private readonly fheEncryptedDatasets = inject(FheEncryptedDatasetsService);
   private readonly fheEncrypt = inject(FheEncryptService);
   private readonly imageDetection = inject(ImageDetectionMockService);
+  private readonly imageGpu = inject(ImageDetectionGpuService);
 
   readonly encryptedDatasetId = signal<number | null>(
     parseEncryptedDatasetId(this.route.snapshot.queryParamMap.get('encryptedDatasetId')),
@@ -87,7 +89,7 @@ export class DecryptResultWorkspace {
   readonly inferenceResult = signal<FheEncryptedResult | null>(null);
   readonly loadingDataset = signal(false);
   readonly datasetError = signal('');
-  readonly imageJob = signal<MockImageJob | null>(null);
+  readonly imageJob = signal<MockImageJob | GpuImageJob | null>(null);
   readonly imagePrediction = signal<ImageDetectionPrediction | null>(null);
 
   readonly canDecrypt = computed(() => {
@@ -215,23 +217,31 @@ export class DecryptResultWorkspace {
     this.imagePrediction.set(null);
 
     const mockJob = this.imageDetection.getJob(id);
-    if (mockJob) {
-      this.imageJob.set(mockJob);
-      this.dataset.set(this.imageDetection.toDataset(mockJob));
+    const gpuJob = mockJob ? null : this.imageGpu.getJob(id);
+    const imageJob = mockJob ?? gpuJob;
+    if (imageJob) {
+      this.imageJob.set(imageJob);
+      this.dataset.set(
+        mockJob ? this.imageDetection.toDataset(mockJob) : this.imageGpu.toDataset(gpuJob!),
+      );
       this.inferenceResult.set({
-        id: mockJob.id,
-        user_id: 'mock',
-        result_id: `mock-${mockJob.id}`,
-        result_path: '',
-        encrypted_dataset_id: mockJob.id,
-        encrypt_id: `e4e${mockJob.id.toString(16)}`,
+        id: imageJob.id,
+        user_id: mockJob ? 'mock' : 'gpu',
+        result_id: mockJob
+          ? `mock-${mockJob.id}`
+          : (gpuJob?.resultDir?.split('/').pop() ?? `gpu-${imageJob.id}`),
+        result_path: gpuJob?.resultDir ?? '',
+        encrypted_dataset_id: imageJob.id,
+        encrypt_id: mockJob
+          ? `e4e${mockJob.id.toString(16)}`
+          : (gpuJob?.encryptedDir?.split('/').pop() ?? `gpu${imageJob.id.toString(16)}`),
         status: 'completed',
-        created_at: mockJob.createdAt,
-        updated_at: mockJob.createdAt,
+        created_at: imageJob.createdAt,
+        updated_at: imageJob.createdAt,
       });
-      this.decrypted.set(!!mockJob.decryptedAt);
-      this.decryptedAt.set(mockJob.decryptedAt);
-      this.imagePrediction.set(mockJob.decryptedAt ? mockJob.prediction : null);
+      this.decrypted.set(!!imageJob.decryptedAt);
+      this.decryptedAt.set(imageJob.decryptedAt);
+      this.imagePrediction.set(imageJob.decryptedAt ? imageJob.prediction : null);
       this.loadingDataset.set(false);
       return;
     }
@@ -280,7 +290,16 @@ export class DecryptResultWorkspace {
     if (imageJob) {
       this.decrypting.set(true);
       this.decryptError.set('');
-      const prediction = await this.imageDetection.decrypt(imageJob.id);
+      let prediction = null;
+      try {
+        prediction = this.imageGpu.isGpuJob(imageJob.id)
+          ? await this.imageGpu.decrypt(imageJob.id)
+          : await this.imageDetection.decrypt(imageJob.id);
+      } catch (error) {
+        this.decrypting.set(false);
+        this.decryptError.set(error instanceof Error ? error.message : 'Could not decrypt this image result.');
+        return;
+      }
       this.decrypting.set(false);
       if (!prediction) {
         this.decryptError.set('Could not decrypt this image result.');
