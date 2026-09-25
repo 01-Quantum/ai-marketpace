@@ -180,6 +180,21 @@ lucide-angular svg {
   font-weight: 500;
 }
 
+.btn-sign-in {
+  padding: 0.45rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(45, 212, 191, 0.55);
+  background: linear-gradient(180deg, #34d399 0%, var(--teal) 100%);
+  color: #042f2e;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-sign-in:hover {
+  filter: brightness(1.05);
+}
+
 .btn-sign-out {
   padding: 0.45rem 1rem;
   border-radius: 8px;

@@ -10,4 +10,6 @@ export const environment: Environment = {
   supabaseAnonKey: 'YOUR_SUPABASE_ANON_KEY',
   // Leave empty in dev to use the /fhe-vault proxy; set to the deployed API URL in prod.
   fheApiBaseUrl: '',
+  // Proxied to the RunPod GPU (see proxy.conf.json). Paths are /v1/encrypt, /v1/infer, /v1/decrypt.
+  imageApiBaseUrl: '/fhe-image',
 };

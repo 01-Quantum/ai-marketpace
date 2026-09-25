@@ -3,6 +3,8 @@ import { BehaviorSubject, combineLatest, filter, map, shareReplay, take } from '
 import { toObservable } from '@angular/core/rxjs-interop';
 import { AuthService } from '../shared/auth.service';
 import { FheTreePublishService } from './fhe-tree-publish.service';
+import { ImageDetectionGpuService } from '../image-detection/image-detection.gpu.service';
+import { ImageDetectionMockService } from '../image-detection/image-detection.mock.service';
 import { ModelSupabaseService, SupabaseModel } from './model-supabase.service';
 import {
   DEFAULT_DECISION_TREE_NODES,
@@ -35,6 +37,7 @@ import {
 
 function iconKindForType(type: import('./model-builder.types').ModelType): LibraryModel['iconKind'] {
   if (type === 'logistic') return 'scatter';
+  if (type === 'image') return 'image';
   return 'tree';
 }
 
@@ -126,6 +129,8 @@ export class ModelBuilderService {
   private readonly auth = inject(AuthService);
   private readonly modelSupabase = inject(ModelSupabaseService);
   private readonly fheTreePublish = inject(FheTreePublishService);
+  private readonly imageDetection = inject(ImageDetectionMockService);
+  private readonly imageGpu = inject(ImageDetectionGpuService);
 
   readonly saving = signal(false);
   readonly deleting = signal(false);
@@ -566,7 +571,7 @@ export class ModelBuilderService {
   /** Delete a model from Supabase (if saved) and remove it from the library. */
   async deleteModelById(modelId: string): Promise<void> {
     const model = this.libraryModelsSubject.value.find((entry) => entry.id === modelId);
-    if (!model) return;
+    if (!model || model.shared) return;
 
     this.deleting.set(true);
     try {
@@ -595,6 +600,7 @@ export class ModelBuilderService {
     const logisticMap: Record<string, LogisticRegressionModel> = {};
     const sampleMap: Record<string, SampleDataRow[]> = {};
 
+    const userId = this.auth.user()?.id;
     const entries: LibraryModel[] = remoteModels
       .filter((rm) => rm.model_type === 'tree' || rm.model_type === 'logistic')
       .map((rm) => {
@@ -620,6 +626,7 @@ export class ModelBuilderService {
           type: rm.model_type,
           isSaved: true,
           published: !!rm.published,
+          shared: !!userId && rm.user_id !== userId,
         };
       });
 
@@ -633,6 +640,7 @@ export class ModelBuilderService {
       });
     }
     this.sampleDataByModelSubject.next(sampleMap);
+    entries.push(this.imageGpu.libraryModel(), this.imageDetection.libraryModel());
     this.libraryModelsSubject.next(entries);
   }
 

@@ -2,6 +2,7 @@
   <app-top-bar
     brandTag="FHE Encrypted Enclave"
     (signOut)="signOut()"
+    (signIn)="openSignIn()"
     (authRequired)="goWithAuth($event)"
   />
 
@@ -105,6 +106,24 @@
                 <lucide-angular class="select-mark" [img]="CircleIcon" size="22"></lucide-angular>
               }
             </button>
+
+            <button
+              type="button"
+              class="model-card"
+              [class.selected]="selectedModel() === 'image'"
+              (click)="selectModel('image')"
+            >
+              <lucide-angular class="model-icon teal" [img]="ImageIcon" size="48" [strokeWidth]="1.6"></lucide-angular>
+              <div class="model-card-body">
+                <h3 class="model-name">Image Detection</h3>
+                <p class="model-desc">ResNet-20 image classifier. Runs on an encrypted photo.</p>
+              </div>
+              @if (selectedModel() === 'image') {
+                <lucide-angular class="select-mark active" [img]="CircleCheckIcon" size="22"></lucide-angular>
+              } @else {
+                <lucide-angular class="select-mark" [img]="CircleIcon" size="22"></lucide-angular>
+              }
+            </button>
           </div>
 
           <aside class="model-action">
@@ -114,6 +133,9 @@
             </div>
             <button type="button" class="btn-primary" (click)="continueInference()">
               Continue to Encrypted Inference
+              @if (selectedModel() === 'image') {
+                (Image Detection)
+              }
               <lucide-angular [img]="ArrowRightIcon" size="18"></lucide-angular>
             </button>
           </aside>

@@ -23,7 +23,7 @@
             </button>
           } @else {
             <span class="model-name">{{ model.name }}</span>
-            <button type="button" class="btn-edit-name" (click)="startEditingName()">
+            <button type="button" class="btn-edit-name" (click)="startEditingName()" [disabled]="model.shared">
               <lucide-angular [img]="PencilIcon" size="14" [strokeWidth]="2"></lucide-angular>
               Edit
             </button>
@@ -37,7 +37,7 @@
           type="button"
           class="btn-toolbar-action"
           title="Save model to Supabase"
-          [disabled]="saving()"
+          [disabled]="saving() || selectedModel()?.type === 'image' || selectedModel()?.shared"
           (click)="saveModel()"
         >
           <lucide-angular [img]="SaveIcon" size="15" [strokeWidth]="2"></lucide-angular>
@@ -68,7 +68,7 @@
           type="button"
           class="btn-toolbar-action btn-toolbar-delete"
           title="Delete model"
-          [disabled]="deleting()"
+          [disabled]="deleting() || selectedModel()?.type === 'image' || selectedModel()?.shared"
           (click)="deleteModel()"
         >
           <lucide-angular [img]="Trash2Icon" size="15" [strokeWidth]="2"></lucide-angular>
@@ -85,6 +85,7 @@
     class="builder-layout"
     [class.library-collapsed]="libraryCollapsed()"
     [class.properties-collapsed]="propertiesCollapsed()"
+    [class.image-mode]="selectedModel()?.type === 'image'"
   >
     <aside class="panel library-panel" [class.collapsed]="libraryCollapsed()">
       <header class="library-head">
@@ -155,6 +156,9 @@
                     <div class="lib-body">
                       <p class="lib-name">{{ item.name }}</p>
                       <p class="lib-meta">{{ item.version }} &middot; {{ item.updated }}</p>
+                      @if (item.shared) {
+                        <span class="lib-status lib-status-shared">Shared</span>
+                      }
                       @if (item.published) {
                         <span class="lib-status lib-status-published">Published</span>
                       } @else if (item.isSaved !== false) {
@@ -199,7 +203,7 @@
                           type="button"
                           class="lib-menu-item lib-menu-item-danger"
                           role="menuitem"
-                          [disabled]="deleting()"
+                          [disabled]="deleting() || item.shared"
                           (click)="deleteLibraryModel(item.id, $event)"
                         >
                           <lucide-angular [img]="Trash2Icon" size="14" [strokeWidth]="2"></lucide-angular>
@@ -216,16 +220,23 @@
       }
     </aside>
 
-    @if (selectedModel()?.type === 'logistic') {
+    @if (selectedModel()?.type === 'image') {
+      <app-image-detection-designer
+        [modelName]="selectedModel()?.name ?? ''"
+        [mocked]="selectedModel()?.id === 'mock-image-resnet20'"
+      />
+    } @else if (selectedModel()?.type === 'logistic') {
       <app-logistic-regression-designer />
     } @else {
       <app-decision-tree-designer />
     }
 
+    @if (selectedModel()?.type !== 'image') {
     <app-model-sidebar-panel
       [collapsed]="propertiesCollapsed()"
       (collapseToggle)="toggleProperties()"
     />
+    }
   </div>
 
   @if (shareModalOpen()) {

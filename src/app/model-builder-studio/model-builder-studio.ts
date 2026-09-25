@@ -10,6 +10,7 @@ import {
   Download,
   LucideAngularModule,
   MoreVertical,
+  Image,
   Network,
   PanelLeftClose,
   PanelLeftOpen,
@@ -26,6 +27,7 @@ import {
 } from 'lucide-angular';
 import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
 import { DecisionTreeDesigner } from './decision-tree-designer/decision-tree-designer';
+import { ImageDetectionDesigner } from './image-detection-designer/image-detection-designer';
 import { toDecisionTreeDocument } from './decision-tree-document';
 import { LogisticRegressionDesigner } from './logistic-regression-designer/logistic-regression-designer';
 import { LogisticRegressionModelService } from './logistic-regression-model.service';
@@ -42,6 +44,7 @@ const LIBRARY_ICONS: Record<LibraryModel['iconKind'], typeof Network> = {
   tree: Network,
   scatter: ChartScatter,
   shield: ShieldCheck,
+  image: Image,
 };
 
 @Component({
@@ -51,6 +54,7 @@ const LIBRARY_ICONS: Record<LibraryModel['iconKind'], typeof Network> = {
     LucideAngularModule,
     AppTopBar,
     DecisionTreeDesigner,
+    ImageDetectionDesigner,
     LogisticRegressionDesigner,
     ModelSidebarPanel,
   ],
@@ -155,7 +159,7 @@ export class ModelBuilderStudio {
 
   startEditingName(): void {
     const model = this.selectedModel();
-    if (!model) return;
+    if (!model || model.shared) return;
     this.nameDraft.set(model.name);
     this.editingName.set(true);
   }
@@ -191,6 +195,8 @@ export class ModelBuilderStudio {
   signOut(): void {}
 
   async saveModel(): Promise<void> {
+    const selected = this.selectedModel();
+    if (!selected || selected.type === 'image' || selected.shared) return;
     const type = this.selectedModel()?.type;
     let modelJson: unknown = null;
     if (type === 'logistic') {
@@ -203,7 +209,7 @@ export class ModelBuilderStudio {
 
   async deleteModel(): Promise<void> {
     const model = this.selectedModel();
-    if (!model) return;
+    if (!model || model.type === 'image' || model.shared) return;
     if (!confirm(`Delete "${model.name}"? This cannot be undone.`)) return;
     await this.modelBuilder.deleteCurrentModel();
   }
@@ -244,17 +250,18 @@ export class ModelBuilderStudio {
   }
 
   publishButtonLabel(): string {
+    if (this.selectedModel()?.type === 'image') return 'Published';
     return this.selectedModel()?.published ? 'Unpublish' : 'Publish';
   }
 
   canTogglePublish(): boolean {
     const model = this.selectedModel();
-    return !!model?.remoteId && !this.publishing() && !this.saving();
+    return !!model?.remoteId && !model.shared && !this.publishing() && !this.saving();
   }
 
   canShareModel(): boolean {
     const model = this.selectedModel();
-    return !!model?.remoteId && !this.sharing();
+    return !!model?.remoteId && !model.shared && !this.sharing();
   }
 
   async openShareModal(): Promise<void> {

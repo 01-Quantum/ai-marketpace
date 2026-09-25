@@ -1,0 +1,80 @@
+<section class="image-model">
+  <header class="image-model-head">
+    <span class="image-model-icon">
+      <lucide-angular [img]="ImageIcon" size="22" [strokeWidth]="1.7"></lucide-angular>
+    </span>
+    <div>
+      <h2 class="image-model-title">
+        {{ modelName() }}
+        <span class="published-pill">Published</span>
+      </h2>
+      <p class="image-model-sub">
+        @if (mocked()) {
+          Local mock. Any image stays on this machine. No GPU required.
+        } @else {
+          CIFAR-10 ResNet-20 on the GPU enclave. Encrypt, infer, and decrypt go through the FHE image API.
+        }
+      </p>
+    </div>
+  </header>
+
+  <dl class="spec-list">
+    <div>
+      <dt><lucide-angular [img]="BoxIcon" size="14"></lucide-angular> Architecture</dt>
+      <dd>ResNet-20 <span>20-layer residual network optimized for CIFAR-10</span></dd>
+    </div>
+    <div>
+      <dt><lucide-angular [img]="DatabaseIcon" size="14"></lucide-angular> Dataset</dt>
+      <dd>CIFAR-10 <span>10 classes, 32×32 color images</span></dd>
+    </div>
+    <div>
+      <dt><lucide-angular [img]="ImageIcon" size="14"></lucide-angular> Input</dt>
+      <dd>32 × 32 RGB <span>3 channels</span></dd>
+    </div>
+    <div>
+      <dt><lucide-angular [img]="LockIcon" size="14"></lucide-angular> Encryption scheme</dt>
+      <dd>CKKS <span>Approximate arithmetic for encrypted inference</span></dd>
+    </div>
+    <div>
+      <dt><lucide-angular [img]="ShieldIcon" size="14"></lucide-angular> Enclave note</dt>
+      <dd>
+        @if (mocked()) {
+          Mocked locally. Predictions are simulated and never call the GPU.
+        } @else {
+          Weights stay on the GPU enclave. GPU is A100, 50GB RAM footprint. Callers send an encrypted image; the enclave returns encrypted logits.
+        }
+      </dd>
+    </div>
+  </dl>
+
+  <div class="class-block">
+    <h3>CIFAR-10 classes</h3>
+    <div class="class-chips">
+      @for (name of classes; track name) {
+        <span class="class-chip">{{ name }}</span>
+      }
+    </div>
+  </div>
+</section>
+
+<aside class="image-spec">
+  <h3>Model spec</h3>
+  <p class="image-spec-sub">Model specification and configuration details.</p>
+  <h4>Model information</h4>
+  <dl>
+    <div><dt>Name</dt><dd>{{ modelName() }}</dd></div>
+    <div><dt>Type</dt><dd>Image Detection</dd></div>
+    <div><dt>Status</dt><dd><span class="published-pill">Published</span></dd></div>
+  </dl>
+  <h4>Input specification</h4>
+  <dl>
+    <div><dt>Input size</dt><dd>32 × 32 RGB</dd></div>
+    <div><dt>Channels</dt><dd>3 (RGB)</dd></div>
+    <div><dt>Format</dt><dd>JPG or PNG</dd></div>
+  </dl>
+  <h4>Class labels</h4>
+  <dl>
+    <div><dt>Total classes</dt><dd>10</dd></div>
+    <div><dt>Labels</dt><dd>{{ classes.join(', ') }}</dd></div>
+  </dl>
+</aside>

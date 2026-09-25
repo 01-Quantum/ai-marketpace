@@ -8,6 +8,7 @@ import {
   Circle,
   CloudCog,
   FileLock,
+  Image,
   KeyRound,
   Lock,
   LucideAngularModule,
@@ -44,6 +45,7 @@ export class LandingPage {
   readonly ArrowRightIcon = ArrowRight;
   readonly NetworkIcon = Network;
   readonly ChartScatterIcon = ChartScatter;
+  readonly ImageIcon = Image;
   readonly CircleCheckIcon = CircleCheck;
   readonly CircleIcon = Circle;
 
@@ -53,6 +55,12 @@ export class LandingPage {
 
   continueInference(): void {
     this.goWithAuth('/data-owner-workspace', { model: this.selectedModel() });
+  }
+
+  openSignIn(): void {
+    this.pendingDestination = null;
+    this.pendingQueryParams = null;
+    this.authDialogOpen.set(true);
   }
 
   goWithAuth(destination: string, queryParams?: Record<string, string>): void {

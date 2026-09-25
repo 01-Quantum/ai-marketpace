@@ -18,7 +18,7 @@
         [strokeWidth]="1.8"
       ></lucide-angular>
       <div class="step-text">
-        <div class="step-label">{{ step.label }}</div>
+        <div class="step-label">{{ stepLabel(step) }}</div>
         <div class="step-status" [class.muted]="!isActive(step.num)">
           {{ stepStatus(step.num) }}
         </div>

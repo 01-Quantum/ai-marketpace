@@ -1,4 +1,4 @@
-export type ModelType = 'tree' | 'logistic';
+export type ModelType = 'tree' | 'logistic' | 'image';
 
 export interface LibraryModel {
   /** Local key used within the studio (matches Supabase row id as string for saved models). */
@@ -8,12 +8,14 @@ export interface LibraryModel {
   name: string;
   version: string;
   updated: string;
-  iconKind: 'tree' | 'scatter' | 'shield';
+  iconKind: 'tree' | 'scatter' | 'shield' | 'image';
   type: ModelType;
   /** Whether the model matches the last saved Supabase state. */
   isSaved?: boolean;
   /** Whether the model is published to the enclave (from Supabase `published`). */
   published?: boolean;
+  /** Published model shared with the current user. They can open it, not change it. */
+  shared?: boolean;
 }
 
 export interface NodeLayout {

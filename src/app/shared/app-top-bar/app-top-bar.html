@@ -2,7 +2,7 @@
   <a routerLink="/landing-page" class="brand brand-link" aria-label="Go to home">
     <img class="brand-logo-img" src="brand-logo.png" alt="Quantum AI Marketplace logo" />
     <div class="brand-text">
-      <span class="brand-title">01 Quantum AI Marketplace</span>
+      <span class="brand-title">Encrypted AI Marketplace</span>
       <span class="brand-tag">{{ brandTag() }}</span>
     </div>
   </a>
@@ -32,11 +32,13 @@
       <span>Secure. Private. Verifiable.</span>
     </div>
     @if (isAuthenticated()) {
-      <span class="username">{{ displayName() }}</span>
+      <span class="username">{{ email() }}</span>
       <button type="button" class="btn-sign-out" (click)="onSignOut()">Sign Out</button>
       <span class="avatar">
         <lucide-angular [img]="UserIcon" size="20" [strokeWidth]="1.8"></lucide-angular>
       </span>
+    } @else {
+      <button type="button" class="btn-sign-in" (click)="onSignIn()">Sign in</button>
     }
   </div>
 </header>

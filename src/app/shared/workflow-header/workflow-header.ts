@@ -1,5 +1,7 @@
 import { Component, inject, input } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
+import { map } from 'rxjs';
 import { CloudCog, FileLock, KeyRound, Lock, LucideAngularModule } from 'lucide-angular';
 import { WorkflowStep } from '../workflow.types';
 
@@ -28,6 +30,10 @@ export class WorkflowHeader {
 
   readonly activeThrough = input.required<WorkflowStep>();
   readonly currentStep = input<WorkflowStep>();
+  private readonly modelQuery = toSignal(
+    this.route.queryParamMap.pipe(map((params) => params.get('model'))),
+    { initialValue: this.route.snapshot.queryParamMap.get('model') },
+  );
 
   readonly steps: StepDefinition[] = [
     { num: 1, label: 'Generate Key Pair', icon: KeyRound },
@@ -35,6 +41,11 @@ export class WorkflowHeader {
     { num: 3, label: 'Run Encrypted Inference', icon: CloudCog },
     { num: 4, label: 'Decrypt Result', icon: Lock },
   ];
+
+  stepLabel(step: StepDefinition): string {
+    if (step.num === 2 && this.modelQuery() === 'image') return 'Upload & Encrypt Image';
+    return step.label;
+  }
 
   isActive(step: WorkflowStep): boolean {
     return step <= this.activeThrough();

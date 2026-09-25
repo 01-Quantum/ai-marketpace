@@ -14,6 +14,7 @@ import {
   FileLock,
   FileText,
   KeyRound,
+  Image,
   List,
   ListChecks,
   LoaderCircle,
@@ -51,6 +52,9 @@ import {
 import { FheKey, FheKeysService } from './fhe-keys.service';
 import { FheEncryptService } from './fhe-encrypt.service';
 import { formatFileSize, validateCsvFile } from './csv-upload';
+import { ImageDetectionGpuService } from '../image-detection/image-detection.gpu.service';
+import { IMAGE_DETECTION_MODEL_ID } from '../image-detection/image-detection.mock';
+import { ImageDetectionMockService } from '../image-detection/image-detection.mock.service';
 
 function parsePositiveInt(value: string | null): number | null {
   if (!value) return null;
@@ -59,6 +63,14 @@ function parsePositiveInt(value: string | null): number | null {
 }
 
 const parseOptionalModelId = parsePositiveInt;
+
+function validateImageFile(file: File): string | null {
+  const named = /\.(png|jpe?g)$/i.test(file.name);
+  const typed = file.type === 'image/png' || file.type === 'image/jpeg';
+  if (!named && !typed) return 'JPG or PNG only.';
+  if (file.size > 10 * 1024 * 1024) return 'Max size is 10 MB.';
+  return null;
+}
 
 function parseWorkflowStep(value: string | null): WorkflowStep {
   if (value === '1' || value === '2' || value === '3') {
@@ -92,6 +104,8 @@ export class DataOwnerWorkspace {
   readonly auth = inject(AuthService);
   private readonly modelSupabase = inject(ModelSupabaseService);
   private readonly sampleDataDownload = inject(SampleDataDownloadService);
+  private readonly imageDetection = inject(ImageDetectionMockService);
+  private readonly imageGpu = inject(ImageDetectionGpuService);
 
   readonly selectedModelType = signal<InferenceModelChoice>(
     parseInferenceModelChoice(this.route.snapshot.queryParamMap.get('model')),
@@ -116,11 +130,26 @@ export class DataOwnerWorkspace {
   readonly publishedModelCount = computed(() => this.publishedModels().length);
 
   readonly canDownloadSampleData = computed(() => {
+    if (this.isImageModel()) return true;
     const model = this.publishedModel();
     return model ? this.sampleDataDownload.hasSampleRows(model.sample_data) : false;
   });
 
   readonly modelTypeLabel = computed(() => INFERENCE_MODEL_LABELS[this.selectedModelType()]);
+  readonly isImageModel = computed(() => this.selectedModelType() === 'image');
+  /** The mocked image model stays local. The GPU model sends every file to the image API. */
+  readonly usesLocalImageMock = computed(
+    () => this.isImageModel() && this.publishedModel()?.id === IMAGE_DETECTION_MODEL_ID,
+  );
+  readonly encryptedPreviewUrl = new URL('encrypted-sample.png', document.baseURI).href;
+  readonly ImageIcon = Image;
+
+  modelSummaryIcon(): typeof Network {
+    const type = this.selectedModelType();
+    if (type === 'image') return this.ImageIcon;
+    if (type === 'logistic') return this.ChartScatterIcon;
+    return this.NetworkIcon;
+  }
 
   readonly currentKey = signal<FheKey | null>(null);
   readonly loadingKey = signal(true);
@@ -163,14 +192,12 @@ export class DataOwnerWorkspace {
   readonly encryptError = signal('');
   readonly encryptSuccess = signal('');
 
-  readonly canEncrypt = computed(
-    () =>
-      !this.loadingKey() &&
-      !this.loadingModel() &&
-      !!this.currentKey() &&
-      !!this.selectedCsvFile() &&
-      !!this.publishedModel(),
-  );
+  readonly canEncrypt = computed(() => {
+    const fileAndModelReady =
+      !this.loadingModel() && !!this.selectedCsvFile() && !!this.publishedModel();
+    if (this.isImageModel()) return fileAndModelReady;
+    return fileAndModelReady && !this.loadingKey() && !!this.currentKey();
+  });
 
   readonly workflowStep = signal<WorkflowStep>(
     parseWorkflowStep(this.route.snapshot.queryParamMap.get('step')),
@@ -252,21 +279,39 @@ export class DataOwnerWorkspace {
       const modelId = parseOptionalModelId(params.get('modelId'));
       const encryptedDatasetId = parsePositiveInt(params.get('encryptedDatasetId'));
       const typeChanged = modelType !== this.selectedModelType();
+      const modelChanged = modelId !== this.selectedPublishedModelId();
       this.selectedModelType.set(modelType);
       this.selectedPublishedModelId.set(modelId);
       this.workflowStep.set(parseWorkflowStep(params.get('step')));
       this.syncSelectedJob(encryptedDatasetId);
       if (this.auth.initialized() && typeChanged) {
         void this.refreshPublishedModels();
+      } else if (this.auth.initialized() && modelType === 'image' && modelChanged) {
+        void this.refreshWorkspace();
       }
     });
   }
 
   async refreshWorkspace(): Promise<void> {
+    if (this.isImageModel()) {
+      const [mockError, gpuError] = await Promise.all([
+        this.imageDetection.loadFromSupabase(),
+        this.imageGpu.loadFromSupabase(),
+      ]);
+      const error = mockError || gpuError || '';
+      this.datasetsError.set(error);
+      this.jobsError.set(error);
+    }
     await Promise.all([this.refreshEncryptedDatasets(), this.refreshInferenceJobs()]);
   }
 
   async refreshEncryptedDatasets(): Promise<void> {
+    if (this.isImageModel()) {
+      this.datasets.set(this.allImageDatasets());
+      this.loadingDatasets.set(false);
+      return;
+    }
+
     this.loadingDatasets.set(true);
     this.datasetsError.set('');
 
@@ -281,6 +326,16 @@ export class DataOwnerWorkspace {
   }
 
   async refreshInferenceJobs(): Promise<void> {
+    if (this.isImageModel()) {
+      const jobs = this.allImageJobs();
+      this.jobs.set(jobs);
+      const current = this.selectedJobId();
+      const keep = current !== null && jobs.some((job) => job.id === current) ? current : jobs[0]?.id ?? null;
+      this.syncSelectedJob(keep);
+      this.loadingJobs.set(false);
+      return;
+    }
+
     this.loadingJobs.set(true);
     this.jobsError.set('');
 
@@ -340,6 +395,17 @@ export class DataOwnerWorkspace {
   }
 
   private async refreshPublishedModels(): Promise<void> {
+    if (this.isImageModel()) {
+      const models = [this.imageGpu.publishedModel(), this.imageDetection.publishedModel()];
+      this.publishedModels.set(models);
+      const preferredId = this.selectedPublishedModelId();
+      const match = preferredId !== null ? models.find((model) => model.id === preferredId) : null;
+      this.selectedPublishedModelId.set(match?.id ?? models[0].id);
+      this.modelError.set('');
+      this.loadingModel.set(false);
+      return;
+    }
+
     this.loadingModel.set(true);
     this.modelError.set('');
     const { models, error } = await this.modelSupabase.loadPublishedModelsByType(
@@ -403,6 +469,33 @@ export class DataOwnerWorkspace {
     this.inferenceError.set('');
     this.inferenceSuccess.set('');
 
+    if (this.isImageModel()) {
+      const backend = this.imageJobsForDataset(dataset);
+      let started = false;
+      try {
+        started = await backend.runInference(dataset.id);
+      } catch (error) {
+        this.inferenceError.set(
+          error instanceof Error ? error.message : `Could not run inference for "${dataset.source_file_name}".`,
+        );
+        this.inferringDatasetId.set(null);
+        return;
+      }
+      if (!started) {
+        this.inferenceError.set(`Could not run inference for "${dataset.source_file_name}".`);
+      } else {
+        this.inferenceSuccess.set(
+          backend === this.imageDetection
+            ? `Local mock inference completed for "${dataset.source_file_name}". The GPU service was not called.`
+            : `Encrypted inference completed for "${dataset.source_file_name}".`,
+        );
+        this.selectedJobId.set(dataset.id);
+        await this.refreshWorkspace();
+      }
+      this.inferringDatasetId.set(null);
+      return;
+    }
+
     const result = await this.fheEncrypt.runInference(dataset.id);
 
     if (!result.ok) {
@@ -451,9 +544,20 @@ export class DataOwnerWorkspace {
     this.selectedPublishedModelId.set(model.id);
     this.showModelSelectModal.set(false);
     this.encryptSuccess.set('');
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { modelId: String(model.id) },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+    if (this.isImageModel()) void this.refreshWorkspace();
   }
 
   downloadSampleData(): void {
+    if (this.isImageModel()) {
+      this.imageDetection.downloadSampleImage();
+      return;
+    }
     const model = this.publishedModel();
     if (!model) return;
     this.sampleDataDownload.downloadFromDocument(model.sample_data, model.model_name);
@@ -464,8 +568,33 @@ export class DataOwnerWorkspace {
 
     const model = this.publishedModel();
     const file = this.selectedCsvFile();
+    if (!model || !file) return;
+
+    if (this.isImageModel()) {
+      this.encrypting.set(true);
+      this.encryptError.set('');
+      this.encryptSuccess.set('');
+      try {
+        const localMock = model.id === IMAGE_DETECTION_MODEL_ID;
+        const backend = localMock ? this.imageDetection : this.imageGpu;
+        await backend.encryptImage(file);
+        this.selectedCsvFile.set(null);
+        this.encryptSuccess.set(
+          localMock
+            ? `"${file.name}" encrypted locally. The GPU service was not called.`
+            : `"${file.name}" encrypted successfully.`,
+        );
+        await this.refreshWorkspace();
+      } catch (error) {
+        this.encryptError.set(error instanceof Error ? error.message : 'Could not encrypt the image.');
+      } finally {
+        this.encrypting.set(false);
+      }
+      return;
+    }
+
     const key = this.currentKey();
-    if (!model || !file || !key) return;
+    if (!key) return;
 
     this.encrypting.set(true);
     this.encryptError.set('');
@@ -677,12 +806,12 @@ export class DataOwnerWorkspace {
     if (!files?.length) return;
 
     if (files.length > 1) {
-      this.uploadError.set('Please upload one CSV file at a time.');
+      this.uploadError.set(this.isImageModel() ? 'Please upload one image at a time.' : 'Please upload one CSV file at a time.');
       return;
     }
 
     const file = files[0];
-    const error = validateCsvFile(file);
+    const error = this.isImageModel() ? validateImageFile(file) : validateCsvFile(file);
     if (error) {
       this.uploadError.set(error);
       return;
@@ -716,6 +845,12 @@ export class DataOwnerWorkspace {
       return;
     }
 
+    if (this.isImageModel()) {
+      await this.imageJobsForDataset(target).delete(target.id);
+      await this.refreshWorkspace();
+      return;
+    }
+
     const result = await this.fheEncrypt.deleteDataset(target.id);
     if (!result.ok) {
       this.datasetsError.set(result.error);
@@ -739,6 +874,16 @@ export class DataOwnerWorkspace {
     this.deletingResultJobId.set(job.id);
     this.jobsError.set('');
 
+    if (this.isImageModel()) {
+      await this.imageJobsForDataset({ id: job.id }).delete(job.id);
+      this.deletingResultJobId.set(null);
+      if (this.selectedJobId() === job.id) {
+        this.selectedJobId.set(null);
+      }
+      await this.refreshWorkspace();
+      return;
+    }
+
     const deleteResult = await this.fheEncrypt.deleteResult(job.id);
     this.deletingResultJobId.set(null);
 
@@ -754,4 +899,26 @@ export class DataOwnerWorkspace {
   }
 
   signOut(): void {}
+
+  /** Mock and GPU jobs stay in one list so switching models does not hide history. */
+  private allImageDatasets(): FheEncryptedDataset[] {
+    return [...this.imageDetection.pendingDatasets(), ...this.imageGpu.pendingDatasets()].sort((a, b) =>
+      b.created_at.localeCompare(a.created_at),
+    );
+  }
+
+  private allImageJobs(): InferenceJob[] {
+    return [...this.imageDetection.inferenceJobs(), ...this.imageGpu.inferenceJobs()].sort((a, b) =>
+      (b.startedAt ?? '').localeCompare(a.startedAt ?? ''),
+    );
+  }
+
+  /** Existing jobs stay on the service that encrypted them. */
+  private imageJobsForDataset(dataset: {
+    id: number;
+  }): ImageDetectionMockService | ImageDetectionGpuService {
+    if (this.imageDetection.isMockJob(dataset.id)) return this.imageDetection;
+    return this.imageGpu;
+  }
+
 }

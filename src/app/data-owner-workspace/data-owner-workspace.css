@@ -814,6 +814,51 @@
 }
 
 /* ===== Inference Jobs table ===== */
+.image-name-hover {
+  position: relative;
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  outline: none;
+}
+
+.image-name {
+  border-bottom: 1px dotted rgba(148, 163, 184, 0.7);
+  cursor: default;
+}
+
+.image-name-preview {
+  display: none;
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  bottom: calc(100% + 0.45rem);
+  width: 220px;
+  padding: 0.3rem;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.image-name-hover:hover .image-name-preview,
+.image-name-hover:focus-within .image-name-preview {
+  display: block;
+}
+
+.image-name-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+/* Name cells also ellipsis their spans; keep the noise popup fully visible. */
+.cell-name .image-name-preview {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .jobs-table .job-id {
   display: block;
   min-width: 0;

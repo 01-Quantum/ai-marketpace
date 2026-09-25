@@ -104,10 +104,10 @@ export class ModelSupabaseService {
     const userId = this.auth.user()?.id;
     if (!userId) return [];
 
+    // RLS returns models this user owns, plus published models shared with them.
     const { data, error } = await this.db
       .from('models')
       .select('*')
-      .eq('user_id', userId)
       .order('updated_at', { ascending: false });
 
     if (error) {

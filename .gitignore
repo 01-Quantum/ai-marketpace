@@ -47,3 +47,5 @@ sample-datasets/data/
 
 __pycache__
 scripts/deploy-ec2.sh
+.vscode
+mcp.json

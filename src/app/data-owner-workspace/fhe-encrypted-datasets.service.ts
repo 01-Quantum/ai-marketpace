@@ -167,6 +167,7 @@ export class FheEncryptedDatasetsService {
       .from('fhe_encrypted_datasets')
       .select('*')
       .eq('user_id', userId)
+      .neq('model_type', 'image')
       .is('submitted_at', null)
       .order('id', { ascending: false });
 
@@ -193,6 +194,7 @@ export class FheEncryptedDatasetsService {
       .from('fhe_encrypted_datasets')
       .select('*')
       .eq('user_id', userId)
+      .neq('model_type', 'image')
       .not('submitted_at', 'is', null)
       .order('submitted_at', { ascending: false });
 

@@ -18,10 +18,12 @@ export class AppTopBar {
 
   readonly brandTag = input('Quantum FHE Enclave');
 
-  readonly displayName = this.auth.displayName;
+  readonly email = this.auth.email;
   readonly isAuthenticated = this.auth.isAuthenticated;
 
   readonly signOut = output<void>();
+  /** Emitted when the visitor chooses Sign in from the top bar. */
+  readonly signIn = output<void>();
   /** Emitted when navigation requires sign-in (e.g. from landing page). */
   readonly authRequired = output<string>();
 
@@ -50,6 +52,10 @@ export class AppTopBar {
     }
 
     this.authRequired.emit(destination);
+  }
+
+  onSignIn(): void {
+    this.signIn.emit();
   }
 
   async onSignOut(): Promise<void> {
