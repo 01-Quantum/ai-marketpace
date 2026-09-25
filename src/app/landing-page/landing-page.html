@@ -1,6 +1,6 @@
 <div class="page">
   <app-top-bar
-    brandTag="FHE Encrypted Enclave"
+    brandTag="Privacy-Preserving AI"
     (signOut)="signOut()"
     (signIn)="openSignIn()"
     (authRequired)="goWithAuth($event)"
@@ -26,7 +26,7 @@
             <p class="flow-copy">
               You generate an FHE key pair. Keep the private key secure.
             </p>
-            <span class="pill pill-data">Data Owner</span>
+            <span class="pill pill-data">Intelligence Data Source</span>
           </article>
           <lucide-angular class="flow-connector" [img]="ArrowRightIcon" size="30" [strokeWidth]="2.25"></lucide-angular>
           <article class="flow-card">
@@ -36,7 +36,8 @@
             <p class="flow-copy">
               Encrypt your data locally using the public key and upload it securely.
             </p>
-            <span class="pill pill-data">Data Owner</span>
+            <span class="pill pill-data">Intelligence Data Source</span>
+            <span class="pill pill-data">Intelligence Data Source</span>
           </article>
           <lucide-angular class="flow-connector" [img]="ArrowRightIcon" size="30" [strokeWidth]="2.25"></lucide-angular>
           <article class="flow-card">
@@ -46,7 +47,7 @@
             <p class="flow-copy">
               The model owner runs inference on encrypted data—no plaintext is seen.
             </p>
-            <span class="pill pill-model">Model Owner</span>
+            <span class="pill pill-model">AI Manager</span>
           </article>
           <lucide-angular class="flow-connector" [img]="ArrowRightIcon" size="30" [strokeWidth]="2.25"></lucide-angular>
           <article class="flow-card">
@@ -56,7 +57,7 @@
             <p class="flow-copy">
               You decrypt the result with your private key and see the prediction.
             </p>
-            <span class="pill pill-data">Data Owner</span>
+            <span class="pill pill-data">Intelligence Data Source</span>
           </article>
         </div>
       </section>
@@ -70,6 +71,7 @@
         </div>
 
         <div class="model-layout">
+          <div class="model-picker">
           <div class="model-cards">
             <button
               type="button"
@@ -124,6 +126,19 @@
                 <lucide-angular class="select-mark" [img]="CircleIcon" size="22"></lucide-angular>
               }
             </button>
+          </div>
+
+          <div class="future-models">
+            <p class="future-models-label">Future</p>
+            <div class="future-model-grid">
+              @for (model of futureModels; track model.name) {
+                <button type="button" class="future-model" disabled>
+                  <lucide-angular [img]="model.icon" size="28" [strokeWidth]="1.6"></lucide-angular>
+                  <span>{{ model.name }}</span>
+                </button>
+              }
+            </div>
+          </div>
           </div>
 
           <aside class="model-action">

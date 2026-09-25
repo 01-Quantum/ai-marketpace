@@ -74,7 +74,7 @@
   max-height: 560px;
   border-radius: 8px;
   border: 1px solid var(--border-soft);
-  background: rgba(7, 10, 18, 0.35);
+  background: #f8fafc;
   touch-action: none;
 }
 
@@ -197,7 +197,7 @@
   height: 24px;
   border-radius: 999px;
   background: var(--teal);
-  color: #042f2e;
+  color: #fff;
   font-size: 0.78rem;
   font-weight: 700;
   display: inline-flex;

@@ -208,7 +208,7 @@ export class DecryptResultWorkspace {
     if (id === null) {
       this.dataset.set(null);
       this.inferenceResult.set(null);
-      this.datasetError.set('No inference job selected. Choose a completed job in the data owner workspace.');
+      this.datasetError.set('No inference job selected. Choose a completed job in the Intelligence Data Source Workspace.');
       return;
     }
 

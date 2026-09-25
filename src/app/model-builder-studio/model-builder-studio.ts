@@ -1,6 +1,8 @@
 import { Component, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
+  Activity,
+  AudioWaveform,
   ChartScatter,
   Check,
   ChevronRight,
@@ -21,6 +23,8 @@ import {
   Share2,
   Upload,
   ShieldCheck,
+  Sun,
+  Thermometer,
   Trash2,
   UserPlus,
   X,
@@ -113,6 +117,12 @@ export class ModelBuilderStudio {
   readonly Share2Icon = Share2;
   readonly UserPlusIcon = UserPlus;
   readonly XIcon = X;
+  readonly futureModels = [
+    { name: 'Acoustic analysis', icon: AudioWaveform },
+    { name: 'Seismic Analysis', icon: Activity },
+    { name: 'Image analysis (daylight)', icon: Sun },
+    { name: 'Image analysis (infrared)', icon: Thermometer },
+  ];
 
   @HostListener('document:click')
   closeLibraryMenu(): void {
@@ -147,7 +157,7 @@ export class ModelBuilderStudio {
       const importedId = this.modelBuilder.importModelFromJsonText(text);
       if (!importedId) {
         window.alert(
-          'Could not import model. Use a JSON file exported from Model Builder Studio (or a compatible model_name / model_type payload).',
+          'Could not import model. Use a JSON file exported from AI Manager Studio (or a compatible model_name / model_type payload).',
         );
       } else {
         this.editingName.set(false);

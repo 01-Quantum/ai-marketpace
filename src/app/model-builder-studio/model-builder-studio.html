@@ -3,7 +3,7 @@
 
   <div class="builder-toolbar">
     <div class="toolbar-left">
-      <h1 class="hero-title">Model Builder Studio</h1>
+      <h1 class="hero-title">AI Manager Studio</h1>
       <p class="hero-sub">Design a model, publish it to the enclave, and run privacy-preserving inference.</p>
     </div>
     <div class="toolbar-center">
@@ -217,6 +217,27 @@
             }
           </ul>
         }
+
+        <div class="library-future">
+          <p class="library-section-label">Future Model</p>
+          <ul class="library-list">
+            @for (model of futureModels; track model.name) {
+              <li class="library-list-item">
+                <div class="library-item library-item-future">
+                  <div class="library-item-main library-item-main-static">
+                    <span class="lib-icon">
+                      <lucide-angular [img]="model.icon" size="22" [strokeWidth]="1.6"></lucide-angular>
+                    </span>
+                    <div class="lib-body">
+                      <p class="lib-name">{{ model.name }}</p>
+                      <span class="lib-status lib-status-future">Future</span>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            }
+          </ul>
+        </div>
       }
     </aside>
 

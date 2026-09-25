@@ -94,8 +94,8 @@
   padding: 0.65rem 1.15rem;
   border-radius: 10px;
   border: none;
-  background: linear-gradient(180deg, #34d399 0%, var(--teal) 100%);
-  color: #042f2e;
+  background: var(--teal);
+  color: #fff;
   font-weight: 700;
   font-size: 0.88rem;
   cursor: pointer;
@@ -205,11 +205,11 @@
 .ciphertext {
   border: 1px solid var(--border-soft);
   border-radius: 10px;
-  background: rgba(7, 10, 18, 0.6);
+  background: #f8fafc;
   padding: 0.75rem 0.9rem;
   font-family: 'JetBrains Mono', 'Menlo', 'Monaco', monospace;
   font-size: 0.74rem;
-  color: var(--coral);
+  color: var(--text);
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -279,7 +279,7 @@
   padding: 1.35rem 1.25rem 1.1rem;
   border: 1.5px dashed rgba(148, 163, 184, 0.35);
   border-radius: 12px;
-  background: rgba(7, 10, 18, 0.35);
+  background: #f8fafc;
   min-height: 220px;
 }
 
@@ -337,7 +337,7 @@
   gap: 0.55rem;
   padding: 0.85rem 1rem;
   border-radius: 10px;
-  background: rgba(15, 23, 42, 0.65);
+  background: #f8fafc;
   border: 1px solid var(--border-soft);
   font-size: 0.82rem;
   color: var(--muted);
@@ -425,7 +425,7 @@
   border: 1px solid var(--border-soft);
   border-radius: 10px;
   overflow: auto;
-  background: rgba(7, 10, 18, 0.45);
+  background: #ffffff;
 }
 
 .results-table {
@@ -445,7 +445,7 @@
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--muted);
-  background: rgba(15, 23, 42, 0.55);
+  background: #f1f5f9;
 }
 
 .results-table tbody tr:last-child td {
@@ -674,7 +674,7 @@
 .audit-item.completed .audit-mark {
   background: var(--teal);
   border-color: var(--teal);
-  color: #042f2e;
+  color: #fff;
 }
 
 .audit-item.completed .audit-label {
@@ -730,7 +730,7 @@
   height: 96px;
   object-fit: cover;
   border-radius: 12px;
-  background: #134e4a;
+  background: #ccfbf1;
 }
 
 .image-result-kicker,
