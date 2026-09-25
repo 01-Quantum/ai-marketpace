@@ -139,7 +139,9 @@
 
           @if (imageJob() && decrypted() && imagePrediction(); as prediction) {
             <div class="image-result">
-              <img class="image-result-preview" [src]="imageJob()!.previewUrl" alt="Decrypted preview" />
+              @if (imageJob()!.previewUrl) {
+                <img class="image-result-preview" [src]="imageJob()!.previewUrl" alt="Decrypted preview" />
+              }
               <div class="image-result-copy">
                 <div class="image-result-kicker">Predicted class</div>
                 <div class="image-result-class">{{ prediction.className }}</div>

@@ -50,6 +50,15 @@ export const MOCK_CAT_PREDICTION: ImageDetectionPrediction = {
   ],
 };
 
+/**
+ * Cat sample files stay on the local mock so the demo works when the GPU is down.
+ * `cat.jpeg`, `cat.jpg`, and `cat.png` all match.
+ */
+export function isLocalMockImage(fileName: string): boolean {
+  const stem = fileName.replace(/\.[^.]+$/, '').toLowerCase();
+  return stem === 'cat' || stem === 'cat-sample';
+}
+
 export function mockPredictionForFile(fileName: string): ImageDetectionPrediction {
   const stem = fileName.replace(/\.[^.]+$/, '').toLowerCase();
   const match = CIFAR10_CLASSES.find((name) => stem.includes(name));

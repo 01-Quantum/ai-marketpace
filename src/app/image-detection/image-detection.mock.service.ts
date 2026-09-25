@@ -1,10 +1,11 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { SupabaseModel } from '../model-builder-studio/model-supabase.service';
 import { LibraryModel } from '../model-builder-studio/model-builder.types';
 import {
   FheEncryptedDataset,
   InferenceJob,
 } from '../data-owner-workspace/fhe-encrypted-datasets.service';
+import { FheImageJobRow, FheImageJobsService } from './fhe-image-jobs.service';
 import {
   IMAGE_DETECTION_MOCK_LIBRARY_ID,
   IMAGE_DETECTION_MODEL_ID,
@@ -32,10 +33,8 @@ function catSampleUrl(): string {
 
 @Injectable({ providedIn: 'root' })
 export class ImageDetectionMockService {
-  private nextId = 91002;
-  private readonly jobsSignal = signal<MockImageJob[]>([this.seedJob()]);
-
-  readonly jobs = this.jobsSignal.asReadonly();
+  private readonly imageJobs = inject(FheImageJobsService);
+  private readonly jobsSignal = signal<MockImageJob[]>([]);
 
   publishedModel(): SupabaseModel {
     const now = '2026-06-14T22:36:00.000Z';
@@ -123,20 +122,27 @@ export class ImageDetectionMockService {
     };
   }
 
+  /** Load this user's mock image jobs from Supabase. */
+  async loadFromSupabase(): Promise<string | null> {
+    const { rows, error } = await this.imageJobs.list('mock');
+    if (error) return error;
+    this.jobsSignal.set(rows.map((row) => rowToMockJob(row)));
+    return null;
+  }
+
   /** Pretend to encrypt locally. The image stays pending until runInference. */
   async encryptImage(file: File): Promise<MockImageJob> {
     await delay(700);
     const previewUrl = await readPreview(file);
-    const job: MockImageJob = {
-      id: this.nextId++,
-      fileName: file.name,
-      previewUrl,
-      createdAt: new Date().toISOString(),
-      prediction: mockPredictionForFile(file.name),
-      submittedAt: null,
-      decryptedAt: null,
-    };
-    this.jobsSignal.update((jobs) => [job, ...jobs]);
+    const prediction = mockPredictionForFile(file.name);
+    const row = await this.imageJobs.insert({
+      file_name: file.name,
+      source: 'mock',
+      model_name: IMAGE_DETECTION_MODEL_NAME,
+      prediction,
+    });
+    const job = rowToMockJob(row, previewUrl);
+    this.jobsSignal.update((jobs) => [job, ...jobs.filter((entry) => entry.id !== job.id)]);
     return job;
   }
 
@@ -145,13 +151,13 @@ export class ImageDetectionMockService {
     if (!job || job.submittedAt) return false;
     await delay(700);
     const submittedAt = new Date().toISOString();
-    this.jobsSignal.update((jobs) =>
-      jobs.map((entry) => (entry.id === id ? { ...entry, submittedAt } : entry)),
-    );
+    await this.imageJobs.update(id, { submitted_at: submittedAt });
+    this.jobsSignal.update((jobs) => jobs.map((entry) => (entry.id === id ? { ...entry, submittedAt } : entry)));
     return true;
   }
 
-  delete(id: number): void {
+  async delete(id: number): Promise<void> {
+    await this.imageJobs.remove(id);
     this.jobsSignal.update((jobs) => jobs.filter((entry) => entry.id !== id));
   }
 
@@ -160,9 +166,8 @@ export class ImageDetectionMockService {
     if (!job) return null;
     await delay(500);
     const decryptedAt = new Date().toISOString();
-    this.jobsSignal.update((jobs) =>
-      jobs.map((entry) => (entry.id === id ? { ...entry, decryptedAt } : entry)),
-    );
+    await this.imageJobs.update(id, { decrypted_at: decryptedAt });
+    this.jobsSignal.update((jobs) => jobs.map((entry) => (entry.id === id ? { ...entry, decryptedAt } : entry)));
     return job.prediction;
   }
 
@@ -172,18 +177,18 @@ export class ImageDetectionMockService {
     link.download = 'cat.png';
     link.click();
   }
+}
 
-  private seedJob(): MockImageJob {
-    return {
-      id: 91001,
-      fileName: 'cat.png',
-      previewUrl: catSampleUrl(),
-      createdAt: '2026-06-18T14:47:00.000Z',
-      prediction: mockPredictionForFile('cat.png'),
-      submittedAt: '2026-06-18T14:47:00.000Z',
-      decryptedAt: null,
-    };
-  }
+function rowToMockJob(row: FheImageJobRow, previewUrl = ''): MockImageJob {
+  return {
+    id: row.id,
+    fileName: row.file_name,
+    previewUrl: previewUrl || (row.file_name.toLowerCase().startsWith('cat.') ? catSampleUrl() : ''),
+    createdAt: row.created_at,
+    prediction: row.prediction ?? mockPredictionForFile(row.file_name),
+    submittedAt: row.submitted_at,
+    decryptedAt: row.decrypted_at,
+  };
 }
 
 function delay(ms: number): Promise<void> {

@@ -16,7 +16,7 @@ import {
   ImageDetectionMockService,
   MockImageJob,
 } from '../image-detection/image-detection.mock.service';
-import { ImageDetectionPrediction } from '../image-detection/image-detection.mock';
+import { ImageDetectionPrediction, isLocalMockImage } from '../image-detection/image-detection.mock';
 import { parseSampleDataCsv } from '../model-builder-studio/sample-data.types';
 import { AuthService } from '../shared/auth.service';
 import {
@@ -216,6 +216,10 @@ export class DecryptResultWorkspace {
     this.datasetError.set('');
     this.imagePrediction.set(null);
 
+    if (!this.imageDetection.getJob(id) && !this.imageGpu.getJob(id)) {
+      await Promise.all([this.imageDetection.loadFromSupabase(), this.imageGpu.loadFromSupabase()]);
+    }
+
     const mockJob = this.imageDetection.getJob(id);
     const gpuJob = mockJob ? null : this.imageGpu.getJob(id);
     const imageJob = mockJob ?? gpuJob;
@@ -292,9 +296,11 @@ export class DecryptResultWorkspace {
       this.decryptError.set('');
       let prediction = null;
       try {
-        prediction = this.imageGpu.isGpuJob(imageJob.id)
-          ? await this.imageGpu.decrypt(imageJob.id)
-          : await this.imageDetection.decrypt(imageJob.id);
+        const localMock =
+          this.imageDetection.isMockJob(imageJob.id) || isLocalMockImage(imageJob.fileName);
+        prediction = localMock
+          ? await this.imageDetection.decrypt(imageJob.id)
+          : await this.imageGpu.decrypt(imageJob.id);
       } catch (error) {
         this.decrypting.set(false);
         this.decryptError.set(error instanceof Error ? error.message : 'Could not decrypt this image result.');

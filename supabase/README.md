@@ -2,6 +2,10 @@
 
 Apply migrations in order in the Supabase SQL editor or via the CLI.
 
+## Image jobs (`fhe-image-jobs.sql`)
+
+Image detection uses `fhe_encrypted_datasets` and `fhe_encrypted_results`. Run [`fhe-image-jobs.sql`](fhe-image-jobs.sql) once so those tables accept `model_type = 'image'` and `operation = 'image_inference'`, and so the two image model rows exist (`91000` mocked, `92000` GPU).
+
 ## Model sharing (`20250614180000_model_sharing.sql`)
 
 Creates:

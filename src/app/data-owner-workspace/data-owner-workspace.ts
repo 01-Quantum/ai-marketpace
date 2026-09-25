@@ -53,7 +53,7 @@ import { FheKey, FheKeysService } from './fhe-keys.service';
 import { FheEncryptService } from './fhe-encrypt.service';
 import { formatFileSize, validateCsvFile } from './csv-upload';
 import { ImageDetectionGpuService } from '../image-detection/image-detection.gpu.service';
-import { IMAGE_DETECTION_MODEL_ID } from '../image-detection/image-detection.mock';
+import { isLocalMockImage } from '../image-detection/image-detection.mock';
 import { ImageDetectionMockService } from '../image-detection/image-detection.mock.service';
 
 function parsePositiveInt(value: string | null): number | null {
@@ -137,8 +137,9 @@ export class DataOwnerWorkspace {
 
   readonly modelTypeLabel = computed(() => INFERENCE_MODEL_LABELS[this.selectedModelType()]);
   readonly isImageModel = computed(() => this.selectedModelType() === 'image');
-  readonly isMockedImageModel = computed(
-    () => this.isImageModel() && this.publishedModel()?.id === IMAGE_DETECTION_MODEL_ID,
+  /** Only cat sample files stay on the local mock. Other images use the GPU API. */
+  readonly usesLocalImageMock = computed(
+    () => this.isImageModel() && isLocalMockImage(this.selectedCsvFile()?.name ?? ''),
   );
   readonly encryptedPreviewUrl = new URL('encrypted-sample.png', document.baseURI).href;
   readonly ImageIcon = Image;
@@ -292,13 +293,21 @@ export class DataOwnerWorkspace {
   }
 
   async refreshWorkspace(): Promise<void> {
+    if (this.isImageModel()) {
+      const [mockError, gpuError] = await Promise.all([
+        this.imageDetection.loadFromSupabase(),
+        this.imageGpu.loadFromSupabase(),
+      ]);
+      const error = mockError || gpuError || '';
+      this.datasetsError.set(error);
+      this.jobsError.set(error);
+    }
     await Promise.all([this.refreshEncryptedDatasets(), this.refreshInferenceJobs()]);
   }
 
   async refreshEncryptedDatasets(): Promise<void> {
     if (this.isImageModel()) {
-      this.datasets.set(this.activeImageJobs().pendingDatasets());
-      this.datasetsError.set('');
+      this.datasets.set(this.allImageDatasets());
       this.loadingDatasets.set(false);
       return;
     }
@@ -318,12 +327,11 @@ export class DataOwnerWorkspace {
 
   async refreshInferenceJobs(): Promise<void> {
     if (this.isImageModel()) {
-      const jobs = this.activeImageJobs().inferenceJobs();
+      const jobs = this.allImageJobs();
       this.jobs.set(jobs);
       const current = this.selectedJobId();
       const keep = current !== null && jobs.some((job) => job.id === current) ? current : jobs[0]?.id ?? null;
       this.syncSelectedJob(keep);
-      this.jobsError.set('');
       this.loadingJobs.set(false);
       return;
     }
@@ -462,9 +470,10 @@ export class DataOwnerWorkspace {
     this.inferenceSuccess.set('');
 
     if (this.isImageModel()) {
+      const backend = this.imageJobsForDataset(dataset);
       let started = false;
       try {
-        started = await this.imageJobsFor(dataset.model_id).runInference(dataset.id);
+        started = await backend.runInference(dataset.id);
       } catch (error) {
         this.inferenceError.set(
           error instanceof Error ? error.message : `Could not run inference for "${dataset.source_file_name}".`,
@@ -476,7 +485,9 @@ export class DataOwnerWorkspace {
         this.inferenceError.set(`Could not run inference for "${dataset.source_file_name}".`);
       } else {
         this.inferenceSuccess.set(
-          `Encrypted inference completed for "${dataset.source_file_name}".`,
+          backend === this.imageDetection
+            ? `Local mock inference completed for "${dataset.source_file_name}". The GPU service was not called.`
+            : `Encrypted inference completed for "${dataset.source_file_name}".`,
         );
         this.selectedJobId.set(dataset.id);
         await this.refreshWorkspace();
@@ -564,9 +575,15 @@ export class DataOwnerWorkspace {
       this.encryptError.set('');
       this.encryptSuccess.set('');
       try {
-        await this.activeImageJobs().encryptImage(file);
-        this.encryptSuccess.set(`"${file.name}" encrypted successfully.`);
+        const localMock = isLocalMockImage(file.name);
+        const backend = localMock ? this.imageDetection : this.imageGpu;
+        await backend.encryptImage(file);
         this.selectedCsvFile.set(null);
+        this.encryptSuccess.set(
+          localMock
+            ? `"${file.name}" encrypted locally. The GPU service was not called.`
+            : `"${file.name}" encrypted successfully.`,
+        );
         await this.refreshWorkspace();
       } catch (error) {
         this.encryptError.set(error instanceof Error ? error.message : 'Could not encrypt the image.');
@@ -829,7 +846,7 @@ export class DataOwnerWorkspace {
     }
 
     if (this.isImageModel()) {
-      this.imageJobsFor(target.model_id).delete(target.id);
+      await this.imageJobsForDataset(target).delete(target.id);
       await this.refreshWorkspace();
       return;
     }
@@ -858,7 +875,7 @@ export class DataOwnerWorkspace {
     this.jobsError.set('');
 
     if (this.isImageModel()) {
-      this.imageJobsOwning(job.id).delete(job.id);
+      await this.imageJobsForDataset({ id: job.id, source_file_name: job.dataset }).delete(job.id);
       this.deletingResultJobId.set(null);
       if (this.selectedJobId() === job.id) {
         this.selectedJobId.set(null);
@@ -883,15 +900,28 @@ export class DataOwnerWorkspace {
 
   signOut(): void {}
 
-  private activeImageJobs(): ImageDetectionMockService | ImageDetectionGpuService {
-    return this.imageJobsFor(this.publishedModel()?.id);
+  /** Mock and GPU jobs stay in one list so switching models does not hide history. */
+  private allImageDatasets(): FheEncryptedDataset[] {
+    return [...this.imageDetection.pendingDatasets(), ...this.imageGpu.pendingDatasets()].sort((a, b) =>
+      b.created_at.localeCompare(a.created_at),
+    );
   }
 
-  private imageJobsFor(modelId: number | null | undefined): ImageDetectionMockService | ImageDetectionGpuService {
-    return modelId === IMAGE_DETECTION_MODEL_ID ? this.imageDetection : this.imageGpu;
+  private allImageJobs(): InferenceJob[] {
+    return [...this.imageDetection.inferenceJobs(), ...this.imageGpu.inferenceJobs()].sort((a, b) =>
+      (b.startedAt ?? '').localeCompare(a.startedAt ?? ''),
+    );
   }
 
-  private imageJobsOwning(id: number): ImageDetectionMockService | ImageDetectionGpuService {
-    return this.imageDetection.isMockJob(id) ? this.imageDetection : this.imageGpu;
+  /** Cat sample files stay on the mock. Every other image uses the GPU service. */
+  private imageJobsForDataset(dataset: {
+    id: number;
+    source_file_name: string;
+  }): ImageDetectionMockService | ImageDetectionGpuService {
+    if (isLocalMockImage(dataset.source_file_name)) return this.imageDetection;
+    if (this.imageGpu.isGpuJob(dataset.id)) return this.imageGpu;
+    if (this.imageDetection.isMockJob(dataset.id)) return this.imageDetection;
+    return this.imageGpu;
   }
+
 }

@@ -32,7 +32,7 @@ create table public.fhe_encrypted_datasets (
   constraint fhe_encrypted_datasets_model_type_check check (
     (
       model_type = any (
-        array['logistic'::text, 'tree'::text, 'linear'::text]
+        array['logistic'::text, 'tree'::text, 'linear'::text, 'image'::text]
       )
     )
   ),
@@ -128,21 +128,21 @@ create table public.fhe_encrypted_results (
   constraint fhe_encrypted_results_dataset_model_type_check check (
     (
       dataset_model_type = any (
-        array['logistic'::text, 'tree'::text, 'linear'::text]
+        array['logistic'::text, 'tree'::text, 'linear'::text, 'image'::text]
       )
     )
   ),
   constraint fhe_encrypted_results_model_type_check check (
     (
       model_type = any (
-        array['logistic'::text, 'tree'::text, 'linear'::text]
+        array['logistic'::text, 'tree'::text, 'linear'::text, 'image'::text]
       )
     )
   ),
   constraint fhe_encrypted_results_operation_check check (
     (
       operation = any (
-        array['batched_linear_score'::text, 'tree_eval'::text]
+        array['batched_linear_score'::text, 'tree_eval'::text, 'image_inference'::text]
       )
     )
   ),

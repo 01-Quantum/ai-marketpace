@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { SupabaseModel } from '../model-builder-studio/model-supabase.service';
 import { LibraryModel } from '../model-builder-studio/model-builder.types';
@@ -6,12 +6,14 @@ import {
   FheEncryptedDataset,
   InferenceJob,
 } from '../data-owner-workspace/fhe-encrypted-datasets.service';
+import { FheImageJobRow, FheImageJobsService } from './fhe-image-jobs.service';
 import {
   CIFAR10_CLASSES,
   IMAGE_DETECTION_GPU_LIBRARY_ID,
   IMAGE_DETECTION_GPU_MODEL_ID,
   IMAGE_DETECTION_GPU_MODEL_NAME,
   ImageDetectionPrediction,
+  isLocalMockImage,
 } from './image-detection.mock';
 
 export interface GpuImageJob {
@@ -45,12 +47,11 @@ interface DecryptResponse {
   result: DecryptBody;
 }
 
+
 @Injectable({ providedIn: 'root' })
 export class ImageDetectionGpuService {
-  private nextId = 92001;
+  private readonly imageJobs = inject(FheImageJobsService);
   private readonly jobsSignal = signal<GpuImageJob[]>([]);
-
-  readonly jobs = this.jobsSignal.asReadonly();
 
   publishedModel(): SupabaseModel {
     const now = '2026-09-25T14:00:00.000Z';
@@ -138,38 +139,48 @@ export class ImageDetectionGpuService {
     };
   }
 
+  async loadFromSupabase(): Promise<string | null> {
+    const { rows, error } = await this.imageJobs.list('gpu');
+    if (error) return error;
+    this.jobsSignal.set(rows.map((row) => rowToGpuJob(row)));
+    return null;
+  }
+
   /** Encrypt on the GPU pod. The image stays pending until runInference. */
   async encryptImage(file: File): Promise<GpuImageJob> {
+    if (isLocalMockImage(file.name)) {
+      throw new Error(`"${file.name}" stays on the local mock. The GPU service was not called.`);
+    }
     const body = new FormData();
     body.append('file', file, file.name);
     body.append('filename', file.name);
 
     const json = await postForm<EncryptResponse>('/v1/encrypt', body);
     const previewUrl = await readPreview(file);
-    const job: GpuImageJob = {
-      id: this.nextId++,
-      fileName: file.name,
-      previewUrl,
-      createdAt: new Date().toISOString(),
-      prediction: null,
-      submittedAt: null,
-      decryptedAt: null,
-      encryptedDir: json.encrypted_dir,
-      resultDir: null,
-    };
-    this.jobsSignal.update((jobs) => [job, ...jobs]);
+    const row = await this.imageJobs.insert({
+      file_name: file.name,
+      source: 'gpu',
+      model_name: IMAGE_DETECTION_GPU_MODEL_NAME,
+      encrypted_dir: json.encrypted_dir,
+    });
+    const job = rowToGpuJob(row, previewUrl);
+    this.jobsSignal.update((jobs) => [job, ...jobs.filter((entry) => entry.id !== job.id)]);
     return job;
   }
 
   async runInference(id: number): Promise<boolean> {
     const job = this.getJob(id);
     if (!job || job.submittedAt) return false;
+    if (isLocalMockImage(job.fileName)) {
+      throw new Error(`"${job.fileName}" stays on the local mock. The GPU service was not called.`);
+    }
     if (!job.encryptedDir) throw new Error('This image has no encrypted directory.');
 
     const json = await postJson<InferResponse>('/v1/infer', {
       encrypted_dir: job.encryptedDir,
     });
     const submittedAt = new Date().toISOString();
+    await this.imageJobs.update(id, { submitted_at: submittedAt, result_dir: json.result_dir });
     this.jobsSignal.update((jobs) =>
       jobs.map((entry) =>
         entry.id === id ? { ...entry, submittedAt, resultDir: json.result_dir } : entry,
@@ -178,24 +189,43 @@ export class ImageDetectionGpuService {
     return true;
   }
 
-  delete(id: number): void {
+  async delete(id: number): Promise<void> {
+    await this.imageJobs.remove(id);
     this.jobsSignal.update((jobs) => jobs.filter((entry) => entry.id !== id));
   }
 
   async decrypt(id: number): Promise<ImageDetectionPrediction | null> {
     const job = this.getJob(id);
     if (!job?.resultDir) return null;
+    if (isLocalMockImage(job.fileName)) {
+      throw new Error(`"${job.fileName}" stays on the local mock. The GPU service was not called.`);
+    }
 
     const json = await postJson<DecryptResponse>('/v1/decrypt', {
       result_dir: job.resultDir,
     });
     const prediction = predictionFromDecrypt(json.result);
     const decryptedAt = new Date().toISOString();
+    await this.imageJobs.update(id, { decrypted_at: decryptedAt, prediction });
     this.jobsSignal.update((jobs) =>
       jobs.map((entry) => (entry.id === id ? { ...entry, decryptedAt, prediction } : entry)),
     );
     return prediction;
   }
+}
+
+function rowToGpuJob(row: FheImageJobRow, previewUrl = ''): GpuImageJob {
+  return {
+    id: row.id,
+    fileName: row.file_name,
+    previewUrl,
+    createdAt: row.created_at,
+    prediction: row.prediction,
+    submittedAt: row.submitted_at,
+    decryptedAt: row.decrypted_at,
+    encryptedDir: row.encrypted_dir,
+    resultDir: row.result_dir,
+  };
 }
 
 function predictionFromDecrypt(result: DecryptBody): ImageDetectionPrediction {
