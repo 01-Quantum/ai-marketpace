@@ -53,7 +53,7 @@ import { FheKey, FheKeysService } from './fhe-keys.service';
 import { FheEncryptService } from './fhe-encrypt.service';
 import { formatFileSize, validateCsvFile } from './csv-upload';
 import { ImageDetectionGpuService } from '../image-detection/image-detection.gpu.service';
-import { isLocalMockImage } from '../image-detection/image-detection.mock';
+import { IMAGE_DETECTION_MODEL_ID } from '../image-detection/image-detection.mock';
 import { ImageDetectionMockService } from '../image-detection/image-detection.mock.service';
 
 function parsePositiveInt(value: string | null): number | null {
@@ -137,9 +137,9 @@ export class DataOwnerWorkspace {
 
   readonly modelTypeLabel = computed(() => INFERENCE_MODEL_LABELS[this.selectedModelType()]);
   readonly isImageModel = computed(() => this.selectedModelType() === 'image');
-  /** Only cat sample files stay on the local mock. Other images use the GPU API. */
+  /** The mocked image model stays local. The GPU model sends every file to the image API. */
   readonly usesLocalImageMock = computed(
-    () => this.isImageModel() && isLocalMockImage(this.selectedCsvFile()?.name ?? ''),
+    () => this.isImageModel() && this.publishedModel()?.id === IMAGE_DETECTION_MODEL_ID,
   );
   readonly encryptedPreviewUrl = new URL('encrypted-sample.png', document.baseURI).href;
   readonly ImageIcon = Image;
@@ -575,7 +575,7 @@ export class DataOwnerWorkspace {
       this.encryptError.set('');
       this.encryptSuccess.set('');
       try {
-        const localMock = isLocalMockImage(file.name);
+        const localMock = model.id === IMAGE_DETECTION_MODEL_ID;
         const backend = localMock ? this.imageDetection : this.imageGpu;
         await backend.encryptImage(file);
         this.selectedCsvFile.set(null);
@@ -875,7 +875,7 @@ export class DataOwnerWorkspace {
     this.jobsError.set('');
 
     if (this.isImageModel()) {
-      await this.imageJobsForDataset({ id: job.id, source_file_name: job.dataset }).delete(job.id);
+      await this.imageJobsForDataset({ id: job.id }).delete(job.id);
       this.deletingResultJobId.set(null);
       if (this.selectedJobId() === job.id) {
         this.selectedJobId.set(null);
@@ -913,13 +913,10 @@ export class DataOwnerWorkspace {
     );
   }
 
-  /** Cat sample files stay on the mock. Every other image uses the GPU service. */
+  /** Existing jobs stay on the service that encrypted them. */
   private imageJobsForDataset(dataset: {
     id: number;
-    source_file_name: string;
   }): ImageDetectionMockService | ImageDetectionGpuService {
-    if (isLocalMockImage(dataset.source_file_name)) return this.imageDetection;
-    if (this.imageGpu.isGpuJob(dataset.id)) return this.imageGpu;
     if (this.imageDetection.isMockJob(dataset.id)) return this.imageDetection;
     return this.imageGpu;
   }

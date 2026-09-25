@@ -10,7 +10,7 @@
       </h2>
       <p class="image-model-sub">
         @if (mocked()) {
-          Local mock of the CIFAR-10 cat sample. No GPU required.
+          Local mock. Any image stays on this machine. No GPU required.
         } @else {
           CIFAR-10 ResNet-20 on the GPU enclave. Encrypt, infer, and decrypt go through the FHE image API.
         }
@@ -39,9 +39,9 @@
       <dt><lucide-angular [img]="ShieldIcon" size="14"></lucide-angular> Enclave note</dt>
       <dd>
         @if (mocked()) {
-          Mocked locally. The sample image is always classified as cat.
+          Mocked locally. Predictions are simulated and never call the GPU.
         } @else {
-          Weights stay on the GPU enclave. Callers send an image; the enclave returns encrypted logits.
+          Weights stay on the GPU enclave. GPU is A100, 50GB RAM footprint. Callers send an encrypted image; the enclave returns encrypted logits.
         }
       </dd>
     </div>

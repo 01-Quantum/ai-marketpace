@@ -1,3 +1,4 @@
+import { IMAGE_DETECTION_PARAMS_COUNT } from '../image-detection/image-detection.mock';
 import { ModelType } from './model-builder.types';
 
 function countCoefficientParams(modelJson: unknown): number {
@@ -20,6 +21,6 @@ export function computeParamsCount(modelType: ModelType, modelJson: unknown): nu
     case 'tree':
       return countTreeParams(modelJson);
     case 'image':
-      return 16;
+      return IMAGE_DETECTION_PARAMS_COUNT;
   }
 }

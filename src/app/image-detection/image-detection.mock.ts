@@ -20,6 +20,9 @@ export const IMAGE_DETECTION_GPU_MODEL_ID = 92000;
 export const IMAGE_DETECTION_GPU_MODEL_NAME = 'CIFAR-10 Image Detection (ResNet-20)';
 export const IMAGE_DETECTION_GPU_LIBRARY_ID = 'gpu-image-resnet20';
 
+/** CIFAR-10 ResNet-20 parameter count. */
+export const IMAGE_DETECTION_PARAMS_COUNT = 270_000;
+
 export interface ImageClassScore {
   id: number;
   name: string;
@@ -49,15 +52,6 @@ export const MOCK_CAT_PREDICTION: ImageDetectionPrediction = {
     { id: 2, name: 'bird', score: 0.001 },
   ],
 };
-
-/**
- * Cat sample files stay on the local mock so the demo works when the GPU is down.
- * `cat.jpeg`, `cat.jpg`, and `cat.png` all match.
- */
-export function isLocalMockImage(fileName: string): boolean {
-  const stem = fileName.replace(/\.[^.]+$/, '').toLowerCase();
-  return stem === 'cat' || stem === 'cat-sample';
-}
 
 export function mockPredictionForFile(fileName: string): ImageDetectionPrediction {
   const stem = fileName.replace(/\.[^.]+$/, '').toLowerCase();

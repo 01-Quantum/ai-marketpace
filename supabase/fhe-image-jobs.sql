@@ -33,9 +33,17 @@ alter table public.fhe_encrypted_results
 insert into public.models (id, user_id, model_type, model_name, published, params_count)
 overriding system value
 values
-  (91000, null, 'image', 'CIFAR-10 Image Detection (ResNet-20) -mocked', true, 16),
-  (92000, null, 'image', 'CIFAR-10 Image Detection (ResNet-20)', true, 16)
-on conflict (id) do nothing;
+  (91000, null, 'image', 'CIFAR-10 Image Detection (ResNet-20) -mocked', true, 270000),
+  (92000, null, 'image', 'CIFAR-10 Image Detection (ResNet-20)', true, 270000)
+on conflict (id) do update set params_count = excluded.params_count;
+
+update public.fhe_encrypted_datasets
+set params_count = 270000
+where model_type = 'image' and params_count <> 270000;
+
+update public.fhe_encrypted_results
+set params_count = 270000
+where (model_type = 'image' or dataset_model_type = 'image') and params_count <> 270000;
 
 drop policy if exists "Users insert own encrypted datasets" on public.fhe_encrypted_datasets;
 create policy "Users insert own encrypted datasets"

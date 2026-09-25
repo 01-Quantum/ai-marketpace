@@ -12,8 +12,8 @@ import {
   IMAGE_DETECTION_GPU_LIBRARY_ID,
   IMAGE_DETECTION_GPU_MODEL_ID,
   IMAGE_DETECTION_GPU_MODEL_NAME,
+  IMAGE_DETECTION_PARAMS_COUNT,
   ImageDetectionPrediction,
-  isLocalMockImage,
 } from './image-detection.mock';
 
 export interface GpuImageJob {
@@ -62,7 +62,7 @@ export class ImageDetectionGpuService {
       model_name: IMAGE_DETECTION_GPU_MODEL_NAME,
       model_json: null,
       sample_data: null,
-      params_count: 16,
+      params_count: IMAGE_DETECTION_PARAMS_COUNT,
       published: true,
       created_at: now,
       updated_at: now,
@@ -123,7 +123,7 @@ export class ImageDetectionGpuService {
       fhe_key_id: 0,
       fhe_key_storage_path: '',
       slots: 4096,
-      params_count: 16,
+      params_count: IMAGE_DETECTION_PARAMS_COUNT,
       rows_per_ciphertext: 1,
       total_rows: 1,
       ciphertext_count: 1,
@@ -148,9 +148,6 @@ export class ImageDetectionGpuService {
 
   /** Encrypt on the GPU pod. The image stays pending until runInference. */
   async encryptImage(file: File): Promise<GpuImageJob> {
-    if (isLocalMockImage(file.name)) {
-      throw new Error(`"${file.name}" stays on the local mock. The GPU service was not called.`);
-    }
     const body = new FormData();
     body.append('file', file, file.name);
     body.append('filename', file.name);
@@ -171,9 +168,6 @@ export class ImageDetectionGpuService {
   async runInference(id: number): Promise<boolean> {
     const job = this.getJob(id);
     if (!job || job.submittedAt) return false;
-    if (isLocalMockImage(job.fileName)) {
-      throw new Error(`"${job.fileName}" stays on the local mock. The GPU service was not called.`);
-    }
     if (!job.encryptedDir) throw new Error('This image has no encrypted directory.');
 
     const json = await postJson<InferResponse>('/v1/infer', {
@@ -197,9 +191,6 @@ export class ImageDetectionGpuService {
   async decrypt(id: number): Promise<ImageDetectionPrediction | null> {
     const job = this.getJob(id);
     if (!job?.resultDir) return null;
-    if (isLocalMockImage(job.fileName)) {
-      throw new Error(`"${job.fileName}" stays on the local mock. The GPU service was not called.`);
-    }
 
     const json = await postJson<DecryptResponse>('/v1/decrypt', {
       result_dir: job.resultDir,

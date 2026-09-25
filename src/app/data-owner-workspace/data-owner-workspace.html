@@ -261,7 +261,7 @@
                   Key, model, and {{ isImageModel() ? 'image' : 'CSV' }} are set.
                   {{
                     usesLocalImageMock()
-                      ? 'This image stays on the local mock. The GPU service is not called.'
+                      ? 'This model stays on the local mock. The GPU service is not called.'
                       : isImageModel()
                         ? 'Encrypt and inference run on the GPU enclave.'
                         : 'Run FHE encryption via the enclave.'

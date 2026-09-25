@@ -16,7 +16,7 @@ import {
   ImageDetectionMockService,
   MockImageJob,
 } from '../image-detection/image-detection.mock.service';
-import { ImageDetectionPrediction, isLocalMockImage } from '../image-detection/image-detection.mock';
+import { ImageDetectionPrediction } from '../image-detection/image-detection.mock';
 import { parseSampleDataCsv } from '../model-builder-studio/sample-data.types';
 import { AuthService } from '../shared/auth.service';
 import {
@@ -296,8 +296,7 @@ export class DecryptResultWorkspace {
       this.decryptError.set('');
       let prediction = null;
       try {
-        const localMock =
-          this.imageDetection.isMockJob(imageJob.id) || isLocalMockImage(imageJob.fileName);
+        const localMock = this.imageDetection.isMockJob(imageJob.id);
         prediction = localMock
           ? await this.imageDetection.decrypt(imageJob.id)
           : await this.imageGpu.decrypt(imageJob.id);

@@ -6,6 +6,7 @@ import {
   IMAGE_DETECTION_GPU_MODEL_NAME,
   IMAGE_DETECTION_MODEL_ID,
   IMAGE_DETECTION_MODEL_NAME,
+  IMAGE_DETECTION_PARAMS_COUNT,
   ImageDetectionPrediction,
 } from './image-detection.mock';
 
@@ -107,7 +108,7 @@ export class FheImageJobsService {
         fhe_key_id: key.id,
         fhe_key_storage_path: key.path,
         slots: 4096,
-        params_count: 16,
+        params_count: IMAGE_DETECTION_PARAMS_COUNT,
         rows_per_ciphertext: 1,
         total_rows: 1,
         ciphertext_count: 1,
