@@ -1,6 +1,7 @@
 <header class="top-bar">
   <a routerLink="/landing-page" class="brand brand-link" aria-label="Go to home">
     <img class="brand-logo-img" src="brand-logo.png" alt="Quantum AI Marketplace logo" />
+    <img class="brand-flag" src="candian.png" alt="Canadian flag" />
     <div class="brand-text">
       <span class="brand-title">Encrypted AI Marketplace</span>
       <span class="brand-tag">{{ brandTag() }}</span>
@@ -15,7 +16,7 @@
         (click)="setRole('data')"
       >
         <lucide-angular [img]="UserIcon" size="16" [strokeWidth]="2"></lucide-angular>
-        Data Owner
+        Intelligence Data Source
       </button>
       <button
         type="button"
@@ -24,7 +25,7 @@
         (click)="setRole('model')"
       >
         <lucide-angular [img]="LandmarkIcon" size="16" [strokeWidth]="2"></lucide-angular>
-        Model Owner
+        AI Manager
       </button>
     </div>
     <div class="trust-badge">

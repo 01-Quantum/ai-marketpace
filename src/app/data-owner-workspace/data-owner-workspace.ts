@@ -419,7 +419,7 @@ export class DataOwnerWorkspace {
     } else if (models.length === 0) {
       this.selectedPublishedModelId.set(null);
       this.modelError.set(
-        `No published ${this.modelTypeLabel()} model available yet. Publish one in Model Builder Studio, or ask another model owner to share one with you.`,
+        `No published ${this.modelTypeLabel()} model available yet. Publish one in AI Manager Studio, or ask another model owner to share one with you.`,
       );
     } else {
       const preferredId = this.selectedPublishedModelId();

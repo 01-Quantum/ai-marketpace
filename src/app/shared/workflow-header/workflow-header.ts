@@ -43,7 +43,7 @@ export class WorkflowHeader {
   ];
 
   stepLabel(step: StepDefinition): string {
-    if (step.num === 2 && this.modelQuery() === 'image') return 'Upload & Encrypt Image';
+    if (step.num === 2 && this.modelQuery() === 'image') return 'Load Sample';
     return step.label;
   }
 

@@ -16,7 +16,7 @@ export class AppTopBar {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
 
-  readonly brandTag = input('Quantum FHE Enclave');
+  readonly brandTag = input('Privacy-Preserving AI');
 
   readonly email = this.auth.email;
   readonly isAuthenticated = this.auth.isAuthenticated;

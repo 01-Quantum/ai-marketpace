@@ -1,6 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
+  Activity,
+  AudioWaveform,
   ArrowRight,
   ChartScatter,
   CircleCheck,
@@ -14,6 +16,8 @@ import {
   LucideAngularModule,
   Network,
   ShieldCheck,
+  Sun,
+  Thermometer,
 } from 'lucide-angular';
 import { AppTopBar } from '../shared/app-top-bar/app-top-bar';
 import { AuthDialog } from '../shared/auth-dialog/auth-dialog';
@@ -32,6 +36,12 @@ export class LandingPage {
   private readonly auth = inject(AuthService);
 
   readonly selectedModel = signal<InferenceModelChoice>('tree');
+  readonly futureModels = [
+    { name: 'Acoustic analysis', icon: AudioWaveform },
+    { name: 'Seismic Analysis', icon: Activity },
+    { name: 'Image analysis (daylight)', icon: Sun },
+    { name: 'Image analysis (infrared)', icon: Thermometer },
+  ];
 
   readonly authDialogOpen = signal(false);
   private pendingDestination: string | null = null;
