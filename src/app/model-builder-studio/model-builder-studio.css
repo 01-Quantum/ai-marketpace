@@ -90,7 +90,7 @@
 .btn-toolbar-unpublish:hover:not(:disabled) {
   background: rgba(248, 113, 113, 0.1);
   border-color: #f87171;
-  color: #f87171;
+  color: #dc2626;
 }
 
 .lib-status-published {
@@ -105,7 +105,7 @@
 
 .btn-toolbar-delete:hover:not(:disabled) {
   border-color: #f87171;
-  color: #f87171;
+  color: #dc2626;
 }
 
 .toolbar-center {
@@ -120,7 +120,7 @@
   padding: 0.45rem 0.55rem 0.45rem 1rem;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: #0c1220;
+  background: #f8fafc;
 }
 
 .model-name {
@@ -310,6 +310,22 @@
   background: rgba(45, 212, 191, 0.14);
 }
 
+.library-future {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.library-item-future {
+  cursor: not-allowed;
+}
+
+.lib-status-future {
+  background: var(--teal-dim);
+  color: var(--teal);
+}
+
 .library-section-label {
   margin: 0;
   font-size: 0.72rem;
@@ -368,6 +384,11 @@
   box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.3);
 }
 
+.library-item-future:hover {
+  border-color: var(--border);
+  box-shadow: none;
+}
+
 .lib-icon {
   width: 44px;
   height: 44px;
@@ -414,7 +435,7 @@
 
 .lib-status-unsaved {
   background: rgba(251, 191, 36, 0.12);
-  color: #fbbf24;
+  color: #b45309;
 }
 
 .lib-status-local {
@@ -497,7 +518,7 @@
 }
 
 .lib-menu-item-danger {
-  color: #f87171;
+  color: #dc2626;
 }
 
 .lib-menu-item-danger:hover:not(:disabled) {
@@ -893,7 +914,7 @@
   padding: 0.55rem 0.65rem;
   border-radius: 8px;
   border: 1px solid var(--border-soft);
-  background: rgba(7, 10, 18, 0.35);
+  background: #f8fafc;
 }
 
 .share-list-email {

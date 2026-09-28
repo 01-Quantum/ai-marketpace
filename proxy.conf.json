@@ -1,7 +1,7 @@
 {
   "/fhe-vault": {
-    "target": "http://localhost:8000",
-    "secure": false,
+    "target": "https://aimarketplace.01com.com:443",
+    "secure": true,
     "changeOrigin": true,
     "logLevel": "debug"
   },

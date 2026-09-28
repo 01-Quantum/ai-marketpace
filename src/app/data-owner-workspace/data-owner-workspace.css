@@ -98,7 +98,7 @@
   height: 18px;
   border-radius: 999px;
   background: var(--teal);
-  color: #042f2e;
+  color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -543,7 +543,7 @@
   height: 16px;
   border-radius: 999px;
   background: var(--teal);
-  color: #042f2e;
+  color: #fff;
   font-weight: 700;
   font-size: 0.65rem;
   display: inline-flex;

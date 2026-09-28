@@ -6,7 +6,7 @@
 
     <main class="main">
       <header class="workspace-header">
-        <h1 class="hero-title">Data Owner Workspace</h1>
+        <h1 class="hero-title">Intelligence Data Source Workspace</h1>
         <p class="hero-sub">
           Create keys and encrypt your dataset before submitting it to the model owner.
         </p>
@@ -104,7 +104,7 @@
           <header class="step-panel-head">
             <lucide-angular class="step-panel-icon" [img]="FileLockIcon" size="18"></lucide-angular>
             <h2 class="step-panel-title">
-              Step 2: Upload &amp; Encrypt {{ isImageModel() ? 'Image' : 'Data' }}
+              Step 2: {{ isImageModel() ? 'Load Sample' : 'Upload & Encrypt Data' }}
             </h2>
           </header>
 
