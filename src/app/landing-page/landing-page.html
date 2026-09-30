@@ -128,17 +128,7 @@
             </button>
           </div>
 
-          <div class="future-models">
-            <p class="future-models-label">Future use cases</p>
-            <div class="future-model-grid">
-              @for (model of futureModels; track model.name) {
-                <button type="button" class="future-model" disabled>
-                  <lucide-angular [img]="model.icon" size="28" [strokeWidth]="1.6"></lucide-angular>
-                  <span>{{ model.name }}</span>
-                </button>
-              }
-            </div>
-          </div>
+          
           </div>
 
           <aside class="model-action">
